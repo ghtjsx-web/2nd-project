@@ -44,3 +44,8 @@ ehthumbs.db
 Desktop.ini
 $RECYCLE.BIN/
 .DS_Store
+
+# 프론트엔드 무거운 파일 제외
+node_modules/
+.next/
+.vscode
