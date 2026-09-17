@@ -1,0 +1,461 @@
+[
+  {
+    "id": "place-01",
+    "name": "강릉 송정해변 솔밭길 & 송정 바다",
+    "region": "강원 강릉시",
+    "theme": "바다/해변",
+    "persona_fit": ["생각정리형", "카페체류형"],
+    "summary": "안목해변의 카페거리 인파에서 살짝 벗어나 울창한 소나무 숲길과 푸른 동해를 나 홀로 만끽할 수 있는 해변길",
+    "image_url": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&auto=format&fit=crop&q=80",
+    "lat": 37.7785,
+    "lon": 128.9385,
+    "scores": {
+      "quietness": 4.5,
+      "public_transport": 4.2,
+      "walking": 4.8,
+      "solo_dining": 3.8,
+      "solo_cafe": 4.6,
+      "nature": 4.9,
+      "culture": 2.5,
+      "stayability": 4.7,
+      "interaction_need": 1.2,
+      "fatigue": 2.2
+    },
+    "transit": {
+      "route": "KTX 서울역/청량리역 → 강릉역 (1시간 40분) → 시내버스 223번 (15분)",
+      "total_minutes": 115,
+      "transfers": 1,
+      "bus_interval_min": 20,
+      "difficulty": "쉬움"
+    },
+    "itinerary": [
+      {"time": "11:00", "spot": "강릉역 도착 및 송정 솔밭길 이동", "vibe": "기차에서 내려 솔향 맡기", "stimulus": "낮음"},
+      {"time": "11:30", "spot": "송정해변 소나무 숲 벤치 바다멍", "vibe": "파도 소리 들으며 혼자 걷기", "stimulus": "매우 낮음"},
+      {"time": "13:00", "spot": "바닷가 조용한 초당 순두부 혼밥", "vibe": "1인 친화적 담백한 식사", "stimulus": "낮음"},
+      {"time": "14:15", "spot": "송정 통창 오션뷰 북카페", "vibe": "사람 적은 창가에서 독서", "stimulus": "매우 낮음"},
+      {"time": "16:30", "spot": "솔밭길 산책 후 강릉역 복귀", "vibe": "저녁 KTX 타고 집으로", "stimulus": "낮음"}
+    ],
+    "curator_note": "사람 바글거리는 안목 메인 거리에서 딱 10분만 솔밭길로 걸어오세요. 파도 소리만 들리는 진짜 나만의 바다가 펼쳐집니다."
+  },
+  {
+    "id": "place-02",
+    "name": "춘천 의암호 물레길 & 삼천동 수변",
+    "region": "강원 춘천시",
+    "theme": "호수/수변",
+    "persona_fit": ["생각정리형", "자연회복형"],
+    "summary": "잔잔한 호숫가를 따라 데크길이 이어져 복잡한 머릿속을 비워내기 가장 완벽한 뚜벅이 코스",
+    "image_url": "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800&auto=format&fit=crop&q=80",
+    "lat": 37.8682,
+    "lon": 127.7012,
+    "scores": {
+      "quietness": 4.6,
+      "public_transport": 4.5,
+      "walking": 4.9,
+      "solo_dining": 3.6,
+      "solo_cafe": 4.4,
+      "nature": 4.8,
+      "culture": 2.8,
+      "stayability": 4.6,
+      "interaction_need": 1.1,
+      "fatigue": 2.0
+    },
+    "transit": {
+      "route": "ITX 청춘 용산/청량리역 → 남춘천역 (1시간 10분) → 시내버스 16번 (12분)",
+      "total_minutes": 82,
+      "transfers": 1,
+      "bus_interval_min": 15,
+      "difficulty": "매우 쉬움"
+    },
+    "itinerary": [
+      {"time": "10:30", "spot": "남춘천역 도착 후 호수 수변 진입", "vibe": "시원한 호숫바람 맞이", "stimulus": "낮음"},
+      {"time": "11:15", "spot": "의암호 자전거길 옆 보행 데크 산책", "vibe": "물비늘 반짝이는 호수멍", "stimulus": "매우 낮음"},
+      {"time": "12:45", "spot": "남춘천 인근 깔끔한 메밀막국수 혼밥", "vibe": "혼자 앉기 편한 1인석", "stimulus": "낮음"},
+      {"time": "14:00", "spot": "삼천동 언덕 위 호수 뷰 통창 카페", "vibe": "잔잔한 음악과 호수 조망", "stimulus": "낮음"},
+      {"time": "16:00", "spot": "공지천 조각공원 벤치 휴식 후 귀가", "vibe": "ITX 타고 여유롭게 귀가", "stimulus": "낮음"}
+    ],
+    "curator_note": "급행열차로 1시간 남짓이면 서울을 벗어납니다. 주말에도 평일처럼 고요함을 주는 의암호의 윤슬을 바라보세요."
+  },
+  {
+    "id": "place-03",
+    "name": "파주 출판도시 & 갈대샛강 생태공원",
+    "region": "경기 파주시",
+    "theme": "문화/서점",
+    "persona_fit": ["문화감상형", "카페체류형"],
+    "summary": "거대한 책의 요람이자 건축 미학이 돋보이는 거리, 갈대 샛강을 따라 책 한 권 들고 걷기 좋은 곳",
+    "image_url": "https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=800&auto=format&fit=crop&q=80",
+    "lat": 37.7058,
+    "lon": 126.6853,
+    "scores": {
+      "quietness": 4.7,
+      "public_transport": 4.0,
+      "walking": 4.6,
+      "solo_dining": 3.4,
+      "solo_cafe": 4.9,
+      "nature": 3.8,
+      "culture": 5.0,
+      "stayability": 4.9,
+      "interaction_need": 1.0,
+      "fatigue": 1.8
+    },
+    "transit": {
+      "route": "지하철 2/6호선 합정역 1번 출구 → 광역버스 2200번 (35분 탑승 직통)",
+      "total_minutes": 45,
+      "transfers": 0,
+      "bus_interval_min": 12,
+      "difficulty": "매우 쉬움"
+    },
+    "itinerary": [
+      {"time": "11:00", "spot": "합정역 2200번 버스 타고 출판도시 도착", "vibe": "환승 없이 편안하게 도착", "stimulus": "낮음"},
+      {"time": "11:30", "spot": "지혜의숲 서가 및 활판인쇄박물관 산책", "vibe": "책 냄새와 높은 책장 감상", "stimulus": "낮음"},
+      {"time": "13:00", "spot": "출판사 직영 카페에서 샌드위치 혼밥", "vibe": "조용한 1인 독서 식사", "stimulus": "매우 낮음"},
+      {"time": "14:00", "spot": "열화당 도서관 및 독립서점 탐방", "vibe": "취향에 맞는 인문예술 서적 발견", "stimulus": "낮음"},
+      {"time": "15:45", "spot": "갈대샛강 생태수로 나무데크길 걷기", "vibe": "바람에 흔들리는 갈대 소리", "stimulus": "매우 낮음"},
+      {"time": "17:00", "spot": "2200번 버스로 합정 복귀", "vibe": "가벼운 피로도로 귀가", "stimulus": "낮음"}
+    ],
+    "curator_note": "말 한마디 섞지 않고 온전히 활자와 건축, 갈대숲에 둘러싸여 나만의 깊은 침묵을 선물하고 싶은 날 추천합니다."
+  },
+  {
+    "id": "place-04",
+    "name": "수원 화성 성곽길 서장대 & 북수동 골목",
+    "region": "경기 수원시",
+    "theme": "역사/골목",
+    "persona_fit": ["가벼운 탐방형", "생각정리형"],
+    "summary": "화려한 행리단길 메인 도로를 비껴 성곽길 능선과 오래된 북수동 고요한 주택가를 걷는 느린 여정",
+    "image_url": "https://images.unsplash.com/photo-1538485399081-7191377e8241?w=800&auto=format&fit=crop&q=80",
+    "lat": 37.2872,
+    "lon": 127.0118,
+    "scores": {
+      "quietness": 3.8,
+      "public_transport": 4.8,
+      "walking": 4.7,
+      "solo_dining": 4.5,
+      "solo_cafe": 4.7,
+      "nature": 3.7,
+      "culture": 4.4,
+      "stayability": 4.1,
+      "interaction_need": 2.0,
+      "fatigue": 2.5
+    },
+    "transit": {
+      "route": "지하철 1호선/수인분당선 수원역 → 시내버스 11/13번 (12분 화서문 하차)",
+      "total_minutes": 55,
+      "transfers": 1,
+      "bus_interval_min": 8,
+      "difficulty": "쉬움"
+    },
+    "itinerary": [
+      {"time": "11:30", "spot": "수원 화서문 도착 및 성곽 서암문 진입", "vibe": "돌벽을 따라 천천히 오르기", "stimulus": "낮음"},
+      {"time": "12:15", "spot": "팔달산 정상 서장대에서 도시 조망", "vibe": "수원 시내가 한눈에 내려다보이는 쉼", "stimulus": "낮음"},
+      {"time": "13:15", "spot": "북수동 골목 숨은 솥밥/온면 혼밥집", "vibe": "조용한 1인석 정갈한 식사", "stimulus": "낮음"},
+      {"time": "14:30", "spot": "한옥 서재 콘셉트의 독립서점 & 티하우스", "vibe": "차 한 잔과 함께 메모 정리", "stimulus": "매우 낮음"},
+      {"time": "16:30", "spot": "방화수류정 연못가 벤치 물멍 후 귀가", "vibe": "버들가지 흔들리는 풍경 보기", "stimulus": "낮음"}
+    ],
+    "curator_note": "줄 서는 행궁동 카페거리 대신 성곽 위 바람길과 북수동 뒷골목을 걸어보세요. 혼자 걷기에 더없이 안전하고 단정합니다."
+  },
+  {
+    "id": "place-05",
+    "name": "양평 두물머리 연꽃길 & 세미원 수련원",
+    "region": "경기 양평군",
+    "theme": "자연/강변",
+    "persona_fit": ["자연회복형", "생각정리형"],
+    "summary": "남한강과 북한강이 만나는 두 물줄기, 고요한 연꽃 습지와 강변 느티나무 아래에서 누리는 힐링",
+    "image_url": "https://images.unsplash.com/photo-1470770841072-f978cf4d019e?w=800&auto=format&fit=crop&q=80",
+    "lat": 37.5326,
+    "lon": 127.3175,
+    "scores": {
+      "quietness": 4.0,
+      "public_transport": 4.4,
+      "walking": 4.6,
+      "solo_dining": 3.7,
+      "solo_cafe": 4.2,
+      "nature": 4.9,
+      "culture": 3.0,
+      "stayability": 4.5,
+      "interaction_need": 1.3,
+      "fatigue": 2.1
+    },
+    "transit": {
+      "route": "경의중앙선 용산/왕십리역 → 양수역 하차 (55분) → 도보 15분",
+      "total_minutes": 70,
+      "transfers": 0,
+      "bus_interval_min": 0,
+      "difficulty": "쉬움"
+    },
+    "itinerary": [
+      {"time": "10:30", "spot": "경의중앙선 양수역 도착 후 연꽃길 도보 이동", "vibe": "환승 없이 전철 타고 도착", "stimulus": "낮음"},
+      {"time": "11:00", "spot": "세미원 징검다리와 수생식물원 산책", "vibe": "물소리와 푸른 연잎 사이 걷기", "stimulus": "매우 낮음"},
+      {"time": "12:30", "spot": "양수리 재래시장 골목 순대국/칼국수 혼밥", "vibe": "소박하고 부담 없는 혼밥", "stimulus": "낮음"},
+      {"time": "13:45", "spot": "두물머리 400년 느티나무 앞 강변 벤치", "vibe": "유유히 흐르는 강물멍", "stimulus": "매우 낮음"},
+      {"time": "15:30", "spot": "강변 한옥 로스팅 카페 창가석", "vibe": "따뜻한 드립 커피 한 잔", "stimulus": "낮음"},
+      {"time": "17:00", "spot": "양수역에서 전철 타고 편안히 귀가", "vibe": "도보 위주의 건강한 피로감", "stimulus": "낮음"}
+    ],
+    "curator_note": "주말 오후에는 방문객이 늘 수 있으니 오전 10시 반에 도착해 숲과 강변을 먼저 걷는 것을 추천합니다."
+  },
+  {
+    "id": "place-06",
+    "name": "인천 배다리 헌책방 골목 & 싸리재 레트로길",
+    "region": "인천 동구",
+    "theme": "문화/골목",
+    "persona_fit": ["문화감상형", "가벼운 탐방형"],
+    "summary": "드라마 '도깨비' 서점으로 유명하지만 골목 깊숙이 들어가면 옛 정취와 조용한 갤러리가 숨어있는 아지트",
+    "image_url": "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=800&auto=format&fit=crop&q=80",
+    "lat": 37.4716,
+    "lon": 126.6384,
+    "scores": {
+      "quietness": 4.3,
+      "public_transport": 4.9,
+      "walking": 4.5,
+      "solo_dining": 4.2,
+      "solo_cafe": 4.6,
+      "nature": 2.0,
+      "culture": 4.8,
+      "stayability": 4.4,
+      "interaction_need": 1.5,
+      "fatigue": 1.7
+    },
+    "transit": {
+      "route": "지하철 1호선 도원역 또는 동인천역 하차 → 도보 8분",
+      "total_minutes": 50,
+      "transfers": 0,
+      "bus_interval_min": 0,
+      "difficulty": "매우 쉬움"
+    },
+    "itinerary": [
+      {"time": "11:30", "spot": "동인천역 4번 출구에서 배다리 골목 산책", "vibe": "1호선 직통 도보 진입", "stimulus": "낮음"},
+      {"time": "12:00", "spot": "아벨서점 및 한미서점 고서 탐색", "vibe": "오래된 종이 냄새 속 보물찾기", "stimulus": "매우 낮음"},
+      {"time": "13:15", "spot": "오래된 노포 중화요리 1인 간짜장 혼밥", "vibe": "역사 깊은 로컬 맛집", "stimulus": "낮음"},
+      {"time": "14:15", "spot": "LP 음악이 잔잔히 흐르는 싸리재 카페", "vibe": "모카포트 커피와 아날로그 쉼", "stimulus": "매우 낮음"},
+      {"time": "16:00", "spot": "스페이스 빔 대안미술공간 전시 관람", "vibe": "옛 양조장을 개조한 고요한 전시", "stimulus": "낮음"}
+    ],
+    "curator_note": "복잡한 차이나타운이나 월미도 인파를 피해 한 정거장 전인 동인천 배다리에서 조용히 활자 여행을 즐겨보세요."
+  },
+  {
+    "id": "place-07",
+    "name": "군포 초막골 생태공원 & 수리산 피톤치드 숲길",
+    "region": "경기 군포시",
+    "theme": "자연/숲길",
+    "persona_fit": ["자연회복형", "생각정리형"],
+    "summary": "지하철 4호선으로 바로 닿는 도심 속 숨겨진 대규모 생태습지와 수리산 자락의 청정한 숲",
+    "image_url": "https://images.unsplash.com/photo-1448375240586-882707db888b?w=800&auto=format&fit=crop&q=80",
+    "lat": 37.3592,
+    "lon": 126.9174,
+    "scores": {
+      "quietness": 4.6,
+      "public_transport": 4.7,
+      "walking": 4.9,
+      "solo_dining": 3.5,
+      "solo_cafe": 4.1,
+      "nature": 4.9,
+      "culture": 2.2,
+      "stayability": 4.7,
+      "interaction_need": 1.0,
+      "fatigue": 1.9
+    },
+    "transit": {
+      "route": "지하철 4호선 수리산역 3번 출구 → 도보 12분 (철쭉동산 뒤편 연결)",
+      "total_minutes": 45,
+      "transfers": 0,
+      "bus_interval_min": 0,
+      "difficulty": "매우 쉬움"
+    },
+    "itinerary": [
+      {"time": "10:30", "spot": "수리산역 도착 후 초막골 생태공원 진입", "vibe": "지하철 직통, 가벼운 숲 진입", "stimulus": "낮음"},
+      {"time": "11:00", "spot": "물새연못 주변 데크길 걷기 및 들꽃 탐방", "vibe": "연못에 비치는 산 그림자 감상", "stimulus": "매우 낮음"},
+      {"time": "12:30", "spot": "공원 인근 곤드레밥 정식 깔끔한 혼밥", "vibe": "속 편한 1인 한식", "stimulus": "낮음"},
+      {"time": "13:45", "spot": "초막골 맹꽁이 습지원 벤치 독서", "vibe": "새소리만 들리는 그늘 쉼터", "stimulus": "매우 낮음"},
+      {"time": "15:30", "spot": "숲속 작은 갤러리 북카페 커피 한 잔", "vibe": "숲을 바라보는 창가 자리", "stimulus": "낮음"}
+    ],
+    "curator_note": "멀리 가지 않고도 서울 남부에서 4호선 전철 하나로 깊은 산골에 온 듯한 고요함을 만날 수 있는 뚜벅이의 안식처입니다."
+  },
+  {
+    "id": "place-08",
+    "name": "원주 뮤지엄 산 & 자작나무 숲길",
+    "region": "강원 원주시",
+    "theme": "문화/건축",
+    "persona_fit": ["문화감상형", "생각정리형"],
+    "summary": "안도 다다오의 명상적 미니멀리즘 건축과 사계절 푸른 자작나무 숲이 빚어내는 궁극의 사색 공간",
+    "image_url": "https://images.unsplash.com/photo-1513694203232-719a280e022f?w=800&auto=format&fit=crop&q=80",
+    "lat": 37.4082,
+    "lon": 127.8764,
+    "scores": {
+      "quietness": 4.2,
+      "public_transport": 3.7,
+      "walking": 4.6,
+      "solo_dining": 3.2,
+      "solo_cafe": 4.8,
+      "nature": 4.8,
+      "culture": 5.0,
+      "stayability": 4.8,
+      "interaction_need": 1.2,
+      "fatigue": 2.7
+    },
+    "transit": {
+      "route": "KTX 만종역/원주역 (45분) → 오크밸리 셔틀버스 또는 시내버스 (30분)",
+      "total_minutes": 85,
+      "transfers": 1,
+      "bus_interval_min": 60,
+      "difficulty": "보통 (시간표 사전 확인 권장)"
+    },
+    "itinerary": [
+      {"time": "10:30", "spot": "만종역 도착 및 뮤지엄산 연계 셔틀 탑승", "vibe": "창밖 산세를 보며 힐링", "stimulus": "낮음"},
+      {"time": "11:15", "spot": "플라워 가든 & 자작나무 숲길 산책", "vibe": "새하얀 자작나무 사이 사색", "stimulus": "매우 낮음"},
+      {"time": "12:30", "spot": "뮤지엄 내 카페 테라스 워터가든 혼밥/티", "vibe": "물 위에 떠 있는 듯한 공간감", "stimulus": "낮음"},
+      {"time": "14:00", "spot": "제임스 터렐 & 안도 다다오 명상관 체험", "vibe": "빛과 침묵의 완전한 몰입", "stimulus": "매우 낮음"},
+      {"time": "16:15", "spot": "셔틀 타고 원주역 복귀 후 KTX 탑승", "vibe": "정갈하게 정돈된 마음으로 귀가", "stimulus": "낮음"}
+    ],
+    "curator_note": "배차 간격이 있으니 셔틀버스 시간표만 확인해 두세요. 명상관에 앉아 빛의 변화를 바라보는 순간 일상의 모든 피로가 씻겨나갑니다."
+  },
+  {
+    "id": "place-09",
+    "name": "속초 영랑호 둘레길 & 보광사 고요한 쉼",
+    "region": "강원 속초시",
+    "theme": "호수/자연",
+    "persona_fit": ["자연회복형", "생각정리형"],
+    "summary": "속초중앙시장 인파를 피해 설악산 울산바위가 수면에 비치는 8km 호숫가를 느긋하게 걷는 코스",
+    "image_url": "https://images.unsplash.com/photo-1439066615861-d1af74d74000?w=800&auto=format&fit=crop&q=80",
+    "lat": 38.2198,
+    "lon": 128.5776,
+    "scores": {
+      "quietness": 4.6,
+      "public_transport": 4.1,
+      "walking": 4.8,
+      "solo_dining": 4.0,
+      "solo_cafe": 4.5,
+      "nature": 4.9,
+      "culture": 3.0,
+      "stayability": 4.7,
+      "interaction_need": 1.1,
+      "fatigue": 2.4
+    },
+    "transit": {
+      "route": "서울고속버스터미널/동서울 → 속초시외버스터미널 (2시간 10분) → 도보 10분",
+      "total_minutes": 140,
+      "transfers": 0,
+      "bus_interval_min": 15,
+      "difficulty": "쉬움"
+    },
+    "itinerary": [
+      {"time": "11:30", "spot": "속초시외터미널 도착 후 영랑호 방면 도보 진입", "vibe": "터미널에서 바로 걸어서 호수 도착", "stimulus": "낮음"},
+      {"time": "12:00", "spot": "영랑호 수변 벚나무 터널 산책 & 영랑정", "vibe": "호수 너머 설악산 조망", "stimulus": "매우 낮음"},
+      {"time": "13:30", "spot": "영랑호 근처 메밀 막국수 또는 생선구이 백반 혼밥", "vibe": "현지 로컬 담백한 1인 식사", "stimulus": "낮음"},
+      {"time": "14:45", "spot": "영랑호 뷰 통창 베이커리 북카페", "vibe": "호수 바람을 느끼며 차 한 잔", "stimulus": "낮음"},
+      {"time": "16:30", "spot": "조용한 사찰 보광사 경내 산책 후 터미널 이동", "vibe": "풍경 소리 들으며 귀가 준비", "stimulus": "매우 낮음"}
+    ],
+    "curator_note": "속초터미널에서 도보로 10분이면 이 드넓은 호수가 나옵니다. 시끄러운 해수욕장 대신 영랑호의 잔잔한 물결을 마주해 보세요."
+  },
+  {
+    "id": "place-10",
+    "name": "부여 백마강 구드래 억새길 & 부소산성 숲길",
+    "region": "충남 부여군",
+    "theme": "역사/강변",
+    "persona_fit": ["생각정리형", "가벼운 탐방형"],
+    "summary": "시간이 멈춘 듯한 백제의 고도, 나지막한 황토 흙길과 백마강 물결을 따라 홀로 걷는 사색의 시간",
+    "image_url": "https://images.unsplash.com/photo-1473448912268-2022ce9509d8?w=800&auto=format&fit=crop&q=80",
+    "lat": 36.2878,
+    "lon": 126.9124,
+    "scores": {
+      "quietness": 4.8,
+      "public_transport": 3.9,
+      "walking": 4.8,
+      "solo_dining": 4.1,
+      "solo_cafe": 4.3,
+      "nature": 4.6,
+      "culture": 4.9,
+      "stayability": 4.6,
+      "interaction_need": 1.2,
+      "fatigue": 2.3
+    },
+    "transit": {
+      "route": "서울남부터미널 → 부여시외버스터미널 (2시간 직통) → 도보 10분",
+      "total_minutes": 130,
+      "transfers": 0,
+      "bus_interval_min": 40,
+      "difficulty": "쉬움"
+    },
+    "itinerary": [
+      {"time": "11:30", "spot": "부여터미널 도착 및 부소산성 숲길 진입", "vibe": "고즈넉한 옛 흙길 산책", "stimulus": "매우 낮음"},
+      {"time": "12:30", "spot": "낙화암 백화정에서 백마강 내려다보기", "vibe": "탁 트인 강 풍경과 바람", "stimulus": "낮음"},
+      {"time": "13:30", "spot": "구드래 나루터 인근 연잎밥 정식 혼밥", "vibe": "속이 편안한 건강식 1인상", "stimulus": "낮음"},
+      {"time": "14:45", "spot": "부여 읍내 오래된 주택 개조 감성 한옥카페", "vibe": "마당 툇마루에 앉아 쉬기", "stimulus": "매우 낮음"},
+      {"time": "16:30", "spot": "백마강 수변 갈대공원 걷기 후 버스 탑승", "vibe": "노을지는 강변 보며 귀가", "stimulus": "낮음"}
+    ],
+    "curator_note": "부여는 국내에서 손꼽히게 차분하고 느린 도시입니다. 높은 건물 하나 없는 하늘과 강변 흙길이 지친 마음을 다독여 줍니다."
+  },
+  {
+    "id": "place-11",
+    "name": "동두천 소요산 자재암 계곡 숲길",
+    "region": "경기 동두천시",
+    "theme": "자연/계곡",
+    "persona_fit": ["자연회복형", "생각정리형"],
+    "summary": "지하철 1호선 종점역에서 바로 시작되는 시원한 원효폭포와 짙은 녹음의 천년 숲길",
+    "image_url": "https://images.unsplash.com/photo-1432405972618-c60b0225b8f9?w=800&auto=format&fit=crop&q=80",
+    "lat": 37.9458,
+    "lon": 127.0862,
+    "scores": {
+      "quietness": 4.4,
+      "public_transport": 4.8,
+      "walking": 4.5,
+      "solo_dining": 3.9,
+      "solo_cafe": 3.7,
+      "nature": 4.9,
+      "culture": 3.5,
+      "stayability": 4.3,
+      "interaction_need": 1.1,
+      "fatigue": 2.4
+    },
+    "transit": {
+      "route": "지하철 1호선 소요산역 1번 출구 → 도보 10분",
+      "total_minutes": 65,
+      "transfers": 0,
+      "bus_interval_min": 0,
+      "difficulty": "매우 쉬움"
+    },
+    "itinerary": [
+      {"time": "10:30", "spot": "1호선 소요산역 도착 후 매표소 방면 숲길 진입", "vibe": "전철역에서 바로 숲으로", "stimulus": "낮음"},
+      {"time": "11:15", "spot": "원효폭포와 속리교 계곡 물소리 감상", "vibe": "물소리와 산새 소리에 몰입", "stimulus": "매우 낮음"},
+      {"time": "12:30", "spot": "자재암 입구 백년사찰 벤치 명상", "vibe": "기암괴석 아래 청량한 공기", "stimulus": "매우 낮음"},
+      {"time": "13:45", "spot": "하산길 산채비빔밥 및 도토리묵 1인 식사", "vibe": "신선한 나물 향 가득한 혼밥", "stimulus": "낮음"},
+      {"time": "15:00", "spot": "역 인근 조용한 로스터리 카페 쉼 후 전철 탑승", "vibe": "앉아서 가는 1호선 귀가", "stimulus": "낮음"}
+    ],
+    "curator_note": "1호선 전철 하나로 도착하는 '경기도의 소금강'입니다. 등산로 대신 자재암 계곡길까지만 가볍게 걸으면 피로 없이 숲을 완벽히 흡수할 수 있습니다."
+  },
+  {
+    "id": "place-12",
+    "name": "서산 개심사 왕벚꽃 흙길 & 문수사 쉼터",
+    "region": "충남 서산시",
+    "theme": "사찰/숲길",
+    "persona_fit": ["생각정리형", "자연회복형"],
+    "summary": "자연 그대로의 굽은 통나무 기둥이 마음을 편안하게 해주는 '마음을 여는 절', 고요한 산사 산책",
+    "image_url": "https://images.unsplash.com/photo-1542051841857-5f90071e7989?w=800&auto=format&fit=crop&q=80",
+    "lat": 36.7492,
+    "lon": 126.5925,
+    "scores": {
+      "quietness": 4.9,
+      "public_transport": 3.6,
+      "walking": 4.7,
+      "solo_dining": 3.5,
+      "solo_cafe": 4.0,
+      "nature": 5.0,
+      "culture": 4.6,
+      "stayability": 4.9,
+      "interaction_need": 1.0,
+      "fatigue": 2.5
+    },
+    "transit": {
+      "route": "센트럴시티/남부터미널 → 서산공용버스터미널 (1시간 40분) → 시내버스 480번 (35분)",
+      "total_minutes": 135,
+      "transfers": 1,
+      "bus_interval_min": 60,
+      "difficulty": "보통 (시내버스 시간표 확인 필요)"
+    },
+    "itinerary": [
+      {"time": "11:00", "spot": "서산터미널 도착 및 운산면 방면 버스 탑승", "vibe": "한적한 시골길을 달리는 버스", "stimulus": "낮음"},
+      {"time": "11:45", "spot": "개심사 입구 소나무 숲길과 외나무다리 산책", "vibe": "솔향 가득한 흙길 밟기", "stimulus": "매우 낮음"},
+      {"time": "12:45", "spot": "자연목 기둥 심검당 앞 툇마루에서 멍때리기", "vibe": "말 한마디 없는 완전한 고요", "stimulus": "매우 낮음"},
+      {"time": "14:00", "spot": "마을 입구 토속 청국장/비빔밥 1인 혼밥", "vibe": "구수하고 따뜻한 시골 밥상", "stimulus": "낮음"},
+      {"time": "15:15", "spot": "목장 풍경이 보이는 언덕 위 한적한 카페", "vibe": "푸른 초지와 소떼 바라보기", "stimulus": "낮음"},
+      {"time": "17:00", "spot": "서산터미널로 복귀 후 귀가 버스 탑승", "vibe": "차분해진 마음으로 집으로", "stimulus": "낮음"}
+    ],
+    "curator_note": "절 이름 그대로 '마음을 여는(開心)' 곳입니다. 화려하지 않고 꾸밈없는 사찰의 툇마루에 앉아 바람 소리를 들으면 무거웠던 마음이 가벼워집니다."
+  }
+]
