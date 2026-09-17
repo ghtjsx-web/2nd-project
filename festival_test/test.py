@@ -14,15 +14,20 @@
 """
 
 import os
+import sys
 import streamlit as st
 import pandas as pd
 import plotly.express as px
 import folium
 from streamlit_folium import st_folium
 import streamlit.components.v1 as components
-from foods_data import NATIONWIDE_50_FOODS
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+if BASE_DIR not in sys.path:
+    sys.path.insert(0, BASE_DIR)
+
+from foods_data import NATIONWIDE_50_FOODS
+
 ASSETS_DIR = os.path.join(BASE_DIR, "assets")
 GINSENG_POSTER = os.path.join(ASSETS_DIR, "geumsan_ginseng.jpg")
 GINSENG_FOOD = os.path.join(ASSETS_DIR, "geumsan_fried_ginseng.jpg")
@@ -1042,12 +1047,13 @@ with st.sidebar:
         )
         
         track_file_map = {
-            "🎧 VIP 전체 연속 재생 (vip_auto_playlist.mp3)": ("VIP Auto Playlist (연속 재생)", "assets/vip_auto_playlist.mp3"),
-            "🎹 캔들라이트 피아노 세레나데 (piano_serenade.mp3)": ("Candlelight Piano Serenade", "assets/piano_serenade.mp3"),
-            "✨ 럭셔리 라운지 앰비언트 (lounge_breeze.mp3)": ("Luxury Lounge Breeze", "assets/lounge_breeze.mp3"),
+            "🎧 VIP 전체 연속 재생 (vip_auto_playlist.mp3)": ("VIP Auto Playlist (연속 재생)", os.path.join(ASSETS_DIR, "vip_auto_playlist.mp3")),
+            "🎹 캔들라이트 피아노 세레나데 (piano_serenade.mp3)": ("Candlelight Piano Serenade", os.path.join(ASSETS_DIR, "piano_serenade.mp3")),
+            "✨ 럭셔리 라운지 앰비언트 (lounge_breeze.mp3)": ("Luxury Lounge Breeze", os.path.join(ASSETS_DIR, "lounge_breeze.mp3")),
         }
         
-        track_name, track_path = track_file_map.get(bgm_track_choice, ("VIP Auto Playlist", "assets/vip_auto_playlist.mp3"))
+        default_bgm = os.path.join(ASSETS_DIR, "vip_auto_playlist.mp3")
+        track_name, track_path = track_file_map.get(bgm_track_choice, ("VIP Auto Playlist", default_bgm))
         if not os.path.exists(track_path):
             track_path = os.path.join(BASE_DIR, "bgm", os.path.basename(track_path))
         
