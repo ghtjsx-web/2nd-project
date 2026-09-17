@@ -1,0 +1,232 @@
+/* ==========================================================================
+   Hollo [홀로] - 1집구석(1hows.com) 스타일 디자인 시스템
+   - 메인 포인트 컬러: 딥 그린 (Deep Green, #056608)
+   - 서브 포인트 컬러: 세이지 틴트 (#eaf5ea)
+   - 텍스트: 초고대비 젯 블랙 (#111111) & 차콜 (#2b2b2b)
+   - 배경: 오프 화이트 (#fafbfa) & 순백색 카드 (#ffffff)
+   ========================================================================== */
+
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css');
+
+/* 1. 전역 타이포그래피 & 색상 초기화 */
+html, body, .stApp, [data-testid="stAppViewContainer"] {
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Noto Sans KR', sans-serif !important;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Streamlit 내장 Material Symbols 아이콘 폰트 복원 (글씨 겹침 버그 방지) */
+[data-testid="stIconMaterial"],
+[data-testid="stExpanderToggleIcon"],
+.material-symbols-rounded,
+.material-symbols-outlined,
+.material-icons,
+[class*="material-symbols"] {
+    font-family: 'Material Symbols Rounded', 'Material Symbols Outlined', 'Material Icons' !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* 2. 메인 캔버스 배경 */
+.stApp, [data-testid="stAppViewContainer"], .main {
+    background-color: #fafbfa !important;
+    color: #111111 !important;
+}
+
+/* 3. 사이드바 숨김 */
+[data-testid="stSidebar"], section[data-testid="stSidebar"] {
+    display: none !important;
+}
+
+/* 4. 컨테이너 패딩 */
+.block-container {
+    padding-top: 1.2rem !important;
+    padding-bottom: 5rem !important;
+    max-width: 1160px !important;
+    margin: 0 auto !important;
+}
+
+/* 5. 텍스트 가독성 완전 강제 (배경 묻힘 원천 차단) */
+h1, h2, h3, h4, h5, h6 {
+    color: #111111 !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.02em !important;
+}
+
+p, span, div, li {
+    color: #2b2b2b !important;
+}
+
+div[data-testid="stMarkdownContainer"] p {
+    color: #2b2b2b !important;
+    font-size: 0.95rem !important;
+    line-height: 1.65 !important;
+}
+
+label[data-testid="stWidgetLabel"] p, 
+label[data-testid="stWidgetLabel"] span {
+    color: #111111 !important;
+    font-weight: 700 !important;
+    font-size: 0.92rem !important;
+}
+
+.stCaption, [data-testid="stCaptionContainer"], [data-testid="stCaptionContainer"] p {
+    color: #4a5568 !important;
+    font-size: 0.84rem !important;
+    font-weight: 500 !important;
+}
+
+/* 6. 1집구석 스타일 둥근 캡슐 버튼 (Pill Button) */
+.stButton > button {
+    border-radius: 9999px !important;
+    font-weight: 600 !important;
+    font-size: 0.92rem !important;
+    border: 1.5px solid #dfe6df !important;
+    background-color: #ffffff !important;
+    color: #2d3748 !important;
+    padding: 8px 18px !important;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03) !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.stButton > button:hover {
+    border-color: #056608 !important;
+    color: #056608 !important;
+    background-color: #f2f8f2 !important;
+    transform: translateY(-1px) !important;
+}
+
+/* 활성화 버튼 (Primary: 딥 그린 #056608 알약) */
+.stButton > button[kind="primary"],
+.stButton > button[data-testid="baseButton-primary"] {
+    background-color: #056608 !important;
+    color: #ffffff !important;
+    border: 1.5px solid #056608 !important;
+    box-shadow: 0 4px 12px rgba(5, 102, 8, 0.28) !important;
+    font-weight: 700 !important;
+}
+
+.stButton > button[kind="primary"] *,
+.stButton > button[data-testid="baseButton-primary"] * {
+    color: #ffffff !important;
+}
+
+.stButton > button[kind="primary"]:hover,
+.stButton > button[data-testid="baseButton-primary"]:hover {
+    background-color: #044f06 !important;
+    border-color: #044f06 !important;
+    color: #ffffff !important;
+}
+
+/* 7. 슬림 캡슐 검색창 (Pill Search Input) */
+input[type="text"], .stTextInput input {
+    border-radius: 9999px !important;
+    border: 1.5px solid #dfe6df !important;
+    background-color: #ffffff !important;
+    padding: 12px 22px !important;
+    font-size: 0.96rem !important;
+    color: #111111 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03) !important;
+    transition: border 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+input[type="text"]:focus, .stTextInput input:focus {
+    border-color: #056608 !important;
+    box-shadow: 0 0 0 3px rgba(5, 102, 8, 0.15) !important;
+    outline: none !important;
+}
+
+/* 8. 미니멀 화이트 아코디언 (Expander) */
+div[data-testid="stExpander"] {
+    border: 1.5px solid #e5ebe5 !important;
+    border-radius: 14px !important;
+    background-color: #ffffff !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02) !important;
+    overflow: hidden !important;
+    margin-top: 8px !important;
+    margin-bottom: 8px !important;
+}
+
+div[data-testid="stExpander"] summary {
+    color: #111111 !important;
+    font-weight: 700 !important;
+    font-size: 0.92rem !important;
+    background-color: #fafcfa !important;
+    padding: 12px 16px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    cursor: pointer !important;
+}
+
+div[data-testid="stExpander"] summary p {
+    color: #111111 !important;
+    font-weight: 700 !important;
+    font-size: 0.92rem !important;
+    margin: 0 !important;
+    line-height: 1.4 !important;
+}
+
+div[data-testid="stExpander"] summary svg,
+div[data-testid="stExpander"] summary [data-testid="stIconMaterial"] {
+    flex-shrink: 0 !important;
+}
+
+div[data-testid="stExpander"] summary:hover {
+    color: #056608 !important;
+    background-color: #f0f7f0 !important;
+}
+
+div[data-testid="stExpander"] div[data-testid="stExpanderDetails"] {
+    background-color: #ffffff !important;
+    padding: 14px !important;
+}
+
+/* 9. 셀렉트박스 & 슬라이더 색상 */
+div[data-baseweb="select"] {
+    border-radius: 10px !important;
+}
+div[data-baseweb="select"] * {
+    color: #111111 !important;
+}
+div[data-baseweb="popover"] {
+    background-color: #ffffff !important;
+    color: #111111 !important;
+}
+
+/* 10. GNB 상단 헤더 바 */
+.gnb-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 0;
+    border-bottom: 1.5px solid #edf2ed;
+    margin-bottom: 24px;
+}
+
+/* 11. 에디터 큐레이션 노트 */
+.curator-note-card {
+    background: #ffffff;
+    border: 1px solid #ddeadb;
+    border-left: 5px solid #056608;
+    border-radius: 14px;
+    padding: 18px 24px;
+    margin: 24px 0;
+    box-shadow: 0 4px 16px rgba(5, 102, 8, 0.05);
+}
+
+.curator-note-card .curator-title {
+    font-weight: 800;
+    color: #056608;
+    font-size: 1.02rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+.curator-note-card .curator-body {
+    font-size: 0.95rem;
+    line-height: 1.7;
+    color: #2b2b2b;
+}

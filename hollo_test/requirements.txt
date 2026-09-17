@@ -1,0 +1,13 @@
+# Hollo [홀로] - app.py 실행을 위한 최소 필수 라이브러리 목록
+
+# 웹 UI 프레임워크 & 시각화
+streamlit>=1.30.0
+pandas>=2.0.0
+pydeck>=0.9.0
+
+# 환경 변수 로드 (.env)
+python-dotenv>=1.0.0
+
+# LLM 큐레이터 & 슬롯 추출 (OpenAI 연동)
+langchain-core>=0.3.0
+langchain-openai>=0.2.0
