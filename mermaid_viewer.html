@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mermaid 워크플로우 뷰어 (Fest & Rest)</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-color: #0f172a;
+      --card-bg: #1e293b;
+      --border-color: #334155;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-hover: #0284c7;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #38bdf8, #818cf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.5rem;
+    }
+
+    .header p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    /* 탭 컨트롤러 */
+    .tab-bar {
+      display: flex;
+      background: #1e293b;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 0.35rem;
+      margin-bottom: 1.5rem;
+      gap: 0.35rem;
+    }
+
+    .tab-btn {
+      background: transparent;
+      color: var(--text-muted);
+      border: none;
+      border-radius: 8px;
+      padding: 0.6rem 1.25rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .tab-btn:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .tab-btn.active {
+      background: var(--accent);
+      color: #0f172a;
+      box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1020px;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 1.75rem;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .info-bar {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.25rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .desc-title {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: #e2e8f0;
+    }
+
+    .desc-sub {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .btn {
+      background: #334155;
+      color: #f8fafc;
+      border: none;
+      border-radius: 8px;
+      padding: 0.5rem 0.9rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .btn:hover {
+      background: #475569;
+    }
+
+    .diagram-panel {
+      width: 100%;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 2.5rem 1.5rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow-x: auto;
+      min-height: 480px;
+      box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+    }
+
+    .footer {
+      margin-top: 1.75rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>에이전트 워크플로우 머메이드 뷰어</h1>
+    <p>LangGraph 기반 아키텍처 다이어그램 시각화 도구</p>
+  </div>
+
+  <!-- 탭 전환 바 -->
+  <div class="tab-bar">
+    <button class="tab-btn" id="tab1" onclick="switchDiagram(1)">📄 1. 기본 처리부 (mermaid.md)</button>
+    <button class="tab-btn active" id="tab2" onclick="switchDiagram(2)">🚀 2. 고도화 에이전트 & 피드백 (mermaid2.md)</button>
+  </div>
+
+  <div class="container">
+    <div class="info-bar">
+      <div>
+        <div class="desc-title" id="diagramTitle">2️⃣ 다중 에이전트 & 자가 교정(Self-Correction) 피드백 루프</div>
+        <div class="desc-sub" id="diagramDesc">mermaid2.md : 도구 분기 에이전트 + 검증 및 재생성 루프 구조</div>
+      </div>
+      <div class="actions">
+        <button class="btn" onclick="copyCurrentCode()">📋 코드 복사</button>
+        <button class="btn" onclick="renderCurrent()">🔄 다시 렌더링</button>
+      </div>
+    </div>
+
+    <div class="diagram-panel" id="diagramContainer">
+      <!-- 렌더링 영역 -->
+    </div>
+  </div>
+
+  <div class="footer">
+    VS Code / Antigravity IDE 미리보기: <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>V</kbd>
+  </div>
+
+  <script>
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'default',
+      securityLevel: 'loose',
+      flowchart: {
+        useMaxWidth: true,
+        htmlLabels: true,
+        curve: 'basis'
+      }
+    });
+
+    const diagrams = {
+      1: {
+        title: "1️⃣ 기본 처리부 워크플로우",
+        desc: "mermaid.md : 활동 수준 판정 & 체력 분기 전략 노드 구조",
+        code: `graph TD
+    Start([START]) --> Node1[노드 1: 활동 수준 판정 & 의도 분석]
+    
+    Node1 --> Condition{조건부 라우팅<br/>체력 수치 분기}
+    
+    Condition -->|Low <= 30%| LowNode[low_stamina_strategy<br/>쉼터 중심 텍스트 지침 생성]
+    Condition -->|Moderate 30~70%| ModNode[moderate_stamina_strategy<br/>밸런스 텍스트 지침 생성]
+    Condition -->|High > 70%| HighNode[high_stamina_strategy<br/>액티비티 텍스트 지침 생성]
+    
+    LowNode --> Node2[노드 2: 데이터 통합 에이전트<br/>텍스트 + 외부데이터 합쳐서 1번에 JSON 생성]
+    ModNode --> Node2
+    HighNode --> Node2
+    
+    Node2 --> End([END])
+
+    style Node1 fill:#ffe6e6,stroke:#ff4d4d,stroke-width:2px
+    style Node2 fill:#e6f2ff,stroke:#3399ff,stroke-width:2px
+    style Condition fill:#fff5cc,stroke:#ffcc00,stroke-width:2px`
+      },
+      2: {
+        title: "2️⃣ 다중 에이전트 & 자가 교정(Self-Correction) 피드백 루프",
+        desc: "mermaid2.md : 도구 분기 에이전트 + 검증 및 재생성 루프 구조",
+        code: `graph TD
+    Start([START]) --> IntentAgent["1️⃣ 인텐트 분석 에이전트<br/>사용자 입력 정제 및 제약 추출"]
+    
+    IntentAgent --> Condition{"조건부 라우팅<br/>에이전트 및 툴 분기"}
+    
+    Condition -->|저강도 제약| RestAgent["쉼터/무장애 전용 에이전트<br/>Tool: 쉼터 Vector DB 검색"]
+    Condition -->|고강도 제약| ActAgent["광역 액티비티 전용 에이전트<br/>Tool: 광역 축제/부스 API 호출"]
+    
+    RestAgent --> RouteAgent["2️⃣ 동선 최적화 에이전트<br/>1차 타임테이블 완성"]
+    ActAgent --> RouteAgent
+    
+    RouteAgent --> CritiqueAgent["3️⃣ 검증 및 피드백 에이전트<br/>조건 위반 여부 Self-Correction"]
+    
+    CritiqueAgent --> Check{"결함 발견?"}
+    Check -->|"Yes (실패)"| RouteAgent
+    Check -->|"No (통과)"| Final(["FINAL OUTPUT<br/>검증 완료된 맞춤형 루트"])
+
+    style IntentAgent fill:#e6ffed,stroke:#28a745,stroke-width:2px
+    style CritiqueAgent fill:#fff0f5,stroke:#ff69b4,stroke-width:2px
+    style Check fill:#ffe4e1,stroke:#cd5c5c,stroke-width:2px`
+      }
+    };
+
+    let currentTab = 2;
+
+    async function renderCurrent() {
+      const container = document.getElementById('diagramContainer');
+      container.innerHTML = '<div class="mermaid">' + diagrams[currentTab].code + '</div>';
+      await mermaid.run({
+        nodes: container.querySelectorAll('.mermaid')
+      });
+    }
+
+    function switchDiagram(tabId) {
+      currentTab = tabId;
+      document.getElementById('tab1').classList.toggle('active', tabId === 1);
+      document.getElementById('tab2').classList.toggle('active', tabId === 2);
+      document.getElementById('diagramTitle').textContent = diagrams[tabId].title;
+      document.getElementById('diagramDesc').textContent = diagrams[tabId].desc;
+      renderCurrent();
+    }
+
+    function copyCurrentCode() {
+      navigator.clipboard.writeText(diagrams[currentTab].code).then(() => {
+        alert('머메이드 코드가 클립보드에 복사되었습니다.');
+      });
+    }
+
+    // 초기 렌더링 (mermaid2 기본 활성화)
+    switchDiagram(2);
+  </script>
+</body>
+</html>
