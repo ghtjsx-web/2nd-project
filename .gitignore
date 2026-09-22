@@ -49,3 +49,12 @@ $RECYCLE.BIN/
 node_modules/
 .next/
 .vscode
+
+# ChromaDB Vector Store
+chromadb_store/
+
+# Temporary Scratch & Logs
+scratch/
+*.log
+*.tmp
+.gitignore_local_backup
