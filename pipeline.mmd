@@ -1,0 +1,34 @@
+graph TD
+    %% Fest & Rest AI LangGraph Pipeline Architecture
+    START([🏁 START]):::boundary
+    END_NODE([🎯 END]):::boundary
+
+    subgraph Inputs ["📥 프론트엔드 & 외부 API 입력"]
+        UI["👤 user_inputs<br/>(stamina, companion, region, selected_festival, extra_details)"]:::input
+        API["🌐 api_data<br/>(parking_lots, model_restaurants, tourist_spots)"]:::input
+    end
+
+    subgraph LangGraph ["⚡ LangGraph StateGraph (PipelineState)"]
+        N1["<b>1. analyze</b><br/>analyze_stamina_and_intent<br/>- 체력 3단계 분할 (Low/Mod/High)<br/>- LLM 의도 및 제약사항 추출"]:::node
+        N2["<b>2. classify</b><br/>classify_events_node<br/>- 예약 필수 vs 자유 참여 이벤트 분류<br/>- booking_tip 가공 보존"]:::node
+        N3["<b>3. editor</b><br/>generate_magazine_article_node<br/>- 4대 제약조건 준수 매거진 기사 생성<br/>- 사용자 의도 100% 반영 LLM 에디터"]:::node
+        N4["<b>4. format_pins</b><br/>format_folium_pins_node<br/>- Folium 팝업/마커 메타데이터 정제<br/>- (위/경도 유효성 및 팝업 타이틀)"]:::node
+    end
+
+    subgraph Outputs ["📤 최종 출력 (run_processing_pipeline)"]
+        OUT["📦 Result Dictionary<br/>- article_content (매거진 마크다운 기사)<br/>- event_info (예약 필수/자유 이벤트 리스트)<br/>- map_markers (Folium 핀 메타데이터)"]:::output
+    end
+
+    UI --> N1
+    API --> N1
+    START --> N1
+    N1 -->|상태 전이: guideline, intent_analysis| N2
+    N2 -->|상태 전이: event_info| N3
+    N3 -->|상태 전이: article_content| N4
+    N4 --> END_NODE
+    N4 --> OUT
+
+    classDef boundary fill:#4A5568,stroke:#2D3748,stroke-width:2px,color:#FFFFFF,font-weight:bold;
+    classDef input fill:#EBF8FF,stroke:#3182CE,stroke-width:2px,color:#2B6CB0;
+    classDef node fill:#EDFDFD,stroke:#00A3C4,stroke-width:2px,color:#0987A0;
+    classDef output fill:#F0FFF4,stroke:#38A169,stroke-width:2px,color:#276749;
