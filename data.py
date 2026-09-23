@@ -365,22 +365,29 @@ def refine_store_category(raw_category: str, store_name: str, menu_text: str) ->
 
 
 def extract_dynamic_photo_spots(title: str, venue: str, description: str, programs: str = "") -> List[str]:
-    """축제의 '축제명', '개최장소', '주요프로그램/축제내용'을 심층 분석하여
-    축제 성격에 맞는 매력적인 2030 인생샷 포토스팟 2~3개를 지능적으로 생성/추출합니다."""
+    """축제의 '축제명', '개최장소', '주요프로그램/축제내용'을 실제 사실에 기반하여 심층 분석하고,
+    지형 왜곡(도심 축제에 바다/백사장 생성 등) 할루시네이션을 원천 차단한 안전한 인생샷 포토스팟 2~3개를 추출/생성합니다."""
     full_text = f"{title} {venue} {description} {programs}"
+    venue_name = clean_text(venue) if venue and len(clean_text(venue)) >= 2 and clean_text(venue) != "축제장" else "축제장"
     spots: List[str] = []
 
-    # 1. [1순위: 본문 텍스트 내 특정 지명/장소/랜드마크 정규식 추출]
-    # (예: ~전망대, ~광장, ~호수변, ~잔디마당, ~수변데크, ~둘레길, ~누각, ~정자, ~다리, ~백사장 등)
+    # [검증 플래그] 실제 바다/해안 지형 여부 정밀 판별 (단순 '강', '호수'나 '강남/강서' 등 행정구역명 제외)
+    is_real_coastal = any(sea_kw in f"{title} {venue}" for sea_kw in ["해수욕장", "해변", "바닷가", "포구", "항구", "등대", "해안", "해양", "서핑", "요트"])
+
+    # 1. [1순위: 본문 텍스트 내 실제 존재하는 랜드마크 정규식 추출]
     specific_patterns = [
         r'([가-힣A-Za-z0-9]{2,10}(?:전망대|전망쉼터|타워))',
         r'([가-힣A-Za-z0-9]{2,10}(?:광장|잔디마당|야외무대|중앙무대))',
-        r'([가-힣A-Za-z0-9]{2,10}(?:수변데크|수변산책로|호수변|호숫가|강변길|해변길|백사장|모래사장))',
         r'([가-힣A-Za-z0-9]{2,10}(?:둘레길|산책로|숲길|탐방로|가로수길|꽃길|터널))',
         r'([가-힣A-Za-z0-9]{2,10}(?:누각|정자|한옥|성곽|성문|누원|고분))',
         r'([가-힣A-Za-z0-9]{2,10}(?:포토존|조형물|상징탑|기념탑))',
-        r'([가-힣A-Za-z0-9]{2,10}(?:출렁다리|다리|교량|분수대|폭포))',
+        r'([가-힣A-Za-z0-9]{2,10}(?:출렁다리|교량|분수대|폭포|온실|식물원))',
     ]
+    # 실제 해안 축제일 때만 해변 관련 패턴 허용
+    if is_real_coastal:
+        specific_patterns.append(r'([가-힣A-Za-z0-9]{2,10}(?:해변길|백사장|모래사장|등대))')
+    else:
+        specific_patterns.append(r'([가-힣A-Za-z0-9]{2,10}(?:수변데크|수변산책로|호수변|호숫가|강변길))')
 
     found_locations: List[str] = []
     seen = set()
@@ -388,99 +395,117 @@ def extract_dynamic_photo_spots(title: str, venue: str, description: str, progra
         matches = re.findall(pat, full_text)
         for m in matches:
             clean_m = m.strip()
-            if len(clean_m) >= 3 and clean_m not in seen and clean_m != venue:
+            if len(clean_m) >= 3 and clean_m not in seen and clean_m != venue_name:
                 seen.add(clean_m)
                 found_locations.append(clean_m)
 
-    # 본문에서 추출된 장소가 있으면 감성 수식어를 결합하여 포토스팟으로 변환
+    # 본문에서 추출된 장소가 있으면 지형에 맞는 감성 수식어 결합
     if found_locations:
         for loc in found_locations[:3]:
             if any(k in loc for k in ["전망대", "타워"]):
                 spots.append(f"전경이 한눈에 펼쳐지는 {loc}")
-            elif any(k in loc for k in ["수변", "호수", "강변", "해변", "백사장"]):
-                spots.append(f"물결과 윤슬이 빛나는 {loc}")
+            elif any(k in loc for k in ["온실", "식물원", "수목원", "정원"]):
+                spots.append(f"싱그러운 초록빛이 가득한 {loc} 포토존")
+            elif any(k in loc for k in ["수변", "호수", "강변"]):
+                spots.append(f"잔잔한 물결 윤슬이 빛나는 {loc} 쉼터")
+            elif any(k in loc for k in ["해변", "백사장"]) and is_real_coastal:
+                spots.append(f"시원한 바다를 배경으로 한 {loc} 포토존")
             elif any(k in loc for k in ["산책로", "숲길", "둘레길", "꽃길", "터널"]):
                 spots.append(f"계절 정취가 가득한 {loc} 벤치")
             elif any(k in loc for k in ["광장", "마당", "무대", "조형물", "포토존"]):
                 spots.append(f"{loc} 앞 메인 인생샷 포토존")
             elif any(k in loc for k in ["한옥", "누각", "정자", "성곽"]):
-                spots.append(f"고즈넉한 정취의 {loc} 앞마당")
+                spots.append(f"고즈넉한 전통 정취의 {loc} 앞마당")
             else:
-                spots.append(f"추억을 남기는 {loc} 포토스팟")
+                spots.append(f"소중한 추억을 남기는 {loc} 포토스팟")
 
-    # 2. [2순위: 본문 장소가 2개 미만일 경우 축제 성격/테마 기반 지능형 포토스팟 자동 생성]
+    # 2. [2순위: 본문 장소가 부족할 경우 지형 사실에 엄격히 기반한 안전 기본 조합 생성]
     if len(spots) < 2:
-        venue_name = venue if venue and len(venue) >= 2 and venue != "축제장" else "축제 중앙"
-
-        # 테마 1: 꽃/자연/억새/단풍 축제
-        if any(k in full_text for k in ["꽃", "벚꽃", "국화", "억새", "매화", "연꽃", "튤립", "장미", "생태", "자연", "단풍", "유채"]):
+        # 테마 1: 식물원/수목원/꽃/자연 축제
+        if any(k in full_text for k in ["식물원", "수목원", "온실", "허브", "꽃", "벚꽃", "국화", "억새", "매화", "연꽃", "튤립", "장미", "생태", "단풍"]):
             flower = "만개한 계절 꽃"
-            for f_name in ["억새", "벚꽃", "국화", "매화", "연꽃", "튤립", "장미", "단풍", "유채"]:
+            for f_name in ["식물", "허브", "억새", "벚꽃", "국화", "매화", "연꽃", "튤립", "장미", "단풍"]:
                 if f_name in full_text:
-                    flower = f"만개한 {f_name}"
+                    flower = f"아름다운 {f_name}"
                     break
             spots.extend([
-                f"{flower} 군락 산책로 감성 벤치",
-                f"{venue_name} 노을빛 랜드마크 포토존",
-                "바람에 흔들리는 꽃물결 파노라마 뷰"
+                f"{flower} 테마 정원 산책로 감성 벤치",
+                f"{venue_name} 중앙 온실 및 랜드마크 포토존",
+                "초록빛 숲길 쉼터 파노라마 뷰"
             ])
-        # 테마 2: 야경/빛/불빛/달빛 축제
+        # 테마 2: 야경/빛/불빛 축제
         elif any(k in full_text for k in ["야경", "빛", "불빛", "달빛", "루미나리에", "별빛", "드론", "불꽃", "야간", "밤"]):
             spots.extend([
                 "달빛 루미나리에 빛의 터널 입구",
                 f"{venue_name} 메인 일루미네이션 조형물 앞",
-                "화려한 야경이 내려다보이는 수변 데크"
+                "화려한 야간 조명이 수놓은 잔디광장 뷰포인트"
             ])
-        # 테마 3: 전통/역사/문화재 축제
-        elif any(k in full_text for k in ["역사", "문화제", "한옥", "단종", "왕", "사찰", "유적", "전통", "성곽", "도자기", "국악", "선비", "강감찬"]):
+        # 테마 3: 전통/역사/한의학/인물 축제 (예: 허준, 강감찬, 정조 등)
+        elif any(k in full_text for k in ["허준", "한의학", "한방", "역사", "문화제", "한옥", "유적", "전통", "성곽", "도자기", "선비"]):
             spots.extend([
-                "전통 한옥 누각 앞마당",
-                f"{venue_name} 대형 랜드마크 조형물 포토존",
-                "청사초롱 불빛이 이어지는 전통 돌담길"
+                f"{title} 전통 테마 체험관 앞마당",
+                f"{venue_name} 대형 상징 조형물 포토존",
+                "고즈넉한 한옥 돌담길 포토월"
             ])
-        # 테마 4: 음식/특산물/커피 축제
-        elif any(k in full_text for k in ["커피", "가맥", "와인", "음식", "먹거리", "맥주", "고추", "사과", "한우", "대게", "해산물", "수산물", "인삼", "공룡"]):
-            item_kw = "축제"
-            for ik in ["커피", "맥주", "가맥", "와인", "고추", "사과", "한우", "대게", "공룡"]:
-                if ik in full_text:
-                    item_kw = ik
-                    break
+        # 테마 4: 실제 바다/해변 축제 (is_real_coastal 참일 때만 한정)
+        elif is_real_coastal:
             spots.extend([
-                f"대형 {item_kw} 시그니처 조형물 팝업 포토존",
-                f"{venue_name} 중앙 페스티벌 광장 뷰포인트",
-                "감성 푸드 스트리트 파라솔 라운지"
+                f"{venue_name} 시원한 해변 포토존",
+                "푸른 바다가 배경이 되는 수변 산책로",
+                "노을빛이 물드는 해안 랜드마크 조형물 앞"
             ])
-        # 테마 5: 바다/해양/물 축제
-        elif any(k in full_text for k in ["바다", "해변", "모래", "항구", "서핑", "요트", "해양", "강", "호수", "물축제"]):
+        # 테마 5: 음식/특산물 축제
+        elif any(k in full_text for k in ["커피", "와인", "음식", "먹거리", "맥주", "사과", "한우", "인삼", "특산물"]):
             spots.extend([
-                "푸른 파도가 부서지는 백사장 모래조각 앞",
-                f"{venue_name} 오션뷰 수변 산책로",
-                "붉은 노을이 물드는 해안선 실루엣 포토존"
+                f"{title} 시그니처 팝업 조형물 포토존",
+                f"{venue_name} 메인 페스티벌 광장 뷰포인트",
+                "감성 푸드 라운지 쉼터"
             ])
-        # 테마 6: 예술/음악/공연 축제
-        elif any(k in full_text for k in ["음악", "공연", "비엔날레", "연극", "가요", "콘서트", "버스킹", "예술"]):
-            spots.extend([
-                f"{venue_name} 메인 아트 인스톨레이션 앞",
-                "버스킹 라이브 무대와 네온사인 포토월",
-                "낭만적인 축제 전경이 내려다보이는 잔디스탠드"
-            ])
-        # 기본 감성 축제
+        # 기본 안전 축제 (도심 및 일반 축제 지형 무왜곡 안전 조합)
         else:
             spots.extend([
-                f"{venue_name} 중앙 랜드마크 상징 조형물 앞",
-                "축제장 전경이 한눈에 펼쳐지는 메인 뷰포인트",
-                "감성 네온 조명과 꽃길이 어우러진 포토월"
+                f"{venue_name} 메인 진입로 및 상징 조형물 앞",
+                f"{title} 중앙 광장 랜드마크 포토존",
+                f"{venue_name} 축제장 전경 뷰포인트 쉼터"
             ])
 
-    # 3. 중복 제거 및 상위 2~3개 반환
+    # 3. [3순위: 2중 안전장치 - 지형 왜곡 금지 단어 후처리 검증 및 강제 Fallback]
+    # 실제 바다/해변이 아닌 도심/내륙 축제인데 바다 관련 단어가 포함되어 있다면 강제 대체
+    forbidden_coastal_terms = ["오션뷰", "백사장", "파도", "모래조각", "해변", "바닷가", "갯벌", "해안선", "파도소리"]
+    cleaned_spots: List[str] = []
+
+    for spot in spots:
+        has_forbidden = any(term in spot for term in forbidden_coastal_terms)
+        if has_forbidden and not is_real_coastal:
+            # 안전한 도심/일반 축제장 표준 문구로 강제 대체
+            fallback_options = [
+                f"{venue_name} 메인 진입로 및 상징 조형물 앞",
+                f"{title} 중앙 광장 랜드마크 포토존",
+                f"{venue_name} 축제장 전경 뷰포인트 쉼터"
+            ]
+            for fb in fallback_options:
+                if fb not in cleaned_spots:
+                    cleaned_spots.append(fb)
+                    break
+        else:
+            cleaned_spots.append(spot)
+
+    # 4. 중복 제거 및 최종 2~3개 반환
     final_spots: List[str] = []
     seen_final = set()
-    for s in spots:
-        if s not in seen_final:
+    for s in cleaned_spots:
+        if s and s not in seen_final:
             seen_final.add(s)
             final_spots.append(s)
         if len(final_spots) >= 3:
             break
+
+    # 만약 최종 결과가 비었을 경우의 최후 안전 보장
+    if not final_spots:
+        final_spots = [
+            f"{venue_name} 메인 상징 조형물 포토존",
+            f"{title} 중앙 광장 랜드마크 앞"
+        ]
 
     return final_spots
 
@@ -638,6 +663,14 @@ def create_festival_documents(raw_festivals: List[Dict[str, Any]]) -> List[Docum
         if not photo_spots or photo_spots == "현장 곳곳이 포토존":
             dyn_spots = extract_dynamic_photo_spots(title, venue, description, programs)
             photo_spots = ", ".join(dyn_spots) if dyn_spots else f"{venue} 중앙 메인 랜드마크 포토존"
+        else:
+            # 2중 안전장치: 외부 입력 photo_spots에 도심/내륙 지형 왜곡 단어가 포함된 경우 안전하게 대체
+            is_coastal_doc = any(sea_kw in f"{title} {venue}" for sea_kw in ["해수욕장", "해변", "바닷가", "포구", "항구", "등대", "해안", "해양", "서핑", "요트"])
+            if not is_coastal_doc:
+                forbidden_coastal_terms = ["오션뷰", "백사장", "파도", "모래조각", "해변", "바닷가", "갯벌", "해안선", "파도소리"]
+                if any(bad in photo_spots for bad in forbidden_coastal_terms):
+                    dyn_spots = extract_dynamic_photo_spots(title, venue, description, programs)
+                    photo_spots = ", ".join(dyn_spots) if dyn_spots else f"{venue} 중앙 메인 랜드마크 포토존"
 
         # 추천 카페 정보 파싱
         raw_cafes: Any = festival.get("nearby_cafes", "")
@@ -1499,6 +1532,19 @@ class PublicDataRAGManager:
             spot_candidates = [s.strip() for s in re.split(r"[,|/]", raw_spots) if s.strip()]
         if not spot_candidates:
             spot_candidates = extract_dynamic_photo_spots(fest_title, fest_meta.get("venue", ""), "", "")
+
+        # 2중 안전장치: 실제 바다/해양 축제가 아닌 경우 지형 왜곡 금지 단어 방어 필터 적용
+        is_fest_coastal = any(sea_kw in f"{fest_title} {fest_meta.get('venue', '')}" for sea_kw in ["해수욕장", "해변", "바닷가", "포구", "항구", "등대", "해안", "해양", "서핑", "요트"])
+        forbidden_coastal_terms = ["오션뷰", "백사장", "파도", "모래조각", "해변", "바닷가", "갯벌", "해안선", "파도소리"]
+        if not is_fest_coastal:
+            safe_candidates = []
+            for sc in spot_candidates:
+                if any(bad_term in sc for bad_term in forbidden_coastal_terms):
+                    v_name = clean_text(fest_meta.get("venue", "")) or "축제장"
+                    safe_candidates.append(f"{v_name} 메인 진입로 및 상징 조형물 앞")
+                else:
+                    safe_candidates.append(sc)
+            spot_candidates = list(dict.fromkeys(safe_candidates))
 
         if stamina == "하":
             selected_spots = spot_candidates[:1]
