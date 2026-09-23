@@ -39,7 +39,7 @@ load_dotenv()
 # 환경 설정 및 상수 정의
 # ==============================================================================
 DATA_DIR = "./data/"
-WELLNESS_API_KEY = os.getenv("WELLNESS_API_KEY") or os.getenv("WELLNESS_API") or ""
+WELLNESS_API_KEY = os.getenv("WELLNESS_API_KEY") or os.getenv("WELLNESS_API") or os.getenv("TOUR_API_KEY") or os.getenv("DATA_GO_KR_API_KEY") or ""
 
 
 # ==============================================================================
@@ -64,18 +64,20 @@ def calculate_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> fl
 def _resolve_data_path(filename: str) -> str:
     """
     DATA_DIR('./data/') 및 프로젝트 내 주요 후보 폴더에서 파일 존재 여부를 자동 탐색합니다.
+    경로 조작(Path Traversal) 공격을 방지하기 위해 파일명만 추출하여 안전하게 경로를 해석합니다.
     """
+    safe_name = os.path.basename(filename)
     candidates = [
-        os.path.join(DATA_DIR, filename),
-        filename,
-        os.path.join("./data/", filename),
-        os.path.join("./datasets/", filename),
-        os.path.join("../data/", filename),
+        os.path.join(DATA_DIR, safe_name),
+        safe_name,
+        os.path.join("./data/", safe_name),
+        os.path.join("./datasets/", safe_name),
+        os.path.join("../data/", safe_name),
     ]
     for p in candidates:
         if os.path.exists(p):
             return p
-    return os.path.join(DATA_DIR, filename)
+    return os.path.join(DATA_DIR, safe_name)
 
 
 def _read_csv_safe(file_path: str, **kwargs) -> pd.DataFrame:
@@ -158,11 +160,12 @@ def get_wellness_spots(lat: float, lng: float, radius: int = 5000) -> List[Dict[
     검색 결과가 없거나 API 호출 실패 시 가짜 데이터를 지어내지 않고 순수 빈 리스트([])를 반환합니다.
     """
     spots: List[Dict[str, Any]] = []
-    endpoint = "http://apis.data.go.kr/B551011/KorService1/locationBasedList1"
+    # 암호화된 HTTPS 통신 적용 (평문 전송 및 중간자 공격 방지)
+    endpoint = "https://apis.data.go.kr/B551011/KorService1/locationBasedList1"
     clean_service_key = requests.utils.unquote(WELLNESS_API_KEY) if WELLNESS_API_KEY else ""
 
     if not clean_service_key:
-        return []
+        raise RuntimeError("TourAPI 키(WELLNESS_API_KEY)가 설정되지 않았습니다.")
 
     params = {
         "serviceKey": clean_service_key,
@@ -180,31 +183,39 @@ def get_wellness_spots(lat: float, lng: float, radius: int = 5000) -> List[Dict[
 
     try:
         response = requests.get(endpoint, params=params, timeout=4)
-        if response.status_code == 200:
-            data = response.json()
-            items = (data.get("response", {})
-                        .get("body", {})
-                        .get("items", {})
-                        .get("item", []))
-            if isinstance(items, dict):
-                items = [items]
+        if response.status_code != 200:
+            raise RuntimeError(f"HTTP 상태 코드 {response.status_code} ({response.text[:150]})")
 
-            for item in items:
-                item_lat = float(item.get("mapy", 0.0))
-                item_lng = float(item.get("mapx", 0.0))
-                if item_lat != 0.0 and item_lng != 0.0:
-                    addr1 = item.get("addr1", "")
-                    addr2 = item.get("addr2", "")
-                    desc = f"{addr1} {addr2}".strip() if (addr1 or addr2) else "자연 속 힐링 공간"
-                    spots.append({
-                        "name": item.get("title", "로컬 웰니스 쉼터"),
-                        "lat": item_lat,
-                        "lng": item_lng,
-                        "description": desc,
-                        "category": "쉼터"
-                    })
-    except Exception:
-        pass
+        data = response.json()
+        items = (data.get("response", {})
+                    .get("body", {})
+                    .get("items", {})
+                    .get("item", []))
+        if isinstance(items, dict):
+            items = [items]
+
+        for item in items:
+            # [지침 3 준수] 개별 아이템 단위 형변환 예외 처리 (빈 문자열 등 불량 데이터로 인한 전체 증발 방지)
+            try:
+                item_lat = float(item.get("mapy", 0.0) or 0.0)
+                item_lng = float(item.get("mapx", 0.0) or 0.0)
+            except (ValueError, TypeError):
+                continue
+
+            if item_lat != 0.0 and item_lng != 0.0:
+                addr1 = item.get("addr1", "")
+                addr2 = item.get("addr2", "")
+                desc = f"{addr1} {addr2}".strip() if (addr1 or addr2) else "자연 속 힐링 공간"
+                spots.append({
+                    "name": item.get("title", "로컬 웰니스 쉼터"),
+                    "lat": item_lat,
+                    "lng": item_lng,
+                    "description": desc,
+                    "category": "인근 관광지"
+                })
+    except Exception as e:
+        # [지침 1 준수] API 호출 시 status_code != 200이거나 통신 에러 시 조용히 pass하지 않고 RuntimeError 발생
+        raise RuntimeError(f"API 통신 오류: {e}")
 
     # [원칙 1 준수] 가짜 데이터 절대 생성 안 함: 결과가 없으면 그대로 빈 리스트 반환
     return spots
@@ -269,12 +280,19 @@ def get_festivals(region: str = "전국 전체", month: Optional[int] = None, *a
         s_month = s_date.dt.month
         e_month = e_date.dt.month
 
-        mask_month = (
-            ((s_month <= month) & (e_month >= month)) |
-            (s_month == month) |
-            (e_month == month) |
-            (s_date.isna() & e_date.isna())
-        )
+        # [지침 6 준수] 시작/종료일 모두 미상(NaN)인 데이터는 엄격히 제외
+        # 1) 시작일과 종료일이 모두 유효한 경우
+        #    - 일반 기간 (s_month <= e_month): s_month <= month <= e_month
+        #    - 연도 교차 기간 (s_month > e_month, 예: 11월~2월): month >= s_month OR month <= e_month
+        both_dates = s_date.notna() & e_date.notna()
+        normal_range = both_dates & (s_month <= e_month) & (s_month <= month) & (month <= e_month)
+        cross_year_range = both_dates & (s_month > e_month) & ((month >= s_month) | (month <= e_month))
+
+        # 2) 한쪽 날짜만 존재하는 경우 (해당 월과 정확히 일치 시만 포함)
+        only_start = s_date.notna() & e_date.isna() & (s_month == month)
+        only_end = s_date.isna() & e_date.notna() & (e_month == month)
+
+        mask_month = normal_range | cross_year_range | only_start | only_end
         filtered_df = filtered_df[mask_month]
 
     festivals: List[Dict[str, Any]] = []
@@ -400,10 +418,12 @@ def get_nearby_restaurants(target_lat: float, target_lng: float, radius_m: int =
             menu = str(row.get("메뉴1", "")).strip() or "대표메뉴"
             raw_price = str(row.get("가격1", "")).strip()
 
-            if raw_price and raw_price.replace(".", "", 1).isdigit():
-                price_str = f"{int(float(raw_price)):,}원"
-            elif raw_price:
-                price_str = raw_price if "원" in raw_price else f"{raw_price}원"
+            if raw_price and raw_price.lower() not in ["nan", "none", "null"]:
+                clean_p = raw_price.replace(",", "").replace("원", "").strip()
+                if clean_p.replace(".", "", 1).isdigit():
+                    price_str = f"{int(float(clean_p)):,}원"
+                else:
+                    price_str = raw_price if "원" in raw_price else f"{raw_price}원"
             else:
                 price_str = "가격정보 매장문의"
 
@@ -443,7 +463,12 @@ def get_festival_infra_bundle(fest_lat: float, fest_lng: float, radius_m: int = 
 
     parking = get_nearby_parking(fest_lat, fest_lng, radius_m=radius_m)[:15]
     restaurants = get_nearby_restaurants(fest_lat, fest_lng, radius_m=radius_m)[:15]
-    wellness = get_wellness_spots(fest_lat, fest_lng, radius=radius_m)[:6]
+
+    try:
+        wellness = get_wellness_spots(fest_lat, fest_lng, radius=radius_m)[:6]
+    except RuntimeError as e:
+        print(f"[get_festival_infra_bundle] 쉼터/관광지 API 통신 오류 발생 (부분 실패 허용, 빈 리스트 할당): {e}")
+        wellness = []
 
     # [원칙 1 준수] 검색 결과가 0건이면 빈 리스트 그대로 반환 (가짜 데이터 삽입 원천 차단)
     return {

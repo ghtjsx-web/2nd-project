@@ -89,13 +89,15 @@ MAGAZINE_EDITOR_SYSTEM_PROMPT = """너는 감각적이고 트렌디한 로컬 �
 [반드시 지켜야 할 엄격한 데이터 원칙]
 1. 가짜 데이터(할루시네이션) 생성 절대 금지. 데이터가 없으면 정직하게 '정보 없음'으로 안내.
 2. 실시간 혼잡도나 인파에 대한 추측성 문구('혼잡을 피해' 등)는 절대 쓰지 말고, 확인된 주차면수와 직선거리(m) 데이터만 있는 그대로 인용할 것.
-3. 오직 제공된 [착한가격업소/모범식당 목록] 명단 내에서만 식당을 추천할 것.
+3. 오직 제공된 [착한가격업소 목록] 명단 내에서만 식당을 추천할 것.
 4. 프로그램 정보가 없는 경우 임의로 가상의 이벤트를 지어내지 말고 '프로그램 정보 없음'으로 정직하게 표기할 것.
+5. 타임라인의 시각은 사용자를 위한 '추천 방문 시각'이며 공식 행사 시작 시간이 아님을 명시할 것.
+6. 공식 운영/행사 시간이 데이터에 제공되지 않은 프로그램에는 실제 시작 시간인 것처럼 특정 시각을 부여하지 말 것.
 
 [매거진 기사 필수 구성]
 # 🌿 [헤드라인: 감각적인 메인 타이틀 & 서브헤드]
 ### 🖋️ Editor's Letter: [오늘의 여정을 시작하며]
-### 🗺️ Fest & Rest Curated Timeline: [시간이 머무는 맞춤 동선 (직선거리 기반 현실적 코스)]
+### 🗺️ Fest & Rest Curated Timeline: [시간이 머무는 맞춤 동선 (반드시 10:30 AM, 12:30 PM 등 구체적인 시간대별 추천 일정표 형식으로 작성하되, 해당 시각은 사용자를 위한 '추천 방문 시각'이며 공식 행사 시작 시간이 아님을 명시할 것. 공식 운영/행사 시간이 데이터에 제공되지 않은 프로그램에는 실제 시작 시간인 것처럼 특정 시각을 부여하지 말 것. 단, 제공된 실제 공영주차장과 착한가격업소, 행사 데이터만 활용하여 동선을 조립할 것)]
 ### 📌 Event Guide: [프로그램 체크리스트 (사전 예약 vs 자유 참여)]
 ### 🛡️ Safe & Relax Tips: [현장 안심 꿀팁 브리핑 (주차면수 및 직선거리 중심)]
 """
@@ -127,11 +129,13 @@ def _safe_lng(val: Any) -> Optional[float]:
 def _parse_bool(val: Any) -> Optional[bool]:
     if isinstance(val, bool):
         return val
+    if isinstance(val, (int, float)):
+        return bool(val)
     if isinstance(val, str):
         v = val.strip().lower()
-        if v in ("true", "1", "t", "y", "yes"):
+        if v in ("true", "1", "t", "y", "yes", "예약필수", "사전예약", "필수"):
             return True
-        if v in ("false", "0", "f", "n", "no"):
+        if v in ("false", "0", "f", "n", "no", "자유입장", "제한없음", "무료입장", "상시"):
             return False
     return None
 
@@ -152,7 +156,9 @@ def _calc_distance(lat1: Optional[float], lon1: Optional[float], lat2: Optional[
 # ==============================================================================
 def analyze_stamina_and_intent(state: PipelineState) -> Dict[str, Any]:
     stamina = state.get("stamina", 50)
-    extra = state.get("extra_details", "").strip() or "특별한 요청 없음"
+    # 악의적인 대용량 페이로드 주입 및 토큰 소진(DoS) 방지: 최대 1,000자로 제한
+    raw_extra = str(state.get("extra_details", "")).strip()
+    extra = (raw_extra[:1000] if raw_extra else "특별한 요청 없음")
 
     if stamina <= 30:
         level, radius, ratio = "Low", "도보 500m 이내", "Activity 20% : Healing 80%"
@@ -171,7 +177,12 @@ def analyze_stamina_and_intent(state: PipelineState) -> Dict[str, Any]:
             "companion": state.get("companion", "일반"),
             "extra_details": extra
         })
-        intent_data = json.loads(re.sub(r"```json|```", "", raw_output).strip())
+        # 서두/말미 텍스트에 구애받지 않고 유효한 JSON 블록 정밀 추출
+        json_match = re.search(r"\{.*\}", raw_output, re.DOTALL)
+        if json_match:
+            intent_data = json.loads(json_match.group(0))
+        else:
+            intent_data = json.loads(re.sub(r"```json|```", "", raw_output).strip())
     except Exception:
         intent_data = {
             "core_needs": "무리 없는 안심 쉼표 중심 힐링 여행",
@@ -190,36 +201,40 @@ def classify_events_node(state: PipelineState) -> Dict[str, Any]:
     """
     [지침 1 준수] 가짜 프로그램 생성 금지
     - programs가 비어있으면 임의로 가상 프로그램을 지어내지 않고 순수 빈 상태를 반환합니다.
+    - [지침 2 준수] 예약 여부 'Unknown(현장 확인 필요)' 상태 추가:
+      명시적 Boolean 값이 없고 텍스트에 예약 관련 키워드도 없으면 unknown 리스트에 보관합니다.
     """
     fest = state.get("selected_festival", {})
     fest_programs = fest.get("programs", [])
 
-    # [지침 1 준수] 프로그램 정보가 없으면 가짜 데이터를 만들지 않고 빈 리스트 반환
+    # 프로그램 정보가 없으면 가짜 데이터를 만들지 않고 빈 리스트 반환
     if not fest_programs:
-        return {"event_info": {"reservation_required": [], "walk_in": []}}
+        return {"event_info": {"reservation_required": [], "walk_in": [], "unknown": []}}
 
-    reservation_keywords = ["예약", "사전", "예매", "신청", "티켓", "선착순", "정원제"]
-    req, walk = [], []
+    req, walk, unknown = [], [], []
 
     for item_data in fest_programs:
         name = item_data.get("name", "프로그램")
         desc = item_data.get("description", "")
         category = item_data.get("category", "축제 프로그램")
-        target_text = f"{name} {desc} {category}"
 
         parsed_res = _parse_bool(item_data.get("reservation_required"))
-        if parsed_res is not None:
-            is_reserved = parsed_res
+        
+        if parsed_res is True:
+            booking_tip = item_data.get("booking_tip", "공식 누리집 사전 예약 필수")
+            item = {"name": name, "category": category, "description": desc or "세부 정보 없음", "booking_tip": booking_tip}
+            req.append(item)
+        elif parsed_res is False:
+            booking_tip = item_data.get("booking_tip", "현장 자유 참여 가능")
+            item = {"name": name, "category": category, "description": desc or "세부 정보 없음", "booking_tip": booking_tip}
+            walk.append(item)
         else:
-            is_reserved = any(k in target_text for k in reservation_keywords)
+            # [지침 2 준수] 텍스트 키워드 억측 완전 배제: Boolean 값이 없거나 불명확하면 무조건 unknown으로 분류
+            booking_tip = item_data.get("booking_tip", "공식 누리집 또는 현장 안내소 문의 요망")
+            item = {"name": name, "category": category, "description": desc or "세부 정보 없음", "booking_tip": booking_tip}
+            unknown.append(item)
 
-        default_tip = "공식 누리집 사전 예약 필수" if is_reserved else "현장 자유 참여 가능"
-        booking_tip = item_data.get("booking_tip", default_tip)
-
-        item = {"name": name, "category": category, "description": desc or "세부 정보 없음", "booking_tip": booking_tip}
-        (req if is_reserved else walk).append(item)
-
-    return {"event_info": {"reservation_required": req, "walk_in": walk}}
+    return {"event_info": {"reservation_required": req, "walk_in": walk, "unknown": unknown}}
 
 
 def generate_magazine_article_node(state: PipelineState) -> Dict[str, Any]:
@@ -234,16 +249,22 @@ def generate_magazine_article_node(state: PipelineState) -> Dict[str, Any]:
         except (ValueError, TypeError):
             return 0
 
-    # 1. 인프라 거리 계산
-    parking_lots = state.get("parking_lots", [])
-    for p in parking_lots:
+    # 1. 인프라 거리 계산 (원본 상태의 in-place 변조 방지를 위해 복사본 생성)
+    raw_parking = state.get("parking_lots", [])
+    parking_lots = []
+    for item in raw_parking:
+        p = dict(item) if isinstance(item, dict) else {}
         p_lat, p_lng = _safe_lat(p.get("lat")), _safe_lng(p.get("lng"))
         p["_dist"] = _calc_distance(fest_lat, fest_lng, p_lat, p_lng)
+        parking_lots.append(p)
 
-    restaurants = state.get("model_restaurants", [])
-    for r in restaurants:
+    raw_restaurants = state.get("model_restaurants", [])
+    restaurants = []
+    for item in raw_restaurants:
+        r = dict(item) if isinstance(item, dict) else {}
         r_lat, r_lng = _safe_lat(r.get("lat")), _safe_lng(r.get("lng"))
         r["_dist"] = _calc_distance(fest_lat, fest_lng, r_lat, r_lng)
+        restaurants.append(r)
 
     # 2. 체력 기반 동적 데이터 정렬
     is_low_stamina = stamina <= 30
@@ -254,7 +275,7 @@ def generate_magazine_article_node(state: PipelineState) -> Dict[str, Any]:
         # 체력이 보통 이상이면 주차면수가 큰 순으로 우선 정렬
         sorted_parking = sorted(parking_lots, key=lambda x: (-get_parking_size(x), x.get("_dist", float('inf'))))[:5]
 
-    # 식당은 가장 가까운 모범식당 우선 노출 (Top 5 슬라이싱)
+    # 식당은 가장 가까운 착한가격업소 우선 노출 (Top 5 슬라이싱)
     top_restaurants = sorted(restaurants, key=lambda x: x.get("_dist", float('inf')))[:5]
 
     # 3. LLM 컨텍스트 데이터 문자열 변환 (직선거리 및 면수 인용)
@@ -269,12 +290,13 @@ def generate_magazine_article_node(state: PipelineState) -> Dict[str, Any]:
     for r in top_restaurants:
         dist_str = f"약 {int(r['_dist'])}m" if r["_dist"] != float('inf') else "거리 미상"
         rest_str_list.append(f"- {r.get('name')}: {r.get('menu', '대표식')} / 축제장 직선거리 {dist_str} ({r.get('price', '가격 정보 없음')})")
-    rest_str = "\n".join(rest_str_list) if rest_str_list else "인근에 등록된 모범식당 정보가 없습니다."
+    rest_str = "\n".join(rest_str_list) if rest_str_list else "인근에 등록된 착한가격업소 정보가 없습니다."
 
     # [지침 1 준수] 프로그램 정보가 없으면 가짜 이벤트를 만들지 않고 "프로그램 정보 없음"으로 출력
     events = state.get("event_info", {})
     req_items = events.get("reservation_required", [])
     walk_items = events.get("walk_in", [])
+    unknown_items = events.get("unknown", [])
 
     if req_items:
         req_str = "\n".join([f"- **{e['name']}**: {e['description']} *(Tip: {e['booking_tip']})*" for e in req_items])
@@ -285,6 +307,11 @@ def generate_magazine_article_node(state: PipelineState) -> Dict[str, Any]:
         walk_str = "\n".join([f"- **{e['name']}**: {e['description']} *(Tip: {e['booking_tip']})*" for e in walk_items])
     else:
         walk_str = "프로그램 정보 없음"
+
+    if unknown_items:
+        unknown_str = "\n".join([f"- **{e['name']}**: {e['description']} *(Tip: {e['booking_tip']})*" for e in unknown_items])
+    else:
+        unknown_str = "프로그램 정보 없음"
 
     fest_name = fest.get("name", "로컬 축제")
     fest_addr = fest.get("address", state.get("region", ""))
@@ -303,18 +330,23 @@ def generate_magazine_article_node(state: PipelineState) -> Dict[str, Any]:
 
 ■ 확인된 공영주차장 (직선거리/면수 데이터):
 {parking_str}
-■ 확인된 모범식당 (직선거리/메뉴 데이터):
+■ 확인된 착한가격업소 (직선거리/메뉴 데이터):
 {rest_str}
 ■ 예약 필수 프로그램:
 {req_str}
 ■ 자유 참여 프로그램:
 {walk_str}
+■ 현장 확인 필요(미상) 프로그램:
+{unknown_str}
 
 [작성 가이드]
 - 실시간 혼잡도 추론이나 '혼잡을 피해' 같은 근거 없는 문구는 절대 사용하지 마세요.
 - 오직 제공된 주차면수와 축제장 직선거리(m)를 기반으로 정직한 이동 팁을 제시하세요.
 - 계산된 거리는 지도상 최단 '직선거리'이므로 실제 보행/도로 거리와 다를 수 있음을 자연스럽게 안내하세요.
-- 프로그램이 '프로그램 정보 없음'인 경우 가상 행사를 지어내지 마세요.""")
+- 프로그램이 '프로그램 정보 없음'인 경우 가상 행사를 지어내지 마세요.
+- 예약 정보가 미상(Unknown)인 이벤트는 임의로 추측하지 말고 '현장 문의 필요'라고 명시할 것.
+- 타임라인의 시각은 사용자를 위한 '추천 방문 시각'이며 공식 행사 시작 시간이 아님을 명시하세요.
+- 공식 운영/행사 시간이 데이터에 제공되지 않은 프로그램에는 실제 시작 시간인 것처럼 특정 시각을 부여하지 마세요.""")
         ])
 
         chain = prompt | _get_llm(0.3) | StrOutputParser()
@@ -329,11 +361,12 @@ def generate_magazine_article_node(state: PipelineState) -> Dict[str, Any]:
             "intent_analysis": str(state.get("intent_analysis", {})),
             "strategy_guideline": state.get("strategy_guideline", ""),
             "parking_str": parking_str, "rest_str": rest_str,
-            "req_str": req_str, "walk_str": walk_str
+            "req_str": req_str, "walk_str": walk_str,
+            "unknown_str": unknown_str
         })
     except Exception as e:
         # [지침 2 준수] 가짜 타임테이블 삭제 및 정직한 구조적 에러 데이터 요약문 반환
-        print(f"[agent] LLM 기사 작성 중 예외 발생, 구조적 데이터 요약 안내문 반환: {e}")
+        print(f"[agent.py] LLM 기사 작성 중 예외 발생, 구조적 데이터 요약 안내문 반환: {e}")
         parking_count = len(parking_lots)
         max_spaces = max([get_parking_size(p) for p in parking_lots], default=0)
         restaurant_count = len(restaurants)
@@ -341,14 +374,20 @@ def generate_magazine_article_node(state: PipelineState) -> Dict[str, Any]:
 
         article_text = (
             "AI 맞춤 기사를 일시적으로 생성하지 못했습니다.\n\n"
-            "[확인된 데이터 요약]\n"
+            "**[확인된 데이터 요약]**\n"
             f"- 선택 축제: {fest_name}\n"
             f"- 인근 공영주차장: {parking_count}개 (최대 {max_spaces}면)\n"
-            f"- 모범식당: {restaurant_count}개\n"
-            f"- 쉼터: {shelter_count}개"
+            f"- 착한가격업소: {restaurant_count}개\n"
+            f"- 인근 관광·휴식 명소: {shelter_count}개\n\n"
+            "*위 데이터를 바탕으로 하단의 지도와 체크리스트를 확인해 주세요.*"
         )
 
-    return {"article_content": article_text}
+    # [지침 1 준수] 기사와 지도 데이터 불일치 해결: 정렬/필터링된 주차장 및 식당 리스트로 State 업데이트
+    return {
+        "article_content": article_text,
+        "parking_lots": sorted_parking,
+        "model_restaurants": top_restaurants
+    }
 
 
 def format_folium_pins_node(state: PipelineState) -> Dict[str, Any]:
@@ -384,30 +423,30 @@ def format_folium_pins_node(state: PipelineState) -> Dict[str, Any]:
                 "popup_title": f"🅿️ {p.get('name')}"
             })
 
-    # 3. 모범식당 핀 (상위 6개)
+    # 3. 착한가격업소 핀 (상위 6개)
     for r in state.get("model_restaurants", [])[:6]:
         lat, lng = _safe_lat(r.get("lat")), _safe_lng(r.get("lng"))
         if lat is not None and lng is not None:
             price = r.get("price", "가격 정보 없음")
             markers.append({
-                "name": r.get("name", "모범식당"), "category": "restaurant",
+                "name": r.get("name", "착한가격업소"), "category": "restaurant",
                 "lat": lat, "lng": lng,
                 "icon": "cutlery", "color": "green",
                 "menu": r.get("menu", "대표메뉴"), "price": price,
                 "desc": f"대표메뉴: {r.get('menu', '')} ({price})",
-                "popup_title": f"🍲 [모범식당] {r.get('name')}"
+                "popup_title": f"🍲 [착한가격업소] {r.get('name')}"
             })
 
-    # 4. 쉼터 핀 (상위 4개)
+    # 4. 관광·휴식 명소 핀 (상위 4개)
     for s in state.get("tourist_spots", [])[:4]:
         lat, lng = _safe_lat(s.get("lat")), _safe_lng(s.get("lng"))
         if lat is not None and lng is not None:
             markers.append({
-                "name": s.get("name", "쉼터"), "category": "rest_spot",
+                "name": s.get("name", "관광·휴식 명소"), "category": "rest_spot",
                 "lat": lat, "lng": lng,
                 "icon": "leaf", "color": "orange",
-                "desc": s.get("description", "로컬 웰니스 쉼터"),
-                "popup_title": f"🌿 [쉼터] {s.get('name')}"
+                "desc": s.get("description", "인근 관광 및 휴식 명소"),
+                "popup_title": f"🌿 [관광·휴식 명소] {s.get('name')}"
             })
 
     return {"map_markers": markers}
@@ -462,7 +501,7 @@ def run_processing_pipeline(user_inputs: Dict[str, Any], api_data: Optional[Dict
 
     return {
         "article_content": final_state.get("article_content", "매거진 기사를 작성하지 못했습니다."),
-        "event_info": final_state.get("event_info", {"reservation_required": [], "walk_in": []}),
+        "event_info": final_state.get("event_info", {"reservation_required": [], "walk_in": [], "unknown": []}),
         "map_markers": final_state.get("map_markers", [])
     }
 
@@ -487,8 +526,12 @@ if __name__ == "__main__":
     }
 
     print("\n▶ [테스트 1] data.get_festival_infra_bundle() 호출...")
-    infra = get_festival_infra_bundle(fest["lat"], fest["lng"], radius_m=2000)
-    print(f"  - 수집된 주차장: {len(infra['parking_lots'])}건, 모범식당: {len(infra['model_restaurants'])}건, 쉼터: {len(infra['tourist_spots'])}건")
+    try:
+        infra = get_festival_infra_bundle(fest["lat"], fest["lng"], radius_m=2000)
+        print(f"  - 수집된 주차장: {len(infra['parking_lots'])}건, 모범식당: {len(infra['model_restaurants'])}건, 쉼터: {len(infra['tourist_spots'])}건")
+    except Exception as e:
+        print(f"  ⚠️ [API 통신 오류 감지 (정상 방어 동작)]: {e}")
+        infra = {"parking_lots": [], "model_restaurants": [], "tourist_spots": []}
 
     user_inputs = {
         "stamina": 30,
@@ -505,6 +548,7 @@ if __name__ == "__main__":
     print(f"1. 지침 1 검증 (programs=[] 전달 시 이벤트 목록):")
     print(f"   - 사전 예약: {result['event_info']['reservation_required']}")
     print(f"   - 자유 참여: {result['event_info']['walk_in']}")
+    print(f"   - 현장 확인 필요: {result['event_info']['unknown']}")
     print(f"   (가짜 '상설 문화 전시' 생성 없이 빈 리스트 확인 완료!)")
 
     print(f"\n2. 지침 3 검증 (기사 내 '혼잡을 피해' 강제 문구 배제 여부):")
@@ -513,14 +557,16 @@ if __name__ == "__main__":
     print(f"   - 기사 내용 일부:\n{result['article_content'][:300]}...")
 
     print(f"\n3. 지침 2 검증 (예외 발생 시 정직한 데이터 요약문 반환 테스트):")
+    # 임의로 LLM 호출 실패를 유도하는 에러 상태 테스트
     fallback_state = {
         "selected_festival": fest,
         "stamina": 30,
         "parking_lots": infra["parking_lots"],
         "model_restaurants": infra["model_restaurants"],
         "tourist_spots": infra["tourist_spots"],
-        "event_info": {"reservation_required": [], "walk_in": []}
+        "event_info": {"reservation_required": [], "walk_in": [], "unknown": []}
     }
+    # 강제로 잘못된 타입 주입하여 except 분기 테스트
     try:
         from unittest.mock import patch
         with patch("langchain_core.prompts.ChatPromptTemplate.from_messages", side_effect=RuntimeError("LLM 연결 오류 시뮬레이션")):
