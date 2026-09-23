@@ -58,3 +58,6 @@ scratch/
 *.log
 *.tmp
 .gitignore_local_backup
+
+# Local User Backup
+backup_my_work/

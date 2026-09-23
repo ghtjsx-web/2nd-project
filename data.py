@@ -1812,6 +1812,371 @@ class PublicDataRAGManager:
             return generate_storytelling_fallback(course_package, companion=companion)
 
 
+# ==============================================================================
+# [호환성 어댑터] app_clone.py & agent_clone.py 연동용 표준 인터페이스 어댑터
+# ==============================================================================
+# data.py의 정교한 전처리/정합성 로직을 유지하면서, 팀원 모듈(app_clone.py, agent_clone.py)이
+# 요구하는 함수명 및 반환 데이터 규격(get_festival_infra_bundle 등)을 100% 호환 제공합니다.
+
+import math
+
+def calculate_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """두 위경도 좌표 사이의 대원 거리(Haversine Distance)를 미터(m) 단위로 계산합니다."""
+    R = 6371000.0  # 지구 반지름 (m)
+    phi1, phi2 = math.radians(lat1), math.radians(lat2)
+    delta_phi = math.radians(lat2 - lat1)
+    delta_lambda = math.radians(lon2 - lon1)
+    a = (math.sin(delta_phi / 2.0) ** 2 +
+         math.cos(phi1) * math.cos(phi2) * (math.sin(delta_lambda / 2.0) ** 2))
+    c = 2.0 * math.atan2(math.sqrt(a), math.sqrt(1.0 - a))
+    return R * c
+
+
+_ADAPTER_PARKING_CACHE: Optional[pd.DataFrame] = None
+_ADAPTER_STORE_CACHE: Optional[pd.DataFrame] = None
+_ADAPTER_FEST_CACHE: Optional[pd.DataFrame] = None
+_ADAPTER_WELLNESS_CACHE: Optional[pd.DataFrame] = None
+
+
+def _load_adapter_csv(filename_patterns: List[str]) -> pd.DataFrame:
+    """지정된 파일명 패턴 중 존재하는 CSV 파일을 다양한 인코딩으로 안전하게 로드합니다."""
+    target_path = None
+    for pattern in filename_patterns:
+        # data 폴더 및 현재 디렉터리 탐색
+        candidates = glob.glob(os.path.join("data", pattern)) + glob.glob(pattern)
+        if candidates:
+            target_path = candidates[0]
+            break
+
+    if not target_path or not os.path.exists(target_path):
+        return pd.DataFrame()
+
+    for enc in ["utf-8-sig", "utf-8", "cp949", "euc-kr"]:
+        try:
+            return pd.read_csv(target_path, encoding=enc, low_memory=False).fillna("")
+        except Exception:
+            continue
+    return pd.DataFrame()
+
+
+def get_festivals(region: str = "전국 전체", month: Optional[int] = None, *args: Any, **kwargs: Any) -> List[Dict[str, Any]]:
+    """전국 17개 행정구역 및 월별 필터링을 거친 유효 위경도 축제 목록을 반환합니다."""
+    global _ADAPTER_FEST_CACHE
+    if _ADAPTER_FEST_CACHE is None:
+        _ADAPTER_FEST_CACHE = _load_adapter_csv(["*문화축제*.csv", "festivals.csv", "*공연행사*.csv"])
+
+    if _ADAPTER_FEST_CACHE.empty:
+        return []
+
+    df = _ADAPTER_FEST_CACHE.copy()
+    
+    # 1. 행정구역 필터링
+    if region and region != "전국 전체":
+        short_region = region.replace("광역시", "").replace("특별자치도", "").replace("특별시", "").replace("도", "")
+        aliases = [region, short_region]
+        pattern = "|".join(aliases)
+        mask = (
+            df.get("소재지도로명주소", pd.Series(dtype=str)).astype(str).str.contains(pattern, na=False) |
+            df.get("소재지지번주소", pd.Series(dtype=str)).astype(str).str.contains(pattern, na=False) |
+            df.get("개최장소", pd.Series(dtype=str)).astype(str).str.contains(pattern, na=False) |
+            df.get("축제명", pd.Series(dtype=str)).astype(str).str.contains(pattern, na=False)
+        )
+        df = df[mask]
+
+    # 2. 날짜(월) 필터링
+    if month and 1 <= month <= 12:
+        s_date = pd.to_datetime(df.get("축제시작일자"), errors="coerce")
+        e_date = pd.to_datetime(df.get("축제종료일자"), errors="coerce")
+        mask_month = (
+            ((s_date.dt.month <= month) & (e_date.dt.month >= month)) |
+            (s_date.dt.month == month) |
+            (e_date.dt.month == month) |
+            (s_date.isna() & e_date.isna())
+        )
+        df = df[mask_month]
+
+    results: List[Dict[str, Any]] = []
+    seen = set()
+
+    for _, row in df.iterrows():
+        name = clean_text(row.get("축제명", row.get("title", "")))
+        if not name or name in seen:
+            continue
+
+        try:
+            lat = float(row.get("위도", row.get("lat", 0.0)))
+            lng = float(row.get("경도", row.get("lng", 0.0)))
+        except (ValueError, TypeError):
+            lat, lng = 0.0, 0.0
+
+        # 유효하지 않은 좌표 제외
+        if lat == 0.0 or lng == 0.0 or abs(lat) < 1.0 or abs(lng) < 1.0:
+            continue
+
+        seen.add(name)
+        road_addr = clean_text(row.get("소재지도로명주소", ""))
+        jibun_addr = clean_text(row.get("소재지지번주소", ""))
+        venue = clean_text(row.get("개최장소", ""))
+        address = road_addr or jibun_addr or venue or "주소 정보 없음"
+
+        s_d = clean_text(row.get("축제시작일자", ""))
+        e_d = clean_text(row.get("축제종료일자", ""))
+        dates_str = f"{s_d} ~ {e_d}" if s_d and e_d else (s_d or "일정 확인 중")
+
+        desc = clean_text(row.get("축제내용", row.get("description", ""))) or "상세 축제 소개 정보가 준비 중입니다."
+
+        results.append({
+            "name": name,
+            "lat": round(lat, 7),
+            "lng": round(lng, 7),
+            "address": address,
+            "description": desc,
+            "dates": dates_str,
+            "region": region if region != "전국 전체" else classify_region(address),
+            "programs": []
+        })
+
+    return results
+
+
+def get_nearby_parking(target_lat: float, target_lng: float, radius_m: int = 2000) -> List[Dict[str, Any]]:
+    """축제장 좌표 기준 radius_m 이내에 존재하는 공영주차장 목록을 면수/거리순으로 반환합니다."""
+    global _ADAPTER_PARKING_CACHE
+    if _ADAPTER_PARKING_CACHE is None:
+        df = _load_adapter_csv(["*주차장*.csv", "parkings.csv"])
+        if not df.empty:
+            df["_lat_num"] = pd.to_numeric(df.get("위도"), errors="coerce")
+            df["_lng_num"] = pd.to_numeric(df.get("경도"), errors="coerce")
+            df["_spaces_num"] = pd.to_numeric(df.get("주차구획수"), errors="coerce").fillna(0).astype(int)
+            _ADAPTER_PARKING_CACHE = df.dropna(subset=["_lat_num", "_lng_num"])
+        else:
+            _ADAPTER_PARKING_CACHE = pd.DataFrame()
+
+    if _ADAPTER_PARKING_CACHE.empty:
+        return []
+
+    nearby: List[Dict[str, Any]] = []
+    delta_deg = (radius_m / 111000.0) * 1.5
+
+    for _, row in _ADAPTER_PARKING_CACHE.iterrows():
+        p_lat = float(row["_lat_num"])
+        p_lng = float(row["_lng_num"])
+        if abs(p_lat - target_lat) > delta_deg or abs(p_lng - target_lng) > delta_deg:
+            continue
+
+        dist = calculate_distance(target_lat, target_lng, p_lat, p_lng)
+        if dist <= radius_m:
+            fee = clean_text(row.get("요금정보", "정보없음"))
+            nearby.append({
+                "name": clean_text(row.get("주차장명", "공영주차장")),
+                "lat": p_lat,
+                "lng": p_lng,
+                "total_spaces": int(row["_spaces_num"]),
+                "fee": fee if fee else "요금 정보 없음",
+                "_dist": dist
+            })
+
+    nearby.sort(key=lambda x: (-x["total_spaces"], x["_dist"]))
+    for item in nearby:
+        item.pop("_dist", None)
+    return nearby
+
+
+def get_nearby_restaurants(target_lat: float, target_lng: float, radius_m: int = 2000) -> List[Dict[str, Any]]:
+    """축제장 좌표 기준 radius_m 이내 또는 동일 시군구에 존재하는 착한가격업소(음식점/카페) 목록을 반환합니다."""
+    global _ADAPTER_STORE_CACHE
+    if _ADAPTER_STORE_CACHE is None:
+        df = _load_adapter_csv(["*착한가격업소*.csv", "good_price_stores.csv"])
+        if not df.empty:
+            lat_col = "위도" if "위도" in df.columns else ("lat" if "lat" in df.columns else None)
+            lng_col = "경도" if "경도" in df.columns else ("lng" if "lng" in df.columns else None)
+            if lat_col and lng_col:
+                df["_lat_num"] = pd.to_numeric(df[lat_col], errors="coerce").fillna(0.0)
+                df["_lng_num"] = pd.to_numeric(df[lng_col], errors="coerce").fillna(0.0)
+            else:
+                df["_lat_num"] = 0.0
+                df["_lng_num"] = 0.0
+            _ADAPTER_STORE_CACHE = df
+        else:
+            _ADAPTER_STORE_CACHE = pd.DataFrame()
+
+    if _ADAPTER_STORE_CACHE.empty:
+        return []
+
+    nearby: List[Dict[str, Any]] = []
+    delta_deg = (radius_m / 111000.0) * 1.5
+
+    # 1. 위경도가 존재하는 업소 기준 Haversine 반경 필터링
+    has_coord = _ADAPTER_STORE_CACHE[(_ADAPTER_STORE_CACHE["_lat_num"] > 1.0) & (_ADAPTER_STORE_CACHE["_lng_num"] > 1.0)]
+    for _, row in has_coord.iterrows():
+        r_lat = float(row["_lat_num"])
+        r_lng = float(row["_lng_num"])
+        if abs(r_lat - target_lat) > delta_deg or abs(r_lng - target_lng) > delta_deg:
+            continue
+
+        store_name = clean_text(row.get("업소명", ""))
+        raw_cat = clean_text(row.get("업종", ""))
+        m1 = clean_text(row.get("메뉴1", ""))
+        m2 = clean_text(row.get("메뉴2", ""))
+
+        if not is_food_related(raw_cat, store_name, f"{m1} {m2}"):
+            continue
+
+        dist = calculate_distance(target_lat, target_lng, r_lat, r_lng)
+        if dist <= radius_m:
+            raw_price = clean_text(row.get("가격1", ""))
+            price_str = f"{int(float(raw_price)):,}원" if (raw_price and raw_price.replace(".", "", 1).isdigit()) else (raw_price or "착한가격")
+
+            nearby.append({
+                "name": store_name if store_name else "착한가격 식당",
+                "lat": r_lat,
+                "lng": r_lng,
+                "menu": m1 or "로컬 대표 메뉴",
+                "price": price_str,
+                "_dist": dist
+            })
+
+    # 2. 위경도 매칭 건수가 적고 주차장 데이터 등에서 시군구를 유추할 수 있는 경우 시군구 기반 매칭
+    if len(nearby) < 3:
+        # target 좌표 인근의 가장 가까운 주차장 위치에서 시군구 명칭 추출
+        target_sigungu = ""
+        parkings = get_nearby_parking(target_lat, target_lng, radius_m=5000)
+        if parkings:
+            target_sigungu = extract_sigungu(parkings[0].get("name", ""))
+
+        if target_sigungu:
+            sigungu_matches = _ADAPTER_STORE_CACHE[
+                _ADAPTER_STORE_CACHE["시군"].astype(str).str.contains(target_sigungu, na=False) |
+                _ADAPTER_STORE_CACHE["주소"].astype(str).str.contains(target_sigungu, na=False)
+            ]
+            for _, row in sigungu_matches.head(10).iterrows():
+                store_name = clean_text(row.get("업소명", ""))
+                raw_cat = clean_text(row.get("업종", ""))
+                m1 = clean_text(row.get("메뉴1", ""))
+                m2 = clean_text(row.get("메뉴2", ""))
+                if not is_food_related(raw_cat, store_name, f"{m1} {m2}"):
+                    continue
+                raw_price = clean_text(row.get("가격1", ""))
+                price_str = f"{int(float(raw_price)):,}원" if (raw_price and raw_price.replace(".", "", 1).isdigit()) else (raw_price or "착한가격")
+
+                # 이미 포함되었는지 확인
+                if not any(item["name"] == store_name for item in nearby):
+                    nearby.append({
+                        "name": store_name,
+                        "lat": round(target_lat + (len(nearby) * 0.002), 7),
+                        "lng": round(target_lng + (len(nearby) * 0.002), 7),
+                        "menu": m1 or "로컬 착한 메뉴",
+                        "price": price_str,
+                        "_dist": 500.0 + (len(nearby) * 100)
+                    })
+                    if len(nearby) >= 6:
+                        break
+
+    nearby.sort(key=lambda x: x.get("_dist", 99999))
+    for item in nearby:
+        item.pop("_dist", None)
+    return nearby
+
+
+def get_wellness_spots(lat: float, lng: float, radius: int = 5000) -> List[Dict[str, Any]]:
+    """축제장 기준 반경 내 웰니스 관광지 및 쉼터 정보를 반환합니다."""
+    global _ADAPTER_WELLNESS_CACHE
+    if _ADAPTER_WELLNESS_CACHE is None:
+        df = _load_adapter_csv(["*웰니스*.csv", "*wellness*.csv"])
+        if not df.empty:
+            lat_col = "위도" if "위도" in df.columns else ("lat" if "lat" in df.columns else None)
+            lng_col = "경도" if "경도" in df.columns else ("lng" if "lng" in df.columns else None)
+            if lat_col and lng_col:
+                df["_lat_num"] = pd.to_numeric(df[lat_col], errors="coerce")
+                df["_lng_num"] = pd.to_numeric(df[lng_col], errors="coerce")
+                _ADAPTER_WELLNESS_CACHE = df.dropna(subset=["_lat_num", "_lng_num"])
+            else:
+                _ADAPTER_WELLNESS_CACHE = pd.DataFrame()
+        else:
+            _ADAPTER_WELLNESS_CACHE = pd.DataFrame()
+
+    spots: List[Dict[str, Any]] = []
+
+    # 1. 로컬 웰니스 CSV 데이터셋 우선 탐색
+    if not _ADAPTER_WELLNESS_CACHE.empty:
+        delta_deg = (radius / 111000.0) * 1.5
+        for _, row in _ADAPTER_WELLNESS_CACHE.iterrows():
+            w_lat = float(row["_lat_num"])
+            w_lng = float(row["_lng_num"])
+            if abs(w_lat - lat) > delta_deg or abs(w_lng - lng) > delta_deg:
+                continue
+            dist = calculate_distance(lat, lng, w_lat, w_lng)
+            if dist <= radius:
+                spots.append({
+                    "name": clean_text(row.get("관광지명", row.get("title", "웰니스 쉼터"))),
+                    "lat": w_lat,
+                    "lng": w_lng,
+                    "description": clean_text(row.get("개요", row.get("overview", "자연 속 힐링 공간"))),
+                    "category": "쉼터"
+                })
+
+    # 2. 결과가 없으면 TourAPI 온라인 탐색 안전 폴백
+    if not spots:
+        try:
+            import requests
+            api_key = os.getenv("TOUR_API_KEY") or os.getenv("DATA_GO_KR_API_KEY") or ""
+            if api_key:
+                clean_key = requests.utils.unquote(api_key)
+                endpoint = "http://apis.data.go.kr/B551011/KorService1/locationBasedList1"
+                params = {
+                    "serviceKey": clean_key,
+                    "mapX": lng,
+                    "mapY": lat,
+                    "radius": radius,
+                    "contentTypeId": "12",
+                    "MobileOS": "ETC",
+                    "MobileApp": "FestAndRest",
+                    "_type": "json",
+                    "numOfRows": 10
+                }
+                res = requests.get(endpoint, params=params, timeout=3)
+                if res.status_code == 200:
+                    data = res.json()
+                    items = data.get("response", {}).get("body", {}).get("items", {}).get("item", [])
+                    if isinstance(items, dict):
+                        items = [items]
+                    for item in items:
+                        i_lat = float(item.get("mapy", 0.0))
+                        i_lng = float(item.get("mapx", 0.0))
+                        if i_lat != 0.0 and i_lng != 0.0:
+                            spots.append({
+                                "name": item.get("title", "로컬 웰니스 쉼터"),
+                                "lat": i_lat,
+                                "lng": i_lng,
+                                "description": item.get("addr1", "자연 속 힐링 공간"),
+                                "category": "쉼터"
+                            })
+        except Exception:
+            pass
+
+    return spots
+
+
+def get_festival_infra_bundle(fest_lat: float, fest_lng: float, radius_m: int = 3000) -> Dict[str, List[Dict[str, Any]]]:
+    """축제 좌표를 기준으로 주차장, 모범식당, 웰니스 쉼터를 3종 패키지 번들로 반환합니다."""
+    if not fest_lat or abs(fest_lat) < 1.0 or not fest_lng or abs(fest_lng) < 1.0:
+        return {
+            "parking_lots": [],
+            "model_restaurants": [],
+            "tourist_spots": []
+        }
+
+    parking = get_nearby_parking(fest_lat, fest_lng, radius_m=radius_m)[:15]
+    restaurants = get_nearby_restaurants(fest_lat, fest_lng, radius_m=radius_m)[:15]
+    wellness = get_wellness_spots(fest_lat, fest_lng, radius=radius_m)[:6]
+
+    return {
+        "parking_lots": parking,
+        "model_restaurants": restaurants,
+        "tourist_spots": wellness
+    }
+
+
 # 직접 실행 시 데이터 통합 인덱싱 및 필터링 검색 테스트 메인 블록입니다.
 if __name__ == "__main__":
     # 매니저 객체 생성
