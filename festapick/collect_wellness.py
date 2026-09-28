@@ -25,12 +25,11 @@ load_dotenv()
 # ==============================================================================
 # [요구사항 2] 인증키 설정 (.env 파일 자동 연동)
 # ==============================================================================
-# 1순위: .env 파일의 TOUR_API_KEY 또는 DATA_GO_KR_API_KEY 로드
-# 2순위: 기본값 폴백
+# .env 파일의 TOUR_API_KEY 또는 DATA_GO_KR_API_KEY 로드 (보안을 위해 환경변수 전용 처리)
 SERVICE_KEY = (
     os.getenv("TOUR_API_KEY")
     or os.getenv("DATA_GO_KR_API_KEY")
-    or "%2BerrWrmepus%2FKECfl2tWJy8NxdfmU78QBxAeOfPWGoPEhFHRkOzM4C1CMOT3Jc1JpHOcJiBccSWnUuM8P5twQA%3D%3D"
+    or ""
 )
 
 # 저장 파일 경로 (festapick/data/wellness.csv)
