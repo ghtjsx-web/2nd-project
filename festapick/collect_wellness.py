@@ -33,8 +33,9 @@ SERVICE_KEY = (
     or "%2BerrWrmepus%2FKECfl2tWJy8NxdfmU78QBxAeOfPWGoPEhFHRkOzM4C1CMOT3Jc1JpHOcJiBccSWnUuM8P5twQA%3D%3D"
 )
 
-# 저장 파일 경로 (data/wellness.csv)
-OUTPUT_FILE_PATH = os.path.join("data", "wellness.csv")
+# 저장 파일 경로 (festapick/data/wellness.csv)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+OUTPUT_FILE_PATH = os.path.join(BASE_DIR, "data", "wellness.csv")
 
 # 웰니스 4대 핵심 테마 키워드 (문화체육관광부 & 한국관광공사 공인 분류 체계)
 WELLNESS_THEME_KEYWORDS = {

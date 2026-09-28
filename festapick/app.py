@@ -21,6 +21,11 @@ import streamlit as st
 import pandas as pd
 import importlib
 
+# festapick 모듈 경로 보장
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+if CURRENT_DIR not in sys.path:
+    sys.path.insert(0, CURRENT_DIR)
+
 # data.py 및 prompt.py 모듈 연동 (핫 리로드 강제)
 import prompt
 import data

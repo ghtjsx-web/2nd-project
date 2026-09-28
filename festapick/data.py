@@ -17,6 +17,33 @@ import chromadb
 from dotenv import load_dotenv
 load_dotenv()
 
+# festapick 모듈 및 데이터 기본 경로 설정
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+if BASE_DIR not in sys.path:
+    sys.path.insert(0, BASE_DIR)
+
+DEFAULT_DATA_DIR = os.path.join(BASE_DIR, "data")
+
+def get_safe_chromadb_path(db_path: Optional[str] = None) -> str:
+    """Windows 환경에서 상위 폴더명의 한글 인코딩 문제를 방지하기 위해 안전한 상대 경로를 우선 탐색합니다."""
+    if db_path and db_path != "chromadb_store":
+        if os.path.exists(db_path):
+            try:
+                return os.path.relpath(db_path)
+            except Exception:
+                return db_path
+        return db_path
+    if os.path.exists("festapick/chromadb_store"):
+        return "festapick/chromadb_store"
+    elif os.path.exists("chromadb_store"):
+        return "chromadb_store"
+    try:
+        return os.path.relpath(os.path.join(BASE_DIR, "chromadb_store"))
+    except Exception:
+        return os.path.join(BASE_DIR, "chromadb_store")
+
+DEFAULT_DB_PATH = get_safe_chromadb_path()
+
 # prompt.py 연동 (핫 리로드 및 감성 스토리텔링 프롬프트/폴백 생성기)
 import importlib
 import prompt
@@ -1037,33 +1064,42 @@ class PublicDataRAGManager:
     # 축제, 주차장, 착한가격업소 3종 공공데이터를 통합 관리하는 RAG 매니저 클래스입니다.
     def __init__(
         self,
-        data_dir: str = "data",
+        data_dir: Optional[str] = None,
         data_path: Optional[str] = None,
-        db_path: str = "chromadb_store",
+        db_path: Optional[str] = None,
         collection_name: str = "integrated_festivals",
         **kwargs: Any
     ):
+        # 기본 디렉터리 경로 자동 해결
+        if not data_dir or data_dir == "data":
+            effective_data_dir = DEFAULT_DATA_DIR
+        else:
+            effective_data_dir = data_dir
+
+        if not db_path or db_path == "chromadb_store":
+            effective_db_path = DEFAULT_DB_PATH
+        else:
+            effective_db_path = db_path
+
         # data_path가 전달된 경우 경로를 호환 처리합니다.
         if data_path and not os.path.isdir(data_path):
-            # 파일 경로인 경우 부모 디렉토리를 data_dir로 설정합니다.
-            self.data_dir: str = os.path.dirname(data_path) if os.path.dirname(data_path) else "data"
-            # 파일 경로 저장
-            self.data_path: str = data_path
+            if os.path.isabs(data_path) or os.path.exists(data_path):
+                self.data_dir = os.path.dirname(data_path) if os.path.dirname(data_path) else effective_data_dir
+                self.data_path = data_path
+            else:
+                self.data_dir = effective_data_dir
+                self.data_path = os.path.join(effective_data_dir, os.path.basename(data_path))
         # data_path가 디렉토리인 경우
         elif data_path:
-            # 디렉토리 저장
             self.data_dir = data_path
-            # 기본 축제 파일 경로 설정
             self.data_path = os.path.join(self.data_dir, "festivals.csv")
         # data_dir가 전달된 경우
         else:
-            # data_dir 저장
-            self.data_dir = data_dir
-            # 기본 축제 파일 경로 설정
+            self.data_dir = effective_data_dir
             self.data_path = os.path.join(self.data_dir, "festivals.csv")
 
         # ChromaDB 디렉토리 경로 저장
-        self.db_path: str = db_path
+        self.db_path: str = effective_db_path
         # 컬렉션 이름 저장
         self.collection_name: str = collection_name
         # 생성된 통합 문서 리스트
@@ -1888,8 +1924,12 @@ def _load_adapter_csv(filename_patterns: List[str]) -> pd.DataFrame:
     """지정된 파일명 패턴 중 존재하는 CSV 파일을 다양한 인코딩으로 안전하게 로드합니다."""
     target_path = None
     for pattern in filename_patterns:
-        # data 폴더 및 현재 디렉터리 탐색
-        candidates = glob.glob(os.path.join("data", pattern)) + glob.glob(pattern)
+        # data 폴더, 기본 데이터 디렉터리 및 현재 작업 디렉터리 탐색
+        candidates = (
+            glob.glob(os.path.join(DEFAULT_DATA_DIR, pattern))
+            + glob.glob(os.path.join("data", pattern))
+            + glob.glob(pattern)
+        )
         if candidates:
             target_path = candidates[0]
             break
