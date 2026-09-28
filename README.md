@@ -42,25 +42,24 @@
 pip install -r requirements.txt
 ```
 
-### 2단계: 환경변수(.env) 설정
-프로젝트 루트 또는 `festapick/` 폴더 내에 `.env` 파일을 생성하고 API 키를 설정합니다.
+### 2단계: 환경 변수(.env) 설정 가이드
+프로젝트 루트 또는 `festapick/` 디렉터리에 `.env` 파일을 생성하고 아래와 같이 필요한 키를 설정합니다.
 ```env
-# 1. 한국관광공사 TourAPI 서비스키 (필수: 웰니스 데이터 수집 시 사용)
-TOUR_API_KEY=your_tour_api_key_here
+# 필수: 한국관광공사 TourAPI 서비스키 (웰니스 데이터 수집용)
+TOUR_API_KEY=your_tour_api_key
 
-# 2. AI 스토리텔링 연동용 LLM 키 (선택 사항: 미입력 시 고품질 룰기반 에세이로 자동 폴백)
-OPENROUTER_API_KEY=your_openrouter_api_key_here
-OPENAI_API_KEY=your_openai_api_key_here
+# 선택: 실시간 AI 에디터 맞춤형 스토리텔링 생성용 (미입력 시 룰 기반 고품질 에세이로 자동 폴백)
+OPENROUTER_API_KEY=your_openrouter_key  # (선택: 실시간 AI 에디터 스토리텔링용)
+OPENAI_API_KEY=your_openai_key          # (선택: 2차 폴백용)
 ```
 
 ### 3단계: 메인 프로젝트 (페스타픽) 실행
-```bash
-# 방법 1: 터미널에서 실행
-streamlit run festapick/app.py
-
-# 방법 2: 윈도우 탐색기에서 배치 파일 더블클릭
-run_festapick.bat
-```
+- **방법 1 (터미널 명령어)**:
+  ```bash
+  streamlit run festapick/app.py
+  ```
+- **방법 2 (윈도우 탐색기 원클릭)**:
+  `run_festapick.bat` 배치 파일을 더블클릭하면 로컬 서버와 웹 브라우저가 자동 실행됩니다.
 
 > [!TIP]
 > **전체 1,264건 축제 전수 데이터 로드 안내 (`IS_DEV_MODE`)**  

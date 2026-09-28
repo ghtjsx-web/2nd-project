@@ -16,12 +16,26 @@
 - `data/`: 실제 공공데이터 원천 및 전처리 CSV 파일
 - `chromadb_store/`: ChromaDB 임베딩 인덱스 저장소
 
-## 🚀 실행 방법
+## 🚀 실행 방법 (Getting Started)
+
+### 1단계: 필수 라이브러리 설치
+```bash
+pip install -r requirements.txt
+```
+
+### 2단계: 환경 변수(.env) 설정
+```env
+TOUR_API_KEY=your_tour_api_key
+OPENROUTER_API_KEY=your_openrouter_key  # (선택: 실시간 AI 에디터 스토리텔링용)
+OPENAI_API_KEY=your_openai_key          # (선택: 2차 폴백용)
+```
+
+### 3단계: 애플리케이션 실행
 루트 디렉터리에서:
 ```bash
 streamlit run festapick/app.py
 ```
-또는 루트 디렉터리의 `run_festapick.bat` 실행
+또는 루트 디렉터리의 `run_festapick.bat` 더블클릭
 
 > [!TIP]
 > **전체 1,264건 축제 전수 데이터를 로드하려면 `app.py` 및 `data.py`의 `IS_DEV_MODE = False`로 변경하세요.**
