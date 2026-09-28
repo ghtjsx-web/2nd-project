@@ -125,6 +125,35 @@ def clean_text(text: Any) -> str:
     return cleaned.strip()
 
 
+def clean_price(price_val: Any) -> str:
+    """메뉴 가격에서 소수점이나 비정형 문자를 방어하고 정수형 콤마 포맷(예: '6,000원')으로 일관되게 규격화합니다."""
+    if price_val is None:
+        return ""
+    if isinstance(price_val, float) and pd.isna(price_val):
+        return ""
+    s: str = str(price_val).strip()
+    if not s or s.lower() in ["nan", "none", "null", "-", "0", "무료"]:
+        return ""
+    # 콤마, '원', 공백 제거
+    cleaned = s.replace(",", "").replace("원", "").strip()
+    try:
+        val_float = float(cleaned)
+        if val_float <= 0:
+            return ""
+        return f"{int(round(val_float)):,}원"
+    except (ValueError, TypeError):
+        # 숫자가 섞여 있는 경우 정규식 추출
+        m = re.search(r"(\d+(?:\.\d+)?)", cleaned)
+        if m:
+            try:
+                num = float(m.group(1))
+                if num > 0:
+                    return f"{int(round(num)):,}원"
+            except (ValueError, TypeError):
+                pass
+        return ""
+
+
 def classify_region(address_text: str) -> str:
     # 주소 및 위치 텍스트에서 도/시 정보를 파싱하여 6대 표준 권역으로 분류하는 함수입니다.
     target: str = address_text.strip()
@@ -689,6 +718,9 @@ def create_festival_documents(raw_festivals: List[Dict[str, Any]]) -> List[Docum
         start_date: str = clean_text(festival.get("축제시작일자", festival.get("start_date", "")))
         end_date: str = clean_text(festival.get("축제종료일자", festival.get("end_date", "")))
         phone: str = clean_text(festival.get("전화번호", festival.get("phone", "")))
+        # 💡 보강: 결측 번호 필터링
+        if not phone or phone.lower() in ["-", "000-0000", "없음", "nan", "null", "none"]:
+            phone = "현장 종합안내소 문의"
         host: str = clean_text(festival.get("주최기관명", ""))
         org: str = clean_text(festival.get("주관기관명", ""))
         
@@ -968,26 +1000,26 @@ def create_good_price_documents(raw_stores: List[Dict[str, Any]]) -> List[Docume
         phone: str = clean_text(store.get("연락처", ""))
 
 
-        # 메뉴 및 가격 정보들을 정제합니다 (메뉴 1~4 상세 바인딩).
+        # 메뉴 및 가격 정보들을 정제합니다 (메뉴 1~4 상세 바인딩 및 clean_price 적용).
         menu1: str = clean_text(store.get("메뉴1", ""))
-        price1: str = clean_text(store.get("가격1", ""))
+        price1: str = clean_price(store.get("가격1", ""))
         menu2: str = clean_text(store.get("메뉴2", ""))
-        price2: str = clean_text(store.get("가격2", ""))
+        price2: str = clean_price(store.get("가격2", ""))
         menu3: str = clean_text(store.get("메뉴3", ""))
-        price3: str = clean_text(store.get("가격3", ""))
+        price3: str = clean_price(store.get("가격3", ""))
         menu4: str = clean_text(store.get("메뉴4", ""))
-        price4: str = clean_text(store.get("가격4", ""))
+        price4: str = clean_price(store.get("가격4", ""))
 
         # 메뉴 정보 텍스트 조합
         menu_items: List[str] = []
         if menu1:
-            menu_items.append(f"{menu1} ({price1}원)" if price1 else menu1)
+            menu_items.append(f"{menu1} ({price1})" if price1 else menu1)
         if menu2:
-            menu_items.append(f"{menu2} ({price2}원)" if price2 else menu2)
+            menu_items.append(f"{menu2} ({price2})" if price2 else menu2)
         if menu3:
-            menu_items.append(f"{menu3} ({price3}원)" if price3 else menu3)
+            menu_items.append(f"{menu3} ({price3})" if price3 else menu3)
         if menu4:
-            menu_items.append(f"{menu4} ({price4}원)" if price4 else menu4)
+            menu_items.append(f"{menu4} ({price4})" if price4 else menu4)
         menu_str: str = ", ".join(menu_items) if menu_items else "대표 가성비 메뉴 보유"
 
         # 세부 업종 카테고리(한식, 카페/베이커리, 일식, 중식, 양식 등)로 정제합니다.
@@ -2217,8 +2249,7 @@ def get_nearby_restaurants(target_lat: float, target_lng: float, radius_m: int =
 
         dist = calculate_distance(target_lat, target_lng, r_lat, r_lng)
         if dist <= radius_m:
-            raw_price = clean_text(row.get("가격1", ""))
-            price_str = f"{int(float(raw_price)):,}원" if (raw_price and raw_price.replace(".", "", 1).isdigit()) else (raw_price or "착한가격")
+            price_str = clean_price(row.get("가격1", "")) or "착한가격"
 
             nearby.append({
                 "name": store_name if store_name else "착한가격 식당",
@@ -2249,8 +2280,7 @@ def get_nearby_restaurants(target_lat: float, target_lng: float, radius_m: int =
                 m2 = clean_text(row.get("메뉴2", ""))
                 if not is_food_related(raw_cat, store_name, f"{m1} {m2}"):
                     continue
-                raw_price = clean_text(row.get("가격1", ""))
-                price_str = f"{int(float(raw_price)):,}원" if (raw_price and raw_price.replace(".", "", 1).isdigit()) else (raw_price or "착한가격")
+                price_str = clean_price(row.get("가격1", "")) or "착한가격"
 
                 # 이미 포함되었는지 확인
                 if not any(item["name"] == store_name for item in nearby):
