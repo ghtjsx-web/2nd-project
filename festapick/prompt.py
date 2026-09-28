@@ -152,7 +152,9 @@ def get_storytelling_system_prompt() -> str:
    - 축제 즐기기: 축제명, 핵심 볼거리, 인생샷 스팟 및 생생한 현장 분위기 묘사
 3. 🍽️ 점심 (로컬 미식):
    - 착한가격업소(맛집) 연계 규칙 (엄격 준수):
-     * 제공된 추천 음식점(착한가격업소)이 3곳이면 3곳 모두, 2곳이면 2곳, 1곳이면 1곳 등 **제공된 추천 개수만큼 모든 식당의 실제 상호명, 대표 메뉴(가격 포함), 가성비 포인트, 방문 추천 이유를 스토리텔링 본문에 각각 빠짐없이 모두 포함**해주세요. (여행객이 취향에 맞게 메뉴를 고를 수 있도록 다채롭게 비교 및 소개)
+     * 🚨 [점심 1택 취향별 비교 가이드 원칙 - 여러 끼 연속 식사 서술 절대 금지]: 추천 맛집이 다수(2~3곳) 제공될 경우, **절대로 식당들을 차례대로 모두 방문하여 점심을 여러 끼 연속으로 먹는 것처럼 서술하지 마세요.**
+     * 여행객이 오늘의 취향과 입맛에 따라 단 한 곳을 선택할 수 있도록, **'취향별 선택 가이드(예: 든든한 고기나 쌈밥이 당길 때 [식당 A], 칼칼하고 시원한 국물이 생각날 때 [식당 B], 정갈한 로컬 백반을 원할 때 [식당 C])'** 형식의 비교 선택형 톤앤매너로 자연스럽게 작성하세요.
+     * 제공된 모든 추천 식당의 실제 상호명, 대표 메뉴(가격 포함), 가성비 포인트를 빠짐없이 고루 비교 소개하되, "오늘 여러분의 입맛과 기분에 꼭 맞는 한 곳을 골라 든든하고 만족스러운 점심을 즐겨보세요"와 같이 1택 선택형 톤앤매너로 마무리하세요.
 4. ☕ 오후 (휴식 & 웰니스 힐링):
    - 감성 카페: 실제 카페 상호명(또는 티하우스), 대표 음료 및 분위기 묘사
    - 웰니스(힐링지) 연계 규칙 (엄격 준수):
@@ -215,14 +217,22 @@ def build_storytelling_user_prompt(course_package: Dict[str, Any], companion: st
         r_lines = []
         for idx, st in enumerate(real_rests[:3], 1):
             m_parts = []
+            p1 = str(st.get("price1", "")).strip()
             if st.get("menu1"):
-                m_parts.append(f"{st.get('menu1')} ({st.get('price1')}원)" if st.get("price1") else st.get("menu1"))
+                p1_fmt = p1 if p1.endswith("원") else (f"{p1}원" if p1 else "")
+                m_parts.append(f"{st.get('menu1')} ({p1_fmt})" if p1_fmt else st.get('menu1'))
+            p2 = str(st.get("price2", "")).strip()
             if st.get("menu2"):
-                m_parts.append(f"{st.get('menu2')} ({st.get('price2')}원)" if st.get("price2") else st.get("menu2"))
+                p2_fmt = p2 if p2.endswith("원") else (f"{p2}원" if p2 else "")
+                m_parts.append(f"{st.get('menu2')} ({p2_fmt})" if p2_fmt else st.get('menu2'))
             m_str = ", ".join(m_parts) or st.get("menu", "가성비 추천 메뉴")
             r_lines.append(f"   [{idx}번 맛집]: {st.get('title')} (분류: {st.get('category', '착한가격업소')}, 주소: {st.get('location')}) - 대표 메뉴: {m_str} | 연락처: {st.get('phone', '현장 확인')}")
         rest_data_str = "\n".join(r_lines)
-        rest_guide_instruction = f"※ 착한가격업소 맛집이 {len(real_rests[:3])}곳 제공되었습니다. 제공된 {len(real_rests[:3])}곳 모두 본문 미식 코스에 빠짐없이 각각의 상호명, 대표 메뉴(가격 포함), 가성비 포인트를 소개해 주세요."
+        rest_guide_instruction = (
+            f"※ 착한가격업소 맛집 {len(real_rests[:3])}곳이 제공되었습니다. "
+            "🚨 절대로 식당들을 차례로 모두 방문하여 여러 끼를 연달아 먹는 코스로 서술하지 마세요! "
+            "여행객이 오늘의 입맛에 맞게 단 한 곳을 고를 수 있도록 '취향별 선택 가이드(예: 든든한 한식이 당길 때 A, 시원한 국물이 당길 때 B, 깔끔한 백반이 당길 때 C)' 형태의 비교 선택형 톤으로 모든 식당의 상호명과 대표 메뉴(가격)를 소개해 주세요."
+        )
     else:
         rest_data_str = "   - 관내 공식 착한가격업소 등록 데이터 없음 (축제장 인근 로컬 식당 및 먹거리 장터 추천)"
         rest_guide_instruction = "※ 관내 공식 착한가격업소가 없으므로, 축제장 내 먹거리 부스나 주변 로컬 식당을 이용하도록 자연스럽게 안내하세요."
@@ -336,8 +346,11 @@ def generate_storytelling_fallback(course_package: Dict[str, Any], companion: st
 
     def fmt_menu(st):
         m = st.get("menu1") or st.get("menu", "대표 가성비 메뉴")
-        pr = f" ({st.get('price1')}원)" if st.get("price1") else ""
-        return f"{m}{pr}"
+        raw_p = str(st.get("price1", "")).strip()
+        if not raw_p:
+            return m
+        p_str = raw_p if raw_p.endswith("원") else f"{raw_p}원"
+        return f"{m} ({p_str})"
 
     cafe = r.get("cafe", {})
     cafe_title = cafe.get("title") or "로컬 감성 카페"
@@ -357,7 +370,7 @@ def generate_storytelling_fallback(course_package: Dict[str, Any], companion: st
         overview_summary = f"[{sigungu}]의 설레는 축제 현장부터 오붓한 로컬 맛집, 감성 티타임과 로맨틱 웰니스까지 연인과 함께 둘만의 소중한 추억을 남기는 맞춤 데이트 여정"
         morning_lead = f"상쾌한 아침 공기 속에서 연인의 손을 꼭 잡고 오늘의 첫 기착지인 **[{p.get('title', '인근 주차장')}]**({p.get('location', '')})에 도착합니다. 복잡한 인파를 피해 여유롭게 차를 대고, 설레는 미소와 함께 축제장으로 걸어갑니다."
         morning_fest = f"축제장에 들어서자마자 화사하게 펼쳐지는 **[{fest_title}]**의 로맨틱한 풍경이 두 사람을 맞이합니다. {spot_text}에서 서로의 가장 사랑스러운 모습을 카메라에 담아주고, 다정한 커플 인생샷을 남기며 둘만의 잊지 못할 낭만을 만끽합니다."
-        lunch_intro = f"축제장을 다정하게 거닐며 둘만의 감성을 채운 뒤, 마주 앉아 오붓하게 식사를 즐길 수 있는 행정안전부 인증 **[{sigungu}] 착한가격업소 맛집 {len(real_rests[:3])}선**으로 발걸음을 옮깁니다."
+        lunch_intro = f"축제장을 다정하게 거닐며 둘만의 감성을 채운 뒤, 두 사람의 오늘 입맛에 맞춰 단 한 곳을 골라 즐길 수 있는 행정안전부 인증 **[{sigungu}] 착한가격업소 맛집 {len(real_rests[:3])}선**을 취향별로 제안합니다."
         cafe_desc = f"식사 후 오후의 나른한 햇살을 받으며 **[{cafe_title}]**의 아늑한 창가 테이블에 나란히 앉습니다. 향긋한 {cafe_menu}를 사이에 두고 서로의 눈을 맞추며 달콤한 귓속말과 정다운 대화를 나눕니다."
         wellness_intro = f"데이트의 마지막 여정으로, 두 사람의 몸과 마음에 온전한 편안함을 더해줄 **[{sigungu}] 로맨틱 웰니스 힐링 코스**로 향합니다."
         tip_companion = "❤️ 둘만의 데이트 꿀팁: 커플 사진 찍기 좋은 삼각대를 챙기시고, 노을 질 무렵 웰니스 산책로를 걸으면 잊지 못할 로맨틱한 순간이 완성됩니다."
@@ -367,7 +380,7 @@ def generate_storytelling_fallback(course_package: Dict[str, Any], companion: st
         overview_summary = f"[{sigungu}] 축제 현장의 풍성한 체험부터 어르신과 아이 입맛을 모두 사로잡는 착한 맛집, 넉넉한 쉼터까지 온 가족이 웃음 짓는 힐링 여정"
         morning_lead = f"부모님의 편안한 보행과 아이들의 안전을 고려하여 주차가 가장 편리한 **[{p.get('title', '인근 주차장')}]**({p.get('location', '')})에 여유롭게 입차합니다. 짐을 챙기고 온 가족이 손을 잡고 활기차게 축제장으로 걸어갑니다."
         morning_fest = f"현장에 들어서자 **[{fest_title}]**의 풍성한 볼거리와 세대 공감 문화 프로그램에 온 가족의 눈길이 머뭅니다. {spot_text}에서 할머니, 할아버지, 아이들이 다 함께 모여 환한 웃음으로 가족 단체 사진을 남깁니다."
-        lunch_intro = f"신나게 축제를 체험한 후, 아이도 어르신도 모두 든든하게 속을 채울 수 있는 행정안전부 인증 **[{sigungu}] 착한가격업소 가족 맛집 {len(real_rests[:3])}선**을 제안합니다."
+        lunch_intro = f"신나게 축제를 체험한 후, 아이와 부모님의 입맛과 기호에 맞춰 최적의 한 곳을 선택할 수 있도록 행정안전부 인증 **[{sigungu}] 착한가격업소 가족 맛집 {len(real_rests[:3])}선**을 비교 안내합니다."
         cafe_desc = f"식사 후 온 가족이 편안하게 쉴 수 있는 **[{cafe_title}]**의 널찍한 패밀리 좌석으로 향합니다. 아이들이 좋아하는 디저트와 어르신을 위한 따뜻한 {cafe_menu}를 곁들이며 도란도란 가족의 정을 나눕니다."
         wellness_intro = f"가족 모두의 지친 기력을 북돋우고 안전하게 쉴 수 있는 **[{sigungu}] 가족 맞춤형 웰니스 쉼터**로 발걸음을 옮깁니다."
         tip_companion = "👨‍👩‍👧‍👦 가족 케어 꿀팁: 완만한 평지 위주의 동선으로 구성되었으며, 아이들을 위한 여벌 옷과 어르신을 위한 가벼운 외투를 챙기시면 더욱 쾌적합니다."
@@ -377,7 +390,7 @@ def generate_storytelling_fallback(course_package: Dict[str, Any], companion: st
         overview_summary = f"[{sigungu}] 축제의 활기 속에서 나만의 관점으로 풍경을 기록하고, 정갈한 1인 로컬 미식과 고요한 웰니스에서 온전한 쉼을 누리는 나 홀로 여정"
         morning_lead = f"누구의 눈치도 볼 필요 없이 나만의 자유로운 호흡으로 **[{p.get('title', '인근 주차장')}]**({p.get('location', '')})에 차를 댑니다. 이어폰을 꽂고 좋아하는 음악을 들으며 호젓하게 축제장으로 발걸음을 옮깁니다."
         morning_fest = f"**[{fest_title}]** 현장 속을 천천히 거닐며 시선이 닿는 대로 자유롭게 관람합니다. {spot_text} 앞에 서서 고요히 풍경을 바라보며 오롯이 나만의 감성을 담아 멋진 풍경 샷을 남깁니다."
-        lunch_intro = f"기분 좋은 산책 후, 혼자서도 부담 없이 정갈한 한 상을 편안하게 즐길 수 있는 행정안전부 인증 **[{sigungu}] 1인 친화 착한가격업소 {len(real_rests[:3])}선**을 제안합니다."
+        lunch_intro = f"기분 좋은 산책 후, 오늘 나의 기분과 입맛에 딱 맞는 곳 하나를 편안하게 선택할 수 있는 행정안전부 인증 **[{sigungu}] 1인 친화 착한가격업소 {len(real_rests[:3])}선**을 소개합니다."
         cafe_desc = f"식사를 마치고 고즈넉한 **[{cafe_title}]**의 조용한 1인 창가 석에 자리를 잡습니다. 향긋한 {cafe_menu}를 천천히 음미하며 다이어리를 정리하거나 생각에 잠기는 온전한 휴식을 누립니다."
         wellness_intro = f"복잡했던 마음을 깨끗이 비워내고 스스로를 다독여주는 **[{sigungu}] 1인 사색 웰니스 명소**로 향합니다."
         tip_companion = "🧘 나 홀로 꿀팁: 타인의 속도에 맞출 필요 없이 내 체력에 맞춰 머무르고 싶은 장소에서 충분히 머물며 나만의 쉼표를 찍어보세요."
@@ -387,29 +400,29 @@ def generate_storytelling_fallback(course_package: Dict[str, Any], companion: st
         overview_summary = f"[{sigungu}] 축제의 짜릿한 볼거리부터 가성비 넘치는 찐맛집 먹방 투어, 감성 카페 수다와 웰니스까지 친구들과 하루 종일 웃음꽃을 피우는 여정"
         morning_lead = f"차 안에서부터 좋아하는 음악을 크게 틀고 신나게 달려와 **[{p.get('title', '인근 주차장')}]**({p.get('location', '')})에 주차를 마칩니다. 서로의 옷차림을 칭찬하며 유쾌한 수다와 함께 축제장으로 뛰어갑니다."
         morning_fest = f"열기가 가득한 **[{fest_title}]** 현장에 들어서자마자 친구들과 신나게 환호합니다. {spot_text}에서 익살스러운 포즈와 장난기 가득한 표정으로 서로의 인생샷을 찍어주며 배꼽을 잡고 웃습니다."
-        lunch_intro = f"신나게 웃고 떠드느라 출출해진 배를 채우기 위해, 친구들과 테이블 가득 푸짐하게 나누어 먹기 좋은 행정안전부 인증 **[{sigungu}] 착한가격업소 맛집 {len(real_rests[:3])}선**으로 향합니다."
+        lunch_intro = f"신나게 웃고 떠드느라 출출해진 배를 채우기 위해, 친구들의 오늘 먹성 취향에 맞춰 한 곳을 만장일치로 골라볼 수 있는 행정안전부 인증 **[{sigungu}] 착한가격업소 맛집 {len(real_rests[:3])}선**을 제안합니다."
         cafe_desc = f"식사 후 끊이지 않는 수다를 이어가기 위해 핫플레이스인 **[{cafe_title}]**로 자리를 옮깁니다. 시원한 {cafe_menu}와 달콤한 디저트를 펼쳐놓고 방금 찍은 사진들을 공유하며 즐거운 에너지를 나눕니다."
         wellness_intro = f"신나게 달린 하루의 피로를 풀고 내일의 에너지를 충전하기 위해 **[{sigungu}] 친구 맞춤형 힐링 명소**로 향합니다."
         tip_companion = "🎉 친구 꿀팁: 보조 배터리를 넉넉히 챙겨 끊임없이 사진과 영상을 남기시고, 다양한 메뉴를 주문해 골고루 맛보는 것을 추천합니다."
 
-    # 점심 식당 다중 목록 생성
+    # 점심 식당 다중 목록 생성 (연속 방문이 아닌 취향별 1택 선택 가이드)
     if len(real_rests) >= 3:
         r1, r2, r3 = real_rests[0], real_rests[1], real_rests[2]
-        lunch_section = f"""{lunch_intro}
+        lunch_section = f"""{lunch_intro} 세 곳을 차례로 방문하는 것이 아니라, 오늘의 끌리는 입맛과 기분에 맞춰 가장 마음에 드는 한 곳을 선택해 보세요.
 
-1. **[{r1.get('title')}]**({r1.get('location')}) : 대표 메뉴인 **{fmt_menu(r1)}**으로 유명한 곳으로, 푸짐한 양과 정갈한 손맛으로 방문객 모두의 입맛을 사로잡습니다.
-2. **[{r2.get('title')}]**({r2.get('location')}) : 정성 가득한 **{fmt_menu(r2)}**을 착한 가격에 제공하여 현지 주민들도 즐겨 찾는 검증된 가성비 맛집입니다.
-3. **[{r3.get('title')}]**({r3.get('location')}) : 알찬 구성의 **{fmt_menu(r3)}**이 매력적인 곳으로, 축제 관람 후 든든하게 에너지를 재충전하기에 안성맞춤입니다."""
+- **[선택지 A: 든든한 한식과 고기가 당길 때]** ➔ **[{r1.get('title')}]**({r1.get('location')}) : 대표 메뉴인 **{fmt_menu(r1)}**으로 유명하며, 푸짐한 양과 정갈한 손맛으로 든든하게 속을 채우기에 제격입니다.
+- **[선택지 B: 깊은 국물과 착한 가성비를 원할 때]** ➔ **[{r2.get('title')}]**({r2.get('location')}) : 정성 가득한 **{fmt_menu(r2)}**을 착한 가격에 선보여 현지 주민들도 즐겨 찾는 검증된 로컬 찐맛집입니다.
+- **[선택지 C: 정갈한 백반과 감칠맛을 즐기고 싶을 때]** ➔ **[{r3.get('title')}]**({r3.get('location')}) : 알찬 구성의 **{fmt_menu(r3)}**이 매력적인 곳으로, 축제 관람 후 기분 좋은 미식 에너지를 충전하기에 안성맞춤입니다."""
     elif len(real_rests) == 2:
         r1, r2 = real_rests[0], real_rests[1]
-        lunch_section = f"""{lunch_intro}
+        lunch_section = f"""{lunch_intro} 두 곳 중 오늘의 취향에 맞는 한 곳을 선택해 방문해 보세요.
 
-1. **[{r1.get('title')}]**({r1.get('location')}) : 대표 메뉴인 **{fmt_menu(r1)}**으로 유명하며, 착한 가격에 정갈하고 든든한 식사를 즐길 수 있습니다.
-2. **[{r2.get('title')}]**({r2.get('location')}) : 현지 주민들이 추천하는 **{fmt_menu(r2)}** 맛집으로, 깊은 손맛과 넉넉한 인심이 돋보입니다."""
+- **[선택지 A: 정갈하고 든든한 식사]** ➔ **[{r1.get('title')}]**({r1.get('location')}) : 대표 메뉴인 **{fmt_menu(r1)}**으로 착한 가격에 정갈하고 든든한 한 상을 즐길 수 있습니다.
+- **[선택지 B: 깊은 손맛의 로컬 미식]** ➔ **[{r2.get('title')}]**({r2.get('location')}) : 현지 주민들이 추천하는 **{fmt_menu(r2)}** 맛집으로, 깊은 손맛과 넉넉한 인심이 돋보입니다."""
     elif len(real_rests) == 1:
         r1 = real_rests[0]
         lunch_section = f"""{lunch_intro}
-대표 추천 식당인 **[{r1.get('title')}]**({r1.get('location')})의 시그니처 메뉴인 **{fmt_menu(r1)}**은 정갈하고 푸짐한 손맛으로 여행자의 입맛을 단번에 사로잡습니다. 합리적인 가격에 든든하게 속을 채우며 로컬의 따뜻한 온정을 느껴보세요."""
+오늘의 원픽 추천 식당인 **[{r1.get('title')}]**({r1.get('location')})의 시그니처 메뉴 **{fmt_menu(r1)}**은 정갈하고 푸짐한 손맛으로 여행자의 입맛을 단번에 사로잡습니다. 합리적인 가격에 든든하게 속을 채우며 로컬의 따뜻한 온정을 느껴보세요."""
     else:
         lunch_section = f"""축제장을 기분 좋게 둘러본 뒤, 현장 특유의 활기가 넘치는 로컬 먹거리 장터와 주변 식당가로 발걸음을 옮깁니다. 갓 조리된 신선한 향토 먹거리와 따뜻한 음식들로 허기를 달래며 기분 좋은 점심 시간을 즐겨보세요."""
 
