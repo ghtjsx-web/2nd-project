@@ -77,7 +77,14 @@ def validate_festivals() -> Tuple[bool, Dict[str, Any]]:
     dup_mask = df.duplicated(subset=[name_col, sdate_col], keep=False)
     duplicate_count = int(dup_mask.sum())
 
-    is_valid = (missing_coords_count == 0) and (in_korea_count == total_count) and (duplicate_count == 0)
+    # 4) 실내/야외(is_indoor) 태그 컬럼 검증
+    indoor_col = "is_indoor" if "is_indoor" in df.columns else ("실내외구분" if "실내외구분" in df.columns else None)
+    has_indoor = indoor_col is not None
+    indoor_dist = df[indoor_col].value_counts().to_dict() if has_indoor else {}
+    valid_indoor_count = int(df[indoor_col].isin(["실내", "야외"]).sum()) if has_indoor else 0
+    indoor_ok = has_indoor and (valid_indoor_count == total_count)
+
+    is_valid = (missing_coords_count == 0) and (in_korea_count == total_count) and (duplicate_count == 0) and indoor_ok
 
     report = {
         "file": filepath,
@@ -86,6 +93,9 @@ def validate_festivals() -> Tuple[bool, Dict[str, Any]]:
         "in_korea_count": in_korea_count,
         "in_korea_ratio": in_korea_ratio,
         "duplicate_count": duplicate_count,
+        "has_indoor": has_indoor,
+        "indoor_distribution": indoor_dist,
+        "indoor_ok": indoor_ok,
         "passed": is_valid
     }
     return is_valid, report
@@ -231,6 +241,13 @@ def main() -> int:
         # 중복 축제 체크
         d_status = "✅ 정상 (0건)" if f_rep["duplicate_count"] == 0 else f"❌ 오류 ({f_rep['duplicate_count']}건 중복)"
         print(f"  - 3) 중복 축제 (축제명+시작일자 기준): {d_status}")
+
+        # 실내외 태그 컬럼 체크
+        if f_rep.get("indoor_ok"):
+            dist_str = ", ".join([f"{k}: {v:,}건" for k, v in f_rep["indoor_distribution"].items()])
+            print(f"  - 4) 실내/야외(is_indoor) 태그 컬럼: ✅ 정상 (100% 매핑 - {dist_str})")
+        else:
+            print("  - 4) 실내/야외(is_indoor) 태그 컬럼: ❌ 미생성 또는 누락")
 
         if not f_ok:
             all_passed = False

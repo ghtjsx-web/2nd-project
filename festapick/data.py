@@ -154,6 +154,21 @@ def clean_price(price_val: Any) -> str:
         return ""
 
 
+def classify_indoor_outdoor(title: str, venue: str) -> str:
+    """축제명과 개최장소 텍스트를 분석하여 실내외 여부('실내' / '야외')를 판별합니다.
+    체육관, 전시관, 컨벤션, 센터, 미술관, 박물관, 엑스포홀 등이 포함되면 '실내', 그 외는 '야외'.
+    (우천 시 대체 코스 및 실내 축제 필터링 지원)
+    """
+    indoor_keywords = [
+        "체육관", "전시관", "컨벤션", "센터", "미술관", "박물관", "엑스포홀",
+        "아트홀", "문화회관", "시민회관", "예술회관", "실내", "돔", "갤러리", "벡스코", "킨텍스", "코엑스"
+    ]
+    combined: str = f"{title} {venue}".strip()
+    if any(kw in combined for kw in indoor_keywords):
+        return "실내"
+    return "야외"
+
+
 def classify_region(address_text: str) -> str:
     # 주소 및 위치 텍스트에서 도/시 정보를 파싱하여 6대 표준 권역으로 분류하는 함수입니다.
     target: str = address_text.strip()
@@ -713,6 +728,10 @@ def create_festival_documents(raw_festivals: List[Dict[str, Any]]) -> List[Docum
         region_category: str = classify_region(combined_address)
         sigungu_category: str = extract_sigungu(combined_address)
 
+        # 실내/야외(is_indoor) 판별 (우천 시 대체 코스 및 실내외 필터링 지원)
+        raw_indoor = clean_text(festival.get("is_indoor", festival.get("실내외구분", "")))
+        is_indoor: str = raw_indoor if raw_indoor in ["실내", "야외"] else classify_indoor_outdoor(title, venue)
+
         # 축제 상세 내용을 정제합니다.
         description: str = clean_text(festival.get("축제내용", festival.get("description", "")))
         start_date: str = clean_text(festival.get("축제시작일자", festival.get("start_date", "")))
@@ -829,6 +848,7 @@ def create_festival_documents(raw_festivals: List[Dict[str, Any]]) -> List[Docum
             f"축제 기간: {period_str}",
             f"입장/이용 요금: {fee}",
             f"주요 프로그램: {programs}",
+            f"공간/환경: {is_indoor} 행사",
             f"축제 내용: {description if description else detailed_desc}",
             f"[2030 감성 포인트 & 인생샷 스팟]: {photo_spots}",
             f"[2030 추천 주변 감성 카페]: {cafes}",
@@ -866,7 +886,9 @@ def create_festival_documents(raw_festivals: List[Dict[str, Any]]) -> List[Docum
             "companion": companion,
             "stamina_level": stamina_level,
             "photo_spots": photo_spots,
-            "nearby_cafes": cafes
+            "nearby_cafes": cafes,
+            "is_indoor": is_indoor,
+            "indoor_outdoor": is_indoor
         }
 
         # Document 객체 생성 및 리스트 추가
@@ -2158,6 +2180,7 @@ def get_festivals(region: str = "전국 전체", month: Optional[int] = None, *a
             "description": desc,
             "dates": dates_str,
             "region": region if region != "전국 전체" else classify_region(address),
+            "is_indoor": classify_indoor_outdoor(name, venue),
             "programs": []
         })
 
