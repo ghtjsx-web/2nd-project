@@ -1859,7 +1859,7 @@ class PublicDataRAGManager:
                             {"role": "user", "content": user_prompt}
                         ],
                         temperature=0.7,
-                        max_tokens=1000
+                        max_tokens=600  # 무료 크레딧 한도(777 토큰) 초과 402 방어 및 응답 속도 최적화
                     )
                     text = resp.choices[0].message.content.strip()
                     if text:
@@ -1879,7 +1879,7 @@ class PublicDataRAGManager:
                             {"role": "user", "content": user_prompt}
                         ],
                         temperature=0.7,
-                        max_tokens=1500
+                        max_tokens=800
                     )
                     text = resp.choices[0].message.content.strip()
                     if text:

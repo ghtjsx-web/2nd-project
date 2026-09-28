@@ -57,6 +57,8 @@ chromadb_store/
 scratch/
 *.log
 *.tmp
+*.bak
+*_backup.csv
 .gitignore_local_backup
 
 # Local User Backup
