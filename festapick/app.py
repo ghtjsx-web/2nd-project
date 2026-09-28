@@ -206,24 +206,35 @@ def get_rag_manager(cache_version: str = "v2_companion") -> PublicDataRAGManager
 
 
 @st.cache_data(show_spinner="전국 축제 목록을 안전하게 로드 중입니다...")
-def get_all_festivals(cache_version: str = "v21_dynamic_festival_desc") -> List[Dict[str, Any]]:
-    """전국 축제 목록(동적 맞춤 소개글 생성 완료)을 메모리 캐시에 적재하여 0초 만에 목록 화면에 공급합니다."""
-    mgr = get_rag_manager(cache_version="v5_dynamic_festival_desc")
-    # 동적 고유 소개글 반영을 위해 인메모리 데이터 갱신
+def get_all_festivals(cache_version: str = "v22_theme_fixed") -> List[Dict[str, Any]]:
+    """전국 축제 목록(동적 맞춤 소개글 생성 및 10대 테마 분류 완료)을 메모리 캐시에 적재하여 0초 만에 목록 화면에 공급합니다."""
+    mgr = get_rag_manager(cache_version="v6_theme_fixed")
+    # 동적 고유 소개글 및 테마 분류 반영 여부 확인
     has_dynamic_desc = any("열정적인 춤" in str(d.metadata.get("detailed_desc", "")) for d in getattr(mgr, "documents", []))
-    if not mgr.documents or not has_dynamic_desc:
+    has_theme = any(d.metadata.get("theme") and d.metadata.get("theme") != "문화/체험" for d in getattr(mgr, "documents", []))
+    if not mgr.documents or not has_dynamic_desc or not has_theme:
         mgr.load_all_datasets()
     # 축제 데이터만 필터링하여 메타데이터 리스트 반환
     festival_metas: List[Dict[str, Any]] = [
         d.metadata for d in mgr.documents
         if d.metadata.get("data_type") == "축제"
     ]
-    # 이중 안전장치: 메타데이터에 event_type이 혹시라도 누락된 경우 즉시 동적 보강
+    # 이중 안전장치: 메타데이터에 event_type 및 theme이 혹시라도 누락된 경우 즉시 동적 보강
     cultural_keywords = ["문화제", "예술제", "연극", "음악회", "전시", "공연", "역사", "비엔날레", "국악", "문학", "학술", "영화", "도서", "북", "페어", "판소리", "가요제", "콘서트", "포크", "클래식", "뮤지컬", "페스티벌"]
     for f in festival_metas:
         if not f.get("event_type"):
             comb = f"{f.get('title', '')} {f.get('description', '')} {f.get('programs', '')}"
             f["event_type"] = "문화행사" if any(k in comb for k in cultural_keywords) else "지역축제"
+        if not f.get("theme"):
+            if hasattr(data, "classify_festival_theme"):
+                f["theme"] = data.classify_festival_theme(
+                    title=f.get("title", ""),
+                    venue=f.get("venue", ""),
+                    description=f.get("description", ""),
+                    programs=f.get("programs", "")
+                )
+            else:
+                f["theme"] = "문화/체험"
     return festival_metas
 
 

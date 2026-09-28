@@ -169,6 +169,52 @@ def classify_indoor_outdoor(title: str, venue: str) -> str:
     return "야외"
 
 
+def classify_festival_theme(title: str, venue: str = "", description: str = "", programs: str = "") -> str:
+    """축제명, 장소, 내용, 프로그램을 종합 분석하여 10대 대표 축제 테마 라벨을 추출합니다.
+    - 자연/꽃, 미식/특산물, 음악/공연, 역사/전통, 야경/빛, 댄스/퍼레이드, 가족/체험, 예술/전시, 해양/액티비티, 문화/체험
+    """
+    text: str = f"{title} {venue} {description} {programs}".lower()
+
+    # 1. 춤/댄스/퍼레이드
+    if any(k in text for k in ["춤", "무용", "퍼레이드", "댄스", "비보이", "발레", "스트릿"]):
+        return "댄스/퍼레이드"
+
+    # 2. 야경/빛/불꽃
+    if any(k in text for k in ["야경", "빛", "불꽃", "드론", "유등", "미디어아트", "루미나리에", "달빛", "등불", "야행", "야간", "조명"]):
+        return "야경/빛"
+
+    # 3. 해양/액티비티/서핑/물총
+    if any(k in text for k in ["서핑", "해양", "머드", "물총", "워터", "요트", "해수욕장", "수상", "보트"]):
+        return "해양/액티비티"
+
+    # 4. 꽃/나무/단풍/자연
+    if any(k in text for k in ["꽃", "나무", "단풍", "정원", "벚꽃", "유채", "국화", "장미", "연꽃", "매화", "억새", "갈대", "수목원", "생태", "튤립", "철쭉", "백일홍", "라벤더", "자연"]):
+        return "자연/꽃"
+
+    # 5. 먹거리/특산물/미식
+    if any(k in text for k in ["먹거리", "특산물", "한우", "수산물", "와인", "사과", "맛", "미식", "푸드", "인삼", "딸기", "수박", "대게", "송어", "빙어", "막걸리", "커피", "빵", "김치", "젓갈"]):
+        return "미식/특산물"
+
+    # 6. 음악/콘서트/공연
+    if any(k in text for k in ["음악", "콘서트", "가요", "국악", "버스킹", "재즈", "락", "소리", "아리랑", "난계", "관악", "클래식", "밴드", "오케스트라", "포크", "노래", "뮤직"]):
+        return "음악/공연"
+
+    # 7. 역사/전통
+    if any(k in text for k in ["역사", "전통", "문화제", "산성", "조선", "민속", "단오", "백제", "신라", "가야", "고분", "선비", "유생", "충무공", "의병", "성곽"]):
+        return "역사/전통"
+
+    # 8. 가족/어린이/체험
+    if any(k in text for k in ["가족", "어린이", "만화", "과학", "키즈", "캐릭터", "우주", "로봇", "동화", "인형극", "공룡"]):
+        return "가족/체험"
+
+    # 9. 예술/전시/미술
+    if any(k in text for k in ["예술", "전시", "미술", "도예", "아트", "비엔날레", "사진", "도자기", "공예", "페어"]):
+        return "예술/전시"
+
+    # 10. 기본값
+    return "문화/체험"
+
+
 def classify_region(address_text: str) -> str:
     # 주소 및 위치 텍스트에서 도/시 정보를 파싱하여 6대 표준 권역으로 분류하는 함수입니다.
     target: str = address_text.strip()
@@ -836,11 +882,16 @@ def create_festival_documents(raw_festivals: List[Dict[str, Any]]) -> List[Docum
         if not cafes:
             cafes = "주변 카페 정보 준비 중"
 
+        # [10대 대표 축제 테마 라벨 판별]
+        raw_theme = clean_text(festival.get("theme", festival.get("테마", "")))
+        theme: str = raw_theme if raw_theme else classify_festival_theme(title, venue, description, programs)
+
         # 축제 청크 본문 생성
         content_lines: List[str] = [
             f"[데이터 유형]: 축제",
             f"축제명: {title}",
             f"행사 유형: {event_type}",
+            f"테마 분류: {theme}",
             f"지역권역: {region_category}",
             f"시군구: {sigungu_category}" if sigungu_category else "",
             f"개최장소: {venue}" if venue else "",
@@ -888,7 +939,8 @@ def create_festival_documents(raw_festivals: List[Dict[str, Any]]) -> List[Docum
             "photo_spots": photo_spots,
             "nearby_cafes": cafes,
             "is_indoor": is_indoor,
-            "indoor_outdoor": is_indoor
+            "indoor_outdoor": is_indoor,
+            "theme": theme
         }
 
         # Document 객체 생성 및 리스트 추가
@@ -2181,6 +2233,7 @@ def get_festivals(region: str = "전국 전체", month: Optional[int] = None, *a
             "dates": dates_str,
             "region": region if region != "전국 전체" else classify_region(address),
             "is_indoor": classify_indoor_outdoor(name, venue),
+            "theme": classify_festival_theme(name, venue, desc),
             "programs": []
         })
 
