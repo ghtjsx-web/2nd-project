@@ -1118,15 +1118,22 @@ class PublicDataRAGManager:
         festivals_file: str = os.path.join(self.data_dir, "festivals.csv")
         # 축제 파일이 존재하는 경우
         if os.path.exists(festivals_file):
-            # cp949 인코딩으로 데이터프레임 로드
+            # utf-8-sig / utf-8 / cp949 안전 로드
             try:
-                # utf-8 시도
-                df_fest = pd.read_csv(festivals_file, encoding="utf-8")
+                df_fest = pd.read_csv(festivals_file, encoding="utf-8-sig")
             except Exception:
-                # cp949 재시도
-                df_fest = pd.read_csv(festivals_file, encoding="cp949")
-            # 축제 데이터는 1,320건으로 0.09초 만에 초고속 로드되므로 전국 6대 권역(강원/제주 포함) 및 12개월 일정 누락 방지를 위해 전수 로드합니다.
-            print(f"[Info] 축제 데이터 전수 로드 완료: {len(df_fest)}건 (전국 6대 권역 100% 포괄)")
+                try:
+                    df_fest = pd.read_csv(festivals_file, encoding="utf-8")
+                except Exception:
+                    df_fest = pd.read_csv(festivals_file, encoding="cp949")
+
+            # 축제명 및 축제시작일자 기준 중복 완전 제거
+            if "축제명" in df_fest.columns and "축제시작일자" in df_fest.columns:
+                df_fest = df_fest.drop_duplicates(subset=['축제명', '축제시작일자'], keep='first')
+            elif "축제명" in df_fest.columns:
+                df_fest = df_fest.drop_duplicates(subset=['축제명'], keep='first')
+
+            print(f"[Info] 축제 데이터 전수 로드 완료: {len(df_fest)}건 (중복 제거 후 전국 6대 권역 100% 포괄)")
 
             # 축제 Document 변환
             fest_docs = create_festival_documents(df_fest.to_dict(orient="records"))

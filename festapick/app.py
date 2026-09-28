@@ -205,12 +205,11 @@ def get_rag_manager(cache_version: str = "v2_companion") -> PublicDataRAGManager
 
 
 @st.cache_data(show_spinner="전국 축제 목록을 안전하게 로드 중입니다...")
-def get_all_festivals(cache_version: str = "v18_sido_strict") -> List[Dict[str, Any]]:
-    """전국 축제 목록(1,320건)을 메모리 캐시에 적재하여 0초 만에 목록 화면에 공급합니다."""
-    mgr = get_rag_manager(cache_version="v2_companion")
-    # 인메모리 문서가 비어있거나, event_type이 없는 구버전 문서가 캐시되어 있으면 강제 재로드
-    has_event_types = any(d.metadata.get("event_type") == "문화행사" for d in getattr(mgr, "documents", []))
-    if not mgr.documents or not has_event_types:
+def get_all_festivals(cache_version: str = "v19_dedup_festivals") -> List[Dict[str, Any]]:
+    """전국 축제 목록(중복 제거 완료)을 메모리 캐시에 적재하여 0초 만에 목록 화면에 공급합니다."""
+    mgr = get_rag_manager(cache_version="v3_dedup")
+    # 중복 제거 및 최신 데이터 반영을 위해 항상 최신 load_all_datasets 유지
+    if not mgr.documents or len([d for d in mgr.documents if d.metadata.get("data_type") == "축제"]) > 1280:
         mgr.load_all_datasets()
     # 축제 데이터만 필터링하여 메타데이터 리스트 반환
     festival_metas: List[Dict[str, Any]] = [
