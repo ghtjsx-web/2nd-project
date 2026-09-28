@@ -544,19 +544,95 @@ def format_festival_programs(raw_program: str, title: str, event_type: str) -> s
     return "개막식 및 축제 문화행사 프로그램"
 
 
-def format_festival_detailed_desc(title: str, description: str, venue: str, location: str, fee: str, period_str: str, host: str, org: str, sigungu: str, event_type: str) -> str:
-    """축제 본문 상세 설명 및 관람 포인트를 4줄 이상의 고품질 안내문으로 구성합니다."""
+def format_festival_detailed_desc(
+    title: str,
+    description: str,
+    venue: str,
+    location: str,
+    fee: str,
+    period_str: str,
+    host: str,
+    org: str,
+    sigungu: str,
+    event_type: str,
+    programs: str = ""
+) -> str:
+    """축제 본문 상세 설명 및 관람 포인트를 실제 정보(주요프로그램, 개최장소, 축제명 키워드)를 동적으로 조합하여 3~4줄 이상의 고품질 안내문으로 구성합니다."""
     desc_lines = []
     
-    # 1. 축제 테마 소개
-    if description and len(description) >= 30 and not any(k in description for k in ["+", "전시+공연"]):
+    # 1. 기존 description이 이미 50자 이상의 완성형 설명문(온점 포함)이고 단순 나열('+')이 아닐 때는 그대로 보존
+    if description and len(description) >= 50 and any(end in description for end in [".", "다.", "요."]) and not any(k in description for k in ["+", "전시+공연", "부대행사+"]):
         desc_lines.append(description)
-    elif "공룡" in title:
-        desc_lines.append(f"{title}은(는) 세계 3대 공룡 발자국 화석 산지인 {sigungu} {venue}에서 펼쳐지는 국내 최대 규모의 실감형 공룡 테마 엑스포입니다. 백악기 공룡 시대를 최첨단 미디어아트와 실물 크기 조형물로 생생하게 복원하여 온 가족과 여행객 모두에게 압도적인 몰입감과 즐거움을 선사합니다.")
-    elif event_type == "문화행사":
-        desc_lines.append(f"{title}은(는) {sigungu}의 유서 깊은 역사와 문화예술의 숨결을 현대적인 감각으로 재해석한 고품격 {event_type}입니다. 전통과 현대가 조화를 이루는 다채로운 전시와 공연으로 일상에 특별한 쉼과 문화적 감동을 전합니다.")
     else:
-        desc_lines.append(f"{title}은(는) {sigungu}의 청정한 자연경관과 지역 고유의 활기가 어우러진 대표적인 {event_type}입니다. 계절의 정취를 만끽하며 도심 속 스트레스를 해소하고 소중한 사람들과 특별한 인생샷을 남길 수 있는 명소입니다.")
+        # [동적 문장 조합기]: 축제명, 프로그램, 장소, 지자체 키워드 분석
+        comb = f"{title} {programs} {description} {venue} {sigungu}".lower()
+
+        # 테마별 고유 어휘 사전 및 맞춤 하이라이트 매핑
+        themes = [
+            (["공룡"],
+             "백악기 공룡 시대를 생생히 체험하는 실감형 테마",
+             "실물 크기 조형물과 흥미진진한 백악기 탐험"),
+            (["머드", "서핑", "요트", "해수욕장", "해양", "바다", "해변", "물총", "워터"],
+             "시원한 바닷바람과 역동적인 수상·해양 액티비티",
+             "탁 트인 수변 풍경 속에서 즐기는 시원한 레저와 에너지 넘치는 체험"),
+            (["춤", "댄스", "퍼레이드", "무용", "발레", "비보이", "스트릿"],
+             "열정적인 춤과 화려한 거리 퍼레이드",
+             "생동감 넘치는 댄스 퍼포먼스와 온 시민이 함께 어우러지는 열정의 무대"),
+            (["꽃", "벚꽃", "유채", "국화", "장미", "연꽃", "매화", "단풍", "억새", "갈대", "수목원", "정원", "생태", "튤립", "철쭉", "백일홍", "라벤더"],
+             "화사한 계절 꽃과 싱그러운 자연경관",
+             "만개한 꽃물결의 정취와 도심을 벗어난 청정한 자연 속 힐링 산책"),
+            (["먹거리", "맛", "미식", "푸드", "한우", "인삼", "사과", "딸기", "수박", "대게", "송어", "빙어", "와인", "막걸리", "커피", "빵", "수산물", "특산물", "김치", "젓갈"],
+             "지역 명품 특산물과 풍성한 로컬 미식",
+             "오감을 자극하는 제철 먹거리 시식과 활기 넘치는 특산물 장터"),
+            (["음악", "콘서트", "재즈", "락", "가요", "국악", "소리", "아리랑", "난계", "관악", "클래식", "밴드", "버스킹", "오케스트라", "포크"],
+             "낭만적인 선율과 가슴 뛰는 라이브 공연",
+             "감미로운 음악의 향연과 현장의 뜨거운 열기가 전하는 감동"),
+            (["역사", "전통", "문화제", "민속", "단오", "조선", "백제", "신라", "가야", "고분", "산성", "선비", "유생", "충무공", "의병", "성곽"],
+             "살아 숨 쉬는 역사와 유서 깊은 전통문화",
+             "선조들의 지혜가 깃든 전통 의례 재현과 역사적 숨결을 직접 느끼는 문화 체험"),
+            (["야경", "빛", "불꽃", "드론", "달빛", "등불", "유등", "루미나리에", "미디어아트", "야행", "야간", "조명", "led"],
+             "밤하늘을 수놓는 환상적인 빛과 낭만적인 야경",
+             "어둠을 밝히는 화려한 조명 연출과 황홀한 야간 산책 코스"),
+            (["어린이", "가족", "키즈", "만화", "캐릭터", "우주", "과학", "로봇", "동화", "인형극"],
+             "온 가족이 함께 즐기는 흥미진진한 에듀테인먼트",
+             "아이들의 상상력을 깨우는 다채로운 체험 부스와 온 세대가 공감하는 프로그램"),
+            (["예술", "아트", "전시", "공예", "도예", "도자기", "미술", "영화", "도서", "북", "비엔날레"],
+             "창의적인 예술의 감동과 고품격 문화 전시",
+             "예술적 영감을 전하는 작품 전시와 관람객 참여형 문화 워크숍")
+        ]
+
+        selected_theme, selected_highlight = None, None
+        for kw_list, t_name, h_text in themes:
+            if any(kw in comb for kw in kw_list):
+                selected_theme, selected_highlight = t_name, h_text
+                break
+
+        if not selected_theme:
+            if event_type == "문화행사":
+                selected_theme = "지역의 문화예술과 다채로운 축제 공연"
+                selected_highlight = "전통과 현대가 조화를 이루는 품격 있는 문화 공연과 참여 전시"
+            else:
+                selected_theme = "지역 고유의 정겨운 활기와 이색적인 볼거리"
+                selected_highlight = "이곳에서만 만날 수 있는 특색 있는 체험과 정겨운 축제 현장"
+
+        # 실제 프로그램 정제 (특수문자 분리 후 핵심 3개 추출)
+        prog_source = programs if programs else description
+        clean_progs = [p.strip() for p in re.split(r'[+;|/,\n]', prog_source) if len(p.strip()) >= 2 and p.strip() not in ["등", "기타", "체험행사", "축제내용", "행사내용"]]
+
+        venue_str = f"{sigungu} {venue}" if sigungu and sigungu not in venue else venue
+        venue_str = venue_str.strip() or sigungu or "축제 행사장"
+        clean_venue = re.sub(r'\s*일원$', '', venue).strip() or venue or sigungu
+
+        # 3~4줄 자연스러운 고유 소개글 생성
+        s1 = f"{title}은(는) {venue_str}에서 펼쳐지는 {selected_theme} 중심의 대표 {event_type}입니다."
+        if clean_progs:
+            s2 = f"현장에서는 {', '.join(clean_progs[:3])} 등 방문객들의 눈과 귀를 사로잡는 다채로운 볼거리와 참여형 프로그램이 알차게 운영됩니다."
+        else:
+            s2 = "현장 곳곳에는 방문객들이 직접 참여하고 즐길 수 있는 다채로운 공연과 풍성한 즐길 거리가 가득 마련되어 있습니다."
+        s3 = f"{selected_highlight}을(를) 통해 일상의 스트레스를 날려버리고 생생한 축제 에너지를 만끽할 수 있습니다."
+        s4 = f"소중한 사람들과 함께 {clean_venue} 일원을 여유롭게 둘러보며 잊지 못할 특별한 추억과 감성 인생샷을 남겨보세요."
+
+        desc_lines.append(f"{s1} {s2}\n\n{s3} {s4}")
     
     # 2. 개최 장소 및 시설 안내
     venue_info = f"{venue} ({location})" if venue and venue != location else location
@@ -668,7 +744,8 @@ def create_festival_documents(raw_festivals: List[Dict[str, Any]]) -> List[Docum
             host=host,
             org=org,
             sigungu=sigungu_category,
-            event_type=event_type
+            event_type=event_type,
+            programs=programs
         )
 
         # 추천 동행자 정보 (기본값: '누구나')
