@@ -216,36 +216,89 @@ def classify_festival_theme(title: str, venue: str = "", description: str = "", 
 
 
 def classify_region(address_text: str) -> str:
-    # 주소 및 위치 텍스트에서 도/시 정보를 파싱하여 6대 표준 권역으로 분류하는 함수입니다.
-    target: str = address_text.strip()
-    # 서울, 경기, 인천 키워드가 포함되어 있으면 수도권으로 분류합니다.
-    if any(k in target for k in ["서울", "경기", "인천"]):
-        # 수도권 반환
-        return "수도권"
-    # 강원 키워드가 포함되어 있으면 강원권으로 분류합니다.
-    elif "강원" in target:
-        # 강원권 반환
-        return "강원권"
-    # 대전, 세종, 충남, 충북, 충청 키워드가 포함되어 있으면 충청권으로 분류합니다.
-    elif any(k in target for k in ["대전", "세종", "충남", "충북", "충청"]):
-        # 충청권 반환
-        return "충청권"
-    # 광주, 전남, 전북, 전라 키워드가 포함되어 있으면 전라권으로 분류합니다.
-    elif any(k in target for k in ["광주", "전남", "전북", "전라"]):
-        # 전라권 반환
-        return "전라권"
-    # 부산, 대구, 울산, 경남, 경북, 경상 키워드가 포함되어 있으면 경상권으로 분류합니다.
-    elif any(k in target for k in ["부산", "대구", "울산", "경남", "경북", "경상"]):
-        # 경상권 반환
-        return "경상권"
-    # 제주 키워드가 포함되어 있으면 제주도로 분류합니다.
-    elif "제주" in target:
-        # 제주도 반환
-        return "제주도"
-    # 위 조건에 매칭되지 않는 경우 기타로 분류합니다.
-    else:
-        # 기타 반환
+    """
+    주소 및 위치 텍스트에서 도/시/군/구 정보를 분석하여 6대 표준 권역으로 분류하는 함수입니다.
+    - '전주월드컵경기장'처럼 장소명에 '경기'가 포함된 경우 수도권(경기도)으로 오인식되지 않도록 방지
+    - extract_sido() 기반 실제 시/도 우선 판별 및 전북, 전남, 광주 등 행정구역 우선 매칭
+    """
+    if not address_text:
         return "기타"
+    target: str = sanitize_address(address_text).strip()
+
+    # 1. extract_sido로 실제 광역 시/도 우선 판별
+    sido = extract_sido(target)
+    if sido in ["서울특별시", "인천광역시", "경기도"]:
+        return "수도권"
+    elif sido in ["강원도", "강원특별자치도"]:
+        return "강원권"
+    elif sido in ["대전광역시", "세종특별자치시", "충청남도", "충청북도"]:
+        return "충청권"
+    elif sido in ["광주광역시", "전라남도", "전라북도"]:
+        return "전라권"
+    elif sido in ["부산광역시", "대구광역시", "울산광역시", "경상남도", "경상북도"]:
+        return "경상권"
+    elif sido in ["제주도", "제주특별자치도"]:
+        return "제주도"
+
+    # 2. 시/도 표기가 누락되었거나 축약된 경우 지명 및 시군구 키워드로 2차 분류
+    # 제주
+    if any(k in target for k in ["제주", "서귀포"]):
+        return "제주도"
+
+    # 전라권 우선 판정 (전북, 전남, 광주 및 주요 시군)
+    jeolla_keywords = [
+        "전북", "전라북도", "전남", "전라남도", "전주", "군산", "익산", "정읍",
+        "남원", "김제", "완주", "진안", "무주", "장수", "임실", "순창", "고창",
+        "부안", "목포", "여수", "순천", "나주", "광양", "담양", "곡성", "구례",
+        "고흥", "보성", "화순", "장흥", "강진", "해남", "영암", "무안", "함평",
+        "영광", "장성", "완도", "진도", "신안"
+    ]
+    if any(k in target for k in jeolla_keywords):
+        return "전라권"
+    if "광주" in target and not re.search(r'(?:경기|경기도)\s*광주', target):
+        return "전라권"
+
+    # 경상권 (부산, 대구, 울산, 경남, 경북 및 주요 시군)
+    gyeongsang_keywords = [
+        "부산", "대구", "울산", "경남", "경북", "경상남도", "경상북도", "경상",
+        "포항", "경주", "김천", "안동", "구미", "영주", "영천", "상주", "문경",
+        "경산", "군위", "의성", "청송", "영양", "영덕", "청도", "고령", "성주",
+        "칠곡", "예천", "봉화", "울진", "울릉", "창원", "진주", "통영", "사천",
+        "김해", "밀양", "거제", "양산", "의령", "함안", "창녕", "고성군", "남해",
+        "하동", "산청", "함양", "거창", "합천"
+    ]
+    if any(k in target for k in gyeongsang_keywords):
+        return "경상권"
+
+    # 충청권 (대전, 세종, 충남, 충북 및 주요 시군)
+    chungcheong_keywords = [
+        "대전", "세종", "충남", "충북", "충청남도", "충청북도", "충청",
+        "청주", "충주", "제천", "보은", "옥천", "영동", "증평", "진천", "괴산",
+        "음성", "단양", "천안", "공주", "보령", "아산", "서산", "논산", "계룡",
+        "당진", "금산", "부여", "서천", "청양", "홍성", "예산", "태안"
+    ]
+    if any(k in target for k in chungcheong_keywords):
+        return "충청권"
+
+    # 강원권 (강원도 및 주요 시군)
+    gangwon_keywords = [
+        "강원", "강원도", "강원특별자치도", "춘천", "원주", "강릉", "동해",
+        "태백", "속초", "삼척", "홍천", "횡성", "영월", "평창", "정선", "철원",
+        "화천", "양구", "인제", "양양"
+    ]
+    if any(k in target for k in gangwon_keywords):
+        return "강원권"
+
+    # 수도권 (경기장 등 시설명 단어 제외, 서울/인천/경기도 및 경기 시군)
+    if any(k in target for k in ["서울", "인천", "경기도"]):
+        return "수도권"
+    # '경기' 단독 또는 '경기 [시군]' 패턴만 수도권으로 인정 (\b경기\b 및 시설명 배제)
+    if re.search(r'(?:^|[\s,])경기(?!(?:장|대|연맹|협회|대회|일정|종목|력|[a-zA-Z0-9가-힣]))', target):
+        return "수도권"
+    if re.search(r'(?:^|[\s,])경기\s+[가-힣]+(?:시|군)', target):
+        return "수도권"
+
+    return "기타"
 
 
 def sanitize_address(address_text: Any) -> str:
@@ -326,44 +379,67 @@ def extract_sigungu(address_text: str) -> str:
 
 
 def extract_sido(address_text: str) -> str:
-    """주소 텍스트에서 광역자치단체(시/도)를 정밀 추출하여 시군구 혼선(예: 부산 남구 vs 울산 남구)을 원천 방지합니다."""
+    """주소 텍스트에서 광역자치단체(시/도)를 정밀 추출하여 시군구 혼선 및 시설명('경기장' 등) 오인식을 원천 방지합니다."""
     if not address_text:
         return ""
     text = sanitize_address(address_text)
+
+    # 1. 제주특별자치도
+    if any(k in text for k in ["제주특별자치도", "제주도", "제주시", "서귀포시", "제주"]):
+        return "제주도"
+
+    # 2. 전라권 (전북특별자치도, 전라남도, 광주광역시)
+    if any(k in text for k in ["전북특별자치도", "전라북도", "전북"]):
+        return "전라북도"
+    if any(k in text for k in ["전라남도", "전남"]):
+        return "전라남도"
+    if "광주광역시" in text:
+        return "광주광역시"
+    if "광주" in text:
+        if re.search(r'(?:경기|경기도)\s*광주', text):
+            return "경기도"
+        if any(gu in text for gu in ["동구", "서구", "남구", "북구", "광산구"]) or "광주시" not in text:
+            return "광주광역시"
+
+    # 3. 경상권 (경북, 경남, 부산, 대구, 울산)
+    if any(k in text for k in ["경상북도", "경북"]):
+        return "경상북도"
+    if any(k in text for k in ["경상남도", "경남"]):
+        return "경상남도"
+    if "부산" in text:
+        return "부산광역시"
+    if "대구" in text:
+        return "대구광역시"
+    if "울산" in text:
+        return "울산광역시"
+
+    # 4. 충청권 (충북, 충남, 대전, 세종)
+    if any(k in text for k in ["충청북도", "충북"]):
+        return "충청북도"
+    if any(k in text for k in ["충청남도", "충남"]):
+        return "충청남도"
+    if "대전" in text:
+        return "대전광역시"
+    if "세종" in text:
+        return "세종특별자치시"
+
+    # 5. 강원권 (강원특별자치도, 강원도, 강원)
+    if any(k in text for k in ["강원특별자치도", "강원도", "강원"]):
+        return "강원도"
+
+    # 6. 수도권 (서울특별시, 인천광역시, 경기도)
     if "서울" in text:
         return "서울특별시"
-    elif "부산" in text:
-        return "부산광역시"
-    elif "대구" in text:
-        return "대구광역시"
-    elif "인천" in text:
+    if "인천" in text:
         return "인천광역시"
-    elif "대전" in text:
-        return "대전광역시"
-    elif "울산" in text:
-        return "울산광역시"
-    elif "세종" in text:
-        return "세종특별자치시"
-    elif "경기" in text:
+    if "경기도" in text:
         return "경기도"
-    elif "강원" in text:
-        return "강원도"
-    elif "충북" in text or "충청북도" in text:
-        return "충청북도"
-    elif "충남" in text or "충청남도" in text:
-        return "충청남도"
-    elif "전북" in text or "전라북도" in text:
-        return "전라북도"
-    elif "전남" in text or "전라남도" in text:
-        return "전라남도"
-    elif "광주" in text:
-        return "광주광역시"
-    elif "경북" in text or "경상북도" in text:
-        return "경상북도"
-    elif "경남" in text or "경상남도" in text:
-        return "경상남도"
-    elif "제주" in text:
-        return "제주도"
+    # '경기' 단독 매칭 시 '경기장', '경기대' 등 단순 시설명 매칭 배제
+    if re.search(r'(?:^|[\s,])경기(?!(?:장|대|연맹|협회|대회|일정|종목|력|[a-zA-Z0-9가-힣]))', text):
+        return "경기도"
+    if re.search(r'(?:^|[\s,])경기\s+[가-힣]+(?:시|군)', text):
+        return "경기도"
+
     return ""
 
 

@@ -209,20 +209,22 @@ def get_rag_manager(cache_version: str = "v2_companion") -> PublicDataRAGManager
 
 
 @st.cache_data(show_spinner="전국 축제 목록을 안전하게 로드 중입니다...")
-def get_all_festivals(cache_version: str = "v22_theme_fixed") -> List[Dict[str, Any]]:
+def get_all_festivals(cache_version: str = "v23_region_fix") -> List[Dict[str, Any]]:
     """전국 축제 목록(동적 맞춤 소개글 생성 및 10대 테마 분류 완료)을 메모리 캐시에 적재하여 0초 만에 목록 화면에 공급합니다."""
-    mgr = get_rag_manager(cache_version="v6_theme_fixed")
+    mgr = get_rag_manager(cache_version="v7_region_fix")
     # 동적 고유 소개글 및 테마 분류 반영 여부 확인
     has_dynamic_desc = any("열정적인 춤" in str(d.metadata.get("detailed_desc", "")) for d in getattr(mgr, "documents", []))
     has_theme = any(d.metadata.get("theme") and d.metadata.get("theme") != "문화/체험" for d in getattr(mgr, "documents", []))
-    if not mgr.documents or not has_dynamic_desc or not has_theme:
+    # '전주비빔밥축제'가 전라권으로 정상 분류되었는지 확인 (구 캐시 감지 시 자동 재로드)
+    jeonju_jeolla = any("전주비빔밥" in str(d.metadata.get("title", "")) and d.metadata.get("region") == "전라권" for d in getattr(mgr, "documents", []))
+    if not mgr.documents or not has_dynamic_desc or not has_theme or not jeonju_jeolla:
         mgr.load_all_datasets()
     # 축제 데이터만 필터링하여 메타데이터 리스트 반환
     festival_metas: List[Dict[str, Any]] = [
         d.metadata for d in mgr.documents
         if d.metadata.get("data_type") == "축제"
     ]
-    # 이중 안전장치: 메타데이터에 event_type 및 theme이 혹시라도 누락된 경우 즉시 동적 보강
+    # 이중 안전장치: 메타데이터에 event_type, theme 및 권역(region) 최신 정합성 보장
     cultural_keywords = ["문화제", "예술제", "연극", "음악회", "전시", "공연", "역사", "비엔날레", "국악", "문학", "학술", "영화", "도서", "북", "페어", "판소리", "가요제", "콘서트", "포크", "클래식", "뮤지컬", "페스티벌"]
     for f in festival_metas:
         if not f.get("event_type"):
@@ -238,6 +240,10 @@ def get_all_festivals(cache_version: str = "v22_theme_fixed") -> List[Dict[str, 
                 )
             else:
                 f["theme"] = "문화/체험"
+        # 권역 정합성 보장 (경기장 등 시설명 오분류 자동 보정)
+        if hasattr(data, "classify_region"):
+            comb_loc = f"{f.get('location', '')} {f.get('venue', '')}"
+            f["region"] = data.classify_region(comb_loc)
     return festival_metas
 
 
@@ -374,7 +380,7 @@ def render_detail_page():
     fest_sigungu = extract_sigungu(f"{fest_location} {fest_venue}") or extract_sigungu(raw_location) or fest.get("sigungu", "")
     if "전남광주" in fest_sigungu or "통합" in fest_sigungu:
         fest_sigungu = extract_sigungu(fest_location)
-    fest_region = data.classify_region(fest_location) if hasattr(data, "classify_region") else fest.get("region", "")
+    fest_region = data.classify_region(f"{fest_location} {fest_venue}") if hasattr(data, "classify_region") else fest.get("region", "")
     start_date = fest.get("start_date", "")
     end_date = fest.get("end_date", "")
     period_str = f"{start_date} ~ {end_date}".strip(" ~") if (start_date or end_date) else "상시 / 개최 기간 확인 필요"
