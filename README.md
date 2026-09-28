@@ -1,35 +1,32 @@
-# 2nd-project
+# 🌿 페스타픽 (FestaPick) - 체력 맞춤형 축제 여행 큐레이션
 
-이 저장소는 **직접 개발 중인 메인 프로젝트(`festapick/`)**와 **참고용 데모 프로젝트(`latest_demo/`)**로 완전히 분리되어 관리됩니다.
+전국 1,264건 지자체 대표 문화축제와 행정안전부 착한가격업소, 전국 공영주차장, 한국관광공사 웰니스 관광지를 지능적으로 융합한 **체력 & 동행 맞춤형 힐링 여행 큐레이션 웹 애플리케이션**입니다.
 
 ---
 
-## 📁 디렉터리 구조 및 가이드
+## 📁 프로젝트 구조 (Directory Structure)
 
 ```text
-2차프로젝트/
-├── 📂 festapick/                 ⭐ [내가 만든 메인 프로젝트: 페스타픽 (FestaPick)]
-│   ├── app.py                   # Streamlit 메인 웹 애플리케이션
-│   ├── data.py                  # 4대 공공데이터 전처리 및 ChromaDB 벡터 RAG 파이프라인
-│   ├── prompt.py                # AI 맞춤형 스토리텔링 프롬프트 및 폴백 생성 모듈
-│   ├── collect_wellness.py      # 한국관광공사 TourAPI 웰니스 공공데이터 수집 스크립트
-│   ├── fill_festival_coordinates.py # 결측 좌표 100% 자동 보강 배치 스크립트
-│   ├── DATA_PIPELINE_BRIEFING.md# 데이터 파이프라인 아키텍처 브리핑 문서
-│   ├── 📂 data/                 # 축제, 착한가격업소, 웰니스, 카페 공공데이터 CSV
-│   └── 📂 chromadb_store/       # ChromaDB 임베딩 벡터 저장소
+2nd-project/
+├── 📄 DATA_DICTIONARY.md          # 4대 공공데이터셋 상세 명세서
+├── 📄 validate_datasets.py        # 데이터셋 무결성 자동 검증 스크립트
+├── 📄 README.md                   # 프로젝트 종합 안내 문서
+├── 📄 requirements.txt            # 필수 파이썬 라이브러리 목록
+├── 📄 run_festapick.bat           # 원클릭 실행 배치 파일
 │
-├── 📂 latest_demo/              📌 [참고용 데모 프로젝트: Fest & Rest (LangGraph)]
-│   ├── app.py                   # 데모용 Streamlit UI
-│   ├── agent.py                 # LangGraph 기반 오케스트레이터 파이프라인
-│   ├── data.py                  # 데모용 공공데이터 모듈
-│   └── 📂 data/                 # 데모 데이터
-│
-├── 📂 backup_my_work/           🛡️ [작업물 자동 안전 백업 저장소]
-│   └── festapick/               # 실시간 동기화되는 백업본
-│
-├── 📄 run_festapick.bat         🚀 페스타픽 바로 실행 (더블클릭)
-├── 📄 run_demo.bat              🔍 데모 바로 실행 (더블클릭)
-└── 📄 README.md                 # 본 안내 문서
+└── 📁 festapick/                  # 페스타픽(FestaPick) 메인 애플리케이션
+    ├── 🐍 app.py                  # Streamlit 메인 웹 대시보드
+    ├── 🐍 data.py                 # 4대 공공데이터 전처리 및 ChromaDB 벡터 RAG 파이프라인
+    ├── 🐍 prompt.py               # AI 맞춤형 스토리텔링 프롬프트 및 폴백 생성 모듈
+    ├── 🐍 collect_wellness.py      # 한국관광공사 TourAPI 웰니스 공공데이터 수집 스크립트
+    ├── 🐍 fill_festival_coordinates.py # 결측 좌표 100% 자동 보강 배치 스크립트
+    ├── 📄 DATA_PIPELINE_BRIEFING.md # 데이터 파이프라인 아키텍처 브리핑 문서
+    │
+    └── 📁 data/                   # 전수 정제 완료된 4대 공공데이터 CSV
+        ├── 🎪 festivals.csv       # 전국 문화축제 전수 데이터 (1,264건, 실내/야외 태그 완비)
+        ├── 🍲 good_price_stores.csv # 행정안전부 착한가격업소 외식/카페 데이터 (9,563건)
+        ├── 🅿 parkings.csv        # 전국 공영주차장 데이터 (18,883건)
+        └── 🌿 wellness.csv        # 한국관광공사 웰니스 관광지 데이터 (694건)
 ```
 
 ---
@@ -53,7 +50,7 @@ OPENROUTER_API_KEY=your_openrouter_key  # (선택: 실시간 AI 에디터 스토
 OPENAI_API_KEY=your_openai_key          # (선택: 2차 폴백용)
 ```
 
-### 3단계: 메인 프로젝트 (페스타픽) 실행
+### 3단계: 애플리케이션 실행
 - **방법 1 (터미널 명령어)**:
   ```bash
   streamlit run festapick/app.py
@@ -68,20 +65,9 @@ OPENAI_API_KEY=your_openai_key          # (선택: 2차 폴백용)
 
 ---
 
-### 📌 참고용 데모 프로젝트 (Fest & Rest) 실행
-```bash
-# 방법 1: 터미널에서 실행
-cd latest_demo
-streamlit run app.py
-
-# 방법 2: 배치 파일 더블클릭
-run_demo.bat
-```
-
----
-
 ## 🌟 페스타픽(FestaPick) 주요 핵심 기능
-1. **🎉 전국 지자체 대표 문화축제 전수 DB & RAG 파이프라인** (1,264건 전수 DB 기반 무중단 0초 조회)
-2. **🍽️ 행정안전부 착한가격업소 실시간 연계** (비식품 정밀 필터링 및 동일 시/군/구 착한 맛집 매칭)
+1. **🎉 전국 지자체 대표 문화축제 전수 DB & RAG 파이프라인** (1,264건 전수 DB 기반 무중단 0초 조회, 실내/야외 태깅)
+2. **🍽️ 행정안전부 착한가격업소 실시간 연계** (비외식업 100% 필터링, 정수형 가격 포맷 규격화)
 3. **📸 축제 맞춤 인생샷 포토스팟** (지형 기반 사실 기반 매칭 및 할루시네이션 원천 차단)
 4. **🌲 문체부 인증 웰니스 힐링지 & 인근 공영주차장 연계** (체력 배터리별 4단계 최적 동선 패키징)
+5. **📊 데이터셋 품질 자동 검증 체계** (`python validate_datasets.py` 무결성 100% 검증 지원)
