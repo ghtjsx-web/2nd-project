@@ -1127,11 +1127,34 @@ class PublicDataRAGManager:
                 except Exception:
                     df_fest = pd.read_csv(festivals_file, encoding="cp949")
 
-            # 축제명 및 축제시작일자 기준 중복 완전 제거
+            # 1단계: 축제명 및 축제시작일자 기준 정확한 중복 제거
             if "축제명" in df_fest.columns and "축제시작일자" in df_fest.columns:
                 df_fest = df_fest.drop_duplicates(subset=['축제명', '축제시작일자'], keep='first')
             elif "축제명" in df_fest.columns:
                 df_fest = df_fest.drop_duplicates(subset=['축제명'], keep='first')
+
+            # 2단계: 동일 일자 & 동일 장소 내 유사 축제명(예: 천안흥타령축제 vs 천안흥타령춤축제) 지능형 중복 제거
+            if "축제명" in df_fest.columns and "축제시작일자" in df_fest.columns:
+                def _get_norm_key(title: Any) -> str:
+                    return re.sub(r'제?\d+회|\d{4}년?|\s+|축제|페스티벌|문화제', '', str(title))
+
+                addr_col = "소재지도로명주소" if "소재지도로명주소" in df_fest.columns else "개최장소"
+                drop_indices = []
+                for (date, addr), group in df_fest.groupby(['축제시작일자', addr_col]):
+                    if len(group) > 1 and addr != '' and pd.notna(addr):
+                        names = group['축제명'].tolist()
+                        norm_names = [_get_norm_key(n) for n in names]
+                        for i in range(len(group)):
+                            for j in range(i + 1, len(group)):
+                                n1, n2 = norm_names[i], norm_names[j]
+                                if n1 and n2 and (n1 in n2 or n2 in n1 or set(n1) == set(n2)):
+                                    # 더 상세한 공식 명칭(글자 수 우선)을 유지하고 짧은 중복본 제거
+                                    idx_to_drop = group.index[j] if len(names[i]) >= len(names[j]) else group.index[i]
+                                    if idx_to_drop not in drop_indices:
+                                        drop_indices.append(idx_to_drop)
+
+                if drop_indices:
+                    df_fest = df_fest.drop(index=drop_indices)
 
             print(f"[Info] 축제 데이터 전수 로드 완료: {len(df_fest)}건 (중복 제거 후 전국 6대 권역 100% 포괄)")
 

@@ -205,11 +205,11 @@ def get_rag_manager(cache_version: str = "v2_companion") -> PublicDataRAGManager
 
 
 @st.cache_data(show_spinner="전국 축제 목록을 안전하게 로드 중입니다...")
-def get_all_festivals(cache_version: str = "v19_dedup_festivals") -> List[Dict[str, Any]]:
-    """전국 축제 목록(중복 제거 완료)을 메모리 캐시에 적재하여 0초 만에 목록 화면에 공급합니다."""
-    mgr = get_rag_manager(cache_version="v3_dedup")
+def get_all_festivals(cache_version: str = "v20_fuzzy_dedup") -> List[Dict[str, Any]]:
+    """전국 축제 목록(지능형 중복 제거 완료)을 메모리 캐시에 적재하여 0초 만에 목록 화면에 공급합니다."""
+    mgr = get_rag_manager(cache_version="v4_fuzzy_dedup")
     # 중복 제거 및 최신 데이터 반영을 위해 항상 최신 load_all_datasets 유지
-    if not mgr.documents or len([d for d in mgr.documents if d.metadata.get("data_type") == "축제"]) > 1280:
+    if not mgr.documents or len([d for d in mgr.documents if d.metadata.get("data_type") == "축제"]) > 1264:
         mgr.load_all_datasets()
     # 축제 데이터만 필터링하여 메타데이터 리스트 반환
     festival_metas: List[Dict[str, Any]] = [
