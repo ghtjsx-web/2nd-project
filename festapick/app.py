@@ -161,16 +161,19 @@ st.markdown("""
         border: 1px solid #F56565;
     }
     
-    /* 태그 칩 */
+    /* 태그 칩 고대비 & 선명화 */
     .tag-chip {
         display: inline-block;
-        background: rgba(255, 255, 255, 0.08);
-        color: #CBD5E1;
-        padding: 3px 10px;
+        background: #F1F5F9;
+        color: #0F172A;
+        padding: 4px 11px;
         border-radius: 12px;
-        font-size: 0.8rem;
+        font-size: 0.82rem;
+        font-weight: 700;
         margin-right: 6px;
         margin-bottom: 4px;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
     }
     
     /* 동선 타임라인 스텝 카드 */
@@ -386,18 +389,21 @@ def render_detail_page():
             st.rerun()
 
     fest_indoor = fest.get("is_indoor", "야외")
-    indoor_badge = f'<span class="tag-chip" style="background: rgba(14, 165, 233, 0.18); color: #0284C7; font-weight:700;">{"🏠 실내" if fest_indoor == "실내" else "🌳 야외"}</span>'
+    indoor_badge = f'<span class="tag-chip" style="background: rgba(2, 132, 199, 0.25); color: #BAE6FD; font-weight:800; border: 1px solid rgba(56, 189, 248, 0.4);">{"🏠 실내" if fest_indoor == "실내" else "🌳 야외"}</span>'
+    fest_theme = fest.get("theme", "문화/체험")
+    theme_badge_detail = f'<span class="tag-chip" style="background: rgba(168, 85, 247, 0.25); color: #E9D5FF; font-weight:800; border: 1px solid rgba(192, 132, 252, 0.4);">🎨 {fest_theme}</span>'
 
     # 상단 축제 요약 카드
     st.markdown(f"""
     <div class="hero-container">
-        <span class="tag-chip">📍 {fest_region} · {fest_sigungu}</span>
+        <span class="tag-chip" style="background: rgba(255, 255, 255, 0.12); color: #FFFFFF; font-weight: 800; border: 1px solid rgba(255, 255, 255, 0.25);">📍 {fest_region} · {fest_sigungu}</span>
         {indoor_badge}
-        <span class="tag-chip">📅 {period_str}</span>
+        {theme_badge_detail}
+        <span class="tag-chip" style="background: rgba(255, 255, 255, 0.12); color: #FFFFFF; font-weight: 800; border: 1px solid rgba(255, 255, 255, 0.25);">📅 {period_str}</span>
         <div class="hero-title">{fest_title}</div>
         <div class="hero-subtitle">
-            <b>개최 장소:</b> {fest_venue} ({fest_location})<br>
-            <b>축제 개요:</b> {overview}
+            <b style="color: #F8FAFC;">개최 장소:</b> {fest_venue} ({fest_location})<br>
+            <b style="color: #F8FAFC;">축제 개요:</b> {overview}
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -669,12 +675,12 @@ def get_festival_status_badge(start_date: str, end_date: str) -> str:
     e = str(end_date).strip() or s
 
     if not s and not e:
-        return '<span class="tag-chip" style="background: rgba(148, 163, 184, 0.2); color: #94A3B8;">상시운영</span>'
+        return '<span class="tag-chip" style="background: #F1F5F9; color: #334155; font-weight: 800; border: 1px solid #CBD5E1;">상시운영</span>'
 
     if e < today:
-        return '<span class="tag-chip" style="background: rgba(100, 116, 139, 0.2); color: #94A3B8; font-weight:600;">🏁 지난축제</span>'
+        return '<span class="tag-chip" style="background: #F1F5F9; color: #475569; font-weight: 800; border: 1px solid #CBD5E1;">🏁 지난축제</span>'
     elif s <= today <= e:
-        return '<span class="tag-chip" style="background: rgba(72, 187, 120, 0.25); color: #38A169; font-weight:700;">🟢 진행중</span>'
+        return '<span class="tag-chip" style="background: rgba(34, 197, 94, 0.16); color: #15803D; font-weight: 800; border: 1px solid rgba(34, 197, 94, 0.4);">🟢 진행중</span>'
     else:
         try:
             d_today = datetime.strptime(today, "%Y-%m-%d")
@@ -686,9 +692,9 @@ def get_festival_status_badge(start_date: str, end_date: str) -> str:
                 d_str = "내일 시작!"
             else:
                 d_str = f"D-{days_left}"
-            return f'<span class="tag-chip" style="background: rgba(237, 137, 54, 0.25); color: #DD6B20; font-weight:700;">⏳ {d_str}</span>'
+            return f'<span class="tag-chip" style="background: rgba(234, 88, 12, 0.16); color: #C2410C; font-weight: 800; border: 1px solid rgba(234, 88, 12, 0.4);">⏳ {d_str}</span>'
         except Exception:
-            return '<span class="tag-chip" style="background: rgba(237, 137, 54, 0.25); color: #DD6B20; font-weight:700;">⏳ 시작예정</span>'
+            return '<span class="tag-chip" style="background: rgba(234, 88, 12, 0.16); color: #C2410C; font-weight: 800; border: 1px solid rgba(234, 88, 12, 0.4);">⏳ 시작예정</span>'
 
 
 def sort_festivals_by_schedule(festivals: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -755,15 +761,31 @@ def render_festival_card(fest_item: Dict[str, Any], tab_key: str, item_idx: int)
     f_event_type = fest_item.get("event_type", "지역축제")
     status_badge = get_festival_status_badge(f_start, f_end)
 
-    # [요구사항 3] 행사 유형 뱃지 시각화
+    # [요구사항 3] 행사 유형 뱃지 시각화 (선명한 고대비 색상)
     if f_event_type == "문화행사":
-        type_badge = '<span class="tag-chip" style="background: rgba(147, 51, 234, 0.2); color: #C084FC; font-weight:700;">🎭 문화행사</span>'
+        type_badge = '<span class="tag-chip" style="background: rgba(147, 51, 234, 0.15); color: #6B21A8; font-weight: 800; border: 1px solid rgba(147, 51, 234, 0.35);">🎭 문화행사</span>'
     else:
-        type_badge = '<span class="tag-chip" style="background: rgba(59, 130, 246, 0.2); color: #60A5FA; font-weight:700;">🎉 지역축제</span>'
+        type_badge = '<span class="tag-chip" style="background: rgba(37, 99, 235, 0.15); color: #1E40AF; font-weight: 800; border: 1px solid rgba(37, 99, 235, 0.35);">🎉 지역축제</span>'
 
     # [실내/야외 뱃지] 우천 시 대체 코스 및 실내외 환경 시각화
     f_indoor = fest_item.get("is_indoor", "야외")
-    indoor_badge = f'<span class="tag-chip" style="background: rgba(14, 165, 233, 0.18); color: #0284C7; font-weight:700;">{"🏠 실내" if f_indoor == "실내" else "🌳 야외"}</span>'
+    indoor_badge = f'<span class="tag-chip" style="background: rgba(2, 132, 199, 0.15); color: #0369A1; font-weight: 800; border: 1px solid rgba(2, 132, 199, 0.35);">{"🏠 실내" if f_indoor == "실내" else "🌳 야외"}</span>'
+
+    # [테마 뱃지] 10대 대표 테마 선명한 고대비 색상 매핑
+    theme_colors = {
+        "자연/꽃": ("rgba(22, 163, 74, 0.15)", "#15803D", "border: 1px solid rgba(22, 163, 74, 0.35)"),
+        "미식/특산물": ("rgba(234, 88, 12, 0.15)", "#C2410C", "border: 1px solid rgba(234, 88, 12, 0.35)"),
+        "음악/공연": ("rgba(124, 58, 237, 0.15)", "#6D28D9", "border: 1px solid rgba(124, 58, 237, 0.35)"),
+        "역사/전통": ("rgba(180, 83, 9, 0.15)", "#92400E", "border: 1px solid rgba(180, 83, 9, 0.35)"),
+        "야경/빛": ("rgba(3, 105, 161, 0.15)", "#0369A1", "border: 1px solid rgba(3, 105, 161, 0.35)"),
+        "댄스/퍼레이드": ("rgba(219, 39, 119, 0.15)", "#BE185D", "border: 1px solid rgba(219, 39, 119, 0.35)"),
+        "가족/체험": ("rgba(13, 148, 136, 0.15)", "#0F766E", "border: 1px solid rgba(13, 148, 136, 0.35)"),
+        "예술/전시": ("rgba(79, 70, 229, 0.15)", "#4338CA", "border: 1px solid rgba(79, 70, 229, 0.35)"),
+        "해양/액티비티": ("rgba(2, 132, 199, 0.15)", "#0284C7", "border: 1px solid rgba(2, 132, 199, 0.35)"),
+        "문화/체험": ("rgba(71, 85, 105, 0.15)", "#334155", "border: 1px solid rgba(71, 85, 105, 0.35)")
+    }
+    bg_t, col_t, bd_t = theme_colors.get(f_theme, ("rgba(71, 85, 105, 0.15)", "#334155", "border: 1px solid rgba(71, 85, 105, 0.35)"))
+    theme_badge = f'<span class="tag-chip" style="background: {bg_t}; color: {col_t}; font-weight: 800; {bd_t};">🎨 {f_theme}</span>'
 
     venue_display = f"{f_venue} ({f_loc})" if f_venue and f_venue != f_loc else f_loc
 
@@ -774,40 +796,42 @@ def render_festival_card(fest_item: Dict[str, Any], tab_key: str, item_idx: int)
             {status_badge}
             {type_badge}
             {indoor_badge}
-            <span class="tag-chip" style="background: rgba(255, 107, 107, 0.18); color: #FF8E53; font-weight:700;">📍 {f_region} · {f_sigungu}</span>
-            <span class="tag-chip" style="background: rgba(72, 187, 120, 0.18); color: #38A169; font-weight:700;">🔋 소모 체력 [{f_stamina}]</span>
-            <span class="tag-chip">🎨 {f_theme}</span>
+            <span class="tag-chip" style="background: rgba(239, 68, 68, 0.15); color: #B91C1C; font-weight: 800; border: 1px solid rgba(239, 68, 68, 0.35);">📍 {f_region} · {f_sigungu}</span>
+            <span class="tag-chip" style="background: rgba(22, 163, 74, 0.15); color: #15803D; font-weight: 800; border: 1px solid rgba(22, 163, 74, 0.35);">🔋 소모 체력 [{f_stamina}]</span>
+            {theme_badge}
         </div>
-        <h4 style="margin-top: 4px; margin-bottom: 8px; font-weight: 800; line-height: 1.35;">{f_title}</h4>
+        <h4 style="margin-top: 4px; margin-bottom: 8px; font-weight: 800; line-height: 1.35; color: #0F172A;">{f_title}</h4>
         """, unsafe_allow_html=True)
 
         # [본문 1]: 📅 기간 | 📍 장소 및 주소 | 🎟️ 입장/이용 요금
         st.markdown(f"""
-        <div style="font-size: 0.91rem; margin-bottom: 8px; line-height: 1.6;">
-            📅 <b>축제 기간:</b> {f_period} &nbsp;|&nbsp; 🎟️ <b>입장/이용 요금:</b> <span style="color: #DC2626; font-weight: 700;">{f_fee}</span><br>
-            📍 <b>개최 장소:</b> {venue_display}
+        <div style="font-size: 0.92rem; margin-bottom: 8px; line-height: 1.6; color: #1E293B;">
+            📅 <b style="color: #0F172A;">축제 기간:</b> {f_period} &nbsp;|&nbsp; 🎟️ <b style="color: #0F172A;">입장/이용 요금:</b> <span style="color: #DC2626; font-weight: 800;">{f_fee}</span><br>
+            📍 <b style="color: #0F172A;">개최 장소:</b> {venue_display}
         </div>
         """, unsafe_allow_html=True)
 
         # [요구사항 1-1] 축제 내용(description) 원본 텍스트를 요약하지 말고 3~4줄 이상의 '상세 설명 및 관람 포인트'로 본문에 그대로 출력
         st.markdown(f"""
-        <div style="background: rgba(16, 185, 129, 0.08); border-left: 3px solid #10B981; border-radius: 6px; padding: 10px 14px; margin: 8px 0 10px 0; font-size: 0.89rem; line-height: 1.6; white-space: pre-line;">
-            📖 <b>상세 설명 및 관람 포인트:</b><br>{f_desc if f_desc else f_programs}
+        <div style="background: rgba(16, 185, 129, 0.08); border-left: 3px solid #059669; border-radius: 6px; padding: 10px 14px; margin: 8px 0 10px 0; font-size: 0.90rem; line-height: 1.6; color: #0F172A; font-weight: 500; white-space: pre-line;">
+            📖 <b style="color: #065F46; font-weight: 800;">상세 설명 및 관람 포인트:</b><br>{f_desc if f_desc else f_programs}
         </div>
         """, unsafe_allow_html=True)
 
         # [본문 2]: 🎪 주요 행사 및 프로그램 안내
         st.markdown(f"""
-        <div style="background: rgba(99, 102, 241, 0.08); border-left: 3px solid #6366F1; border-radius: 6px; padding: 8px 12px; margin: 6px 0 10px 0; font-size: 0.86rem; line-height: 1.5; white-space: pre-line;">
-            🎪 <b>주요 프로그램 & 행사:</b><br>{f_programs}
+        <div style="background: rgba(99, 102, 241, 0.08); border-left: 3px solid #4F46E5; border-radius: 6px; padding: 8px 12px; margin: 6px 0 10px 0; font-size: 0.88rem; line-height: 1.5; color: #0F172A; white-space: pre-line;">
+            🎪 <b style="color: #3730A3; font-weight: 800;">주요 프로그램 & 행사:</b><br>{f_programs}
         </div>
         """, unsafe_allow_html=True)
 
         # [본문 3]: 📸 인생샷 스팟 & 힐링 포인트
-        if f_spots and f_spots != "현장 곳곳이 포토존":
-            st.caption(f"📸 **인생샷 & 힐링 포인트:** {f_spots}")
-        else:
-            st.caption("📸 **인생샷 & 힐링 포인트:** 현장 곳곳 랜드마크 포토존")
+        spots_disp = f_spots if (f_spots and f_spots != "현장 곳곳이 포토존") else "현장 곳곳 랜드마크 포토존"
+        st.markdown(f"""
+        <div style="color: #334155; font-size: 0.88rem; line-height: 1.5; margin-bottom: 6px;">
+            📸 <b style="color: #0F172A;">인생샷 & 힐링 포인트:</b> {spots_disp}
+        </div>
+        """, unsafe_allow_html=True)
 
         st.markdown("<div style='margin-top: 8px;'></div>", unsafe_allow_html=True)
 
