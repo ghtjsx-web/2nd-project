@@ -374,10 +374,14 @@ def render_detail_page():
             st.session_state.ai_docent_text = ""
             st.rerun()
 
+    fest_indoor = fest.get("is_indoor", "야외")
+    indoor_badge = f'<span class="tag-chip" style="background: rgba(14, 165, 233, 0.18); color: #0284C7; font-weight:700;">{"🏠 실내" if fest_indoor == "실내" else "🌳 야외"}</span>'
+
     # 상단 축제 요약 카드
     st.markdown(f"""
     <div class="hero-container">
         <span class="tag-chip">📍 {fest_region} · {fest_sigungu}</span>
+        {indoor_badge}
         <span class="tag-chip">📅 {period_str}</span>
         <div class="hero-title">{fest_title}</div>
         <div class="hero-subtitle">
@@ -746,14 +750,19 @@ def render_festival_card(fest_item: Dict[str, Any], tab_key: str, item_idx: int)
     else:
         type_badge = '<span class="tag-chip" style="background: rgba(59, 130, 246, 0.2); color: #60A5FA; font-weight:700;">🎉 지역축제</span>'
 
+    # [실내/야외 뱃지] 우천 시 대체 코스 및 실내외 환경 시각화
+    f_indoor = fest_item.get("is_indoor", "야외")
+    indoor_badge = f'<span class="tag-chip" style="background: rgba(14, 165, 233, 0.18); color: #0284C7; font-weight:700;">{"🏠 실내" if f_indoor == "실내" else "🌳 야외"}</span>'
+
     venue_display = f"{f_venue} ({f_loc})" if f_venue and f_venue != f_loc else f_loc
 
     with st.container(border=True):
-        # [상단]: [진행상태] + [행사유형 뱃지] + [권역/시군구 뱃지] + [체력 소모도 뱃지] + [축제명]
+        # [상단]: [진행상태] + [행사유형 뱃지] + [실내/야외 뱃지] + [권역/시군구 뱃지] + [체력 소모도 뱃지] + [축제명]
         st.markdown(f"""
         <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-bottom: 6px;">
             {status_badge}
             {type_badge}
+            {indoor_badge}
             <span class="tag-chip" style="background: rgba(255, 107, 107, 0.18); color: #FF8E53; font-weight:700;">📍 {f_region} · {f_sigungu}</span>
             <span class="tag-chip" style="background: rgba(72, 187, 120, 0.18); color: #38A169; font-weight:700;">🔋 소모 체력 [{f_stamina}]</span>
             <span class="tag-chip">🎨 {f_theme}</span>
@@ -846,6 +855,7 @@ def render_calendar_view(festivals: List[Dict[str, Any]], tab_key: str):
         cal_data.append({
             "진행상태": status,
             "행사유형": f.get("event_type", "지역축제"),
+            "실내/야외": f.get("is_indoor", "야외"),
             "시작일자": s,
             "종료일자": e,
             "권역": f.get("region", ""),
