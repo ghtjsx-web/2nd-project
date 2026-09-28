@@ -89,7 +89,8 @@ load_dotenv()
 # [설정 및 플래그]
 # ==============================================================================
 # 개발 모드 플래그 (True: 개발 중 0초 빠른 샘플링 / False: 프로덕션 전수 로드)
-IS_DEV_MODE: bool = True
+# ※ 전체 1,264건 축제 전수 데이터를 로드하려면 IS_DEV_MODE = False로 변경하세요.
+IS_DEV_MODE: bool = True  # 전체 1,264건 축제 전수 데이터를 로드하려면 IS_DEV_MODE = False로 변경하세요.
 
 # Streamlit 페이지 기본 설정
 st.set_page_config(
