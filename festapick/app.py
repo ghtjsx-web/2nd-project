@@ -225,7 +225,7 @@ def get_all_festivals(cache_version: str = "v23_region_fix") -> List[Dict[str, A
         if d.metadata.get("data_type") == "축제"
     ]
     # 이중 안전장치: 메타데이터에 event_type, theme 및 권역(region) 최신 정합성 보장
-    cultural_keywords = ["문화제", "예술제", "연극", "음악회", "전시", "공연", "역사", "비엔날레", "국악", "문학", "학술", "영화", "도서", "북", "페어", "판소리", "가요제", "콘서트", "포크", "클래식", "뮤지컬", "페스티벌"]
+    cultural_keywords = ["문화제", "예술제", "연극", "음악회", "전시", "공연", "역사", "비엔날레", "국악", "문학", "학술"]
     for f in festival_metas:
         if not f.get("event_type"):
             comb = f"{f.get('title', '')} {f.get('description', '')} {f.get('programs', '')}"
