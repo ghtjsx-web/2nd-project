@@ -26,22 +26,24 @@ CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 if CURRENT_DIR not in sys.path:
     sys.path.insert(0, CURRENT_DIR)
 
-# data.py 및 prompt.py 모듈 연동 (핫 리로드 강제)
-import prompt
+# data.py 및 agent.py 모듈 연동 (핫 리로드 강제)
+import agent
 import data
 try:
-    importlib.reload(prompt)
+    importlib.reload(agent)
     importlib.reload(data)
 except Exception:
     pass
 
 from data import PublicDataRAGManager
-from prompt import (
+from agent import (
     build_user_prompt,
     get_system_prompt,
     get_storytelling_system_prompt,
     build_storytelling_user_prompt,
-    generate_storytelling_fallback
+    generate_storytelling_fallback,
+    generate_storytelling_course,
+    FestaPickAgent
 )
 
 def sanitize_address(address_text: Any) -> str:

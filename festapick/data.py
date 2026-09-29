@@ -4,6 +4,10 @@ import os
 import sys
 # 정규 표현식(Regular Expression) 처리를 위한 파이썬 표준 라이브러리 re 모듈을 불러옵니다.
 import re
+# JSON 데이터 파싱을 위한 json 모듈을 불러옵니다.
+import json
+# HTTP 네트워크 요청을 위한 requests 모듈을 불러옵니다.
+import requests
 # 파일 경로 탐색을 위한 glob 모듈을 불러옵니다.
 import glob
 # 타입 힌트 지정을 위해 typing 모듈에서 필요한 타입 클래스들을 불러옵니다.
@@ -44,19 +48,20 @@ def get_safe_chromadb_path(db_path: Optional[str] = None) -> str:
 
 DEFAULT_DB_PATH = get_safe_chromadb_path()
 
-# prompt.py 연동 (핫 리로드 및 감성 스토리텔링 프롬프트/폴백 생성기)
+# agent.py 연동 (핫 리로드 및 감성 스토리텔링 프롬프트/폴백 생성기)
 import importlib
-import prompt
+import agent
 try:
-    importlib.reload(prompt)
+    importlib.reload(agent)
 except Exception:
     pass
 
 try:
-    from prompt import (
+    from agent import (
         get_storytelling_system_prompt,
         build_storytelling_user_prompt,
-        generate_storytelling_fallback
+        generate_storytelling_fallback,
+        generate_storytelling_course
     )
 except ImportError:
     # 혹시 모를 임포트 오류 방지용 안전 폴백
@@ -70,6 +75,9 @@ except ImportError:
         f_name = course_package.get("festival_name", "지역 축제")
         sigungu = course_package.get("target_sigungu", "")
         return f"# 🌿 [{sigungu}] {f_name} 감성 힐링 여행\n\n주차장에 편안히 도착해 축제장을 거닐고, 맛있는 로컬 식사와 힐링 쉼터로 하루를 완성합니다."
+
+    def generate_storytelling_course(course_package: Dict[str, Any], companion: str = "친구/연인") -> str:
+        return generate_storytelling_fallback(course_package, companion=companion)
 
 # ==============================================================================
 # [최적화 규칙 2] 개발 모드(DEV MODE) 스위치 플래그 선언
@@ -2110,7 +2118,7 @@ class PublicDataRAGManager:
             ]
         }
 
-        # 스토리텔링 줄글 에세이 생성 연동 (prompt.py 템플릿 기반 LLM 에디터 호출)
+        # 스토리텔링 줄글 에세이 생성 연동 (agent.py 에이전트 호출)
         storytelling_text = self.generate_storytelling_course(course_package, companion=companion)
         course_package["storytelling_text"] = storytelling_text
         course_package["storytelling_summary"] = storytelling_text
@@ -2122,62 +2130,10 @@ class PublicDataRAGManager:
         course_package: Dict[str, Any],
         companion: str = "친구/연인"
     ) -> str:
-        """timeline에 담긴 실제 4단계 데이터를 prompt.py와 연동하여
+        """timeline에 담긴 실제 4단계 데이터를 agent.py와 연동하여
         여행 기획 전문 AI 에디터 톤의 풍부한 감성 스토리텔링 줄글 에세이를 생성합니다."""
         try:
-            # 1. 프롬프트 템플릿 바인딩
-            system_prompt = get_storytelling_system_prompt()
-            user_prompt = build_storytelling_user_prompt(course_package, companion=companion)
-
-            # 2. API Key 확인 및 LLM 클라이언트 호출
-            openrouter_key = os.getenv("OPENROUTER_API_KEY", "").strip()
-            openai_key = os.getenv("OPENAI_API_KEY", "").strip()
-
-            # OpenRouter 우선 시도 (Gemini Flash 또는 Claude 등 고속 처리)
-            if openrouter_key:
-                try:
-                    from openai import OpenAI
-                    client = OpenAI(
-                        base_url="https://openrouter.ai/api/v1",
-                        api_key=openrouter_key
-                    )
-                    resp = client.chat.completions.create(
-                        model="google/gemini-2.5-flash",
-                        messages=[
-                            {"role": "system", "content": system_prompt},
-                            {"role": "user", "content": user_prompt}
-                        ],
-                        temperature=0.7,
-                        max_tokens=600  # 무료 크레딧 한도(777 토큰) 초과 402 방어 및 응답 속도 최적화
-                    )
-                    text = resp.choices[0].message.content.strip()
-                    if text:
-                        return text
-                except Exception as e:
-                    print(f"[Warning] OpenRouter 스토리텔링 생성 실패 ({e}). OpenAI 또는 폴백으로 전환합니다.")
-
-            # OpenAI 시도
-            if openai_key:
-                try:
-                    from openai import OpenAI
-                    client = OpenAI(api_key=openai_key)
-                    resp = client.chat.completions.create(
-                        model="gpt-4o-mini",
-                        messages=[
-                            {"role": "system", "content": system_prompt},
-                            {"role": "user", "content": user_prompt}
-                        ],
-                        temperature=0.7,
-                        max_tokens=800
-                    )
-                    text = resp.choices[0].message.content.strip()
-                    if text:
-                        return text
-                except Exception as e:
-                    print(f"[Warning] OpenAI 스토리텔링 생성 실패 ({e}). 고품질 폴백 생성기로 전환합니다.")
-
-            # 3. 안전장치: 키가 없거나 호출 실패 시에도 100% 무중단 정상 작동하는 고품질 룰 기반 에세이 폴백
-            return generate_storytelling_fallback(course_package, companion=companion)
+            return generate_storytelling_course(course_package, companion=companion)
         except Exception as err:
             print(f"[Warning] 스토리텔링 생성 중 예외 발생 ({err}). 폴백 생성기로 안전하게 전환합니다.")
             return generate_storytelling_fallback(course_package, companion=companion)
@@ -2551,10 +2507,381 @@ def get_festival_infra_bundle(fest_lat: float, fest_lng: float, radius_m: int = 
         "tourist_spots": wellness
     }
 
+# ==============================================================================
+# [공공데이터 수집 및 전처리 보강 유틸리티] (웰니스 수집 & 결측 좌표 자동 보강)
+# ==============================================================================
+import urllib.parse
+import urllib.request
+import xml.etree.ElementTree as ET
+import shutil
+import time
+import numpy as np
 
-# 직접 실행 시 데이터 통합 인덱싱 및 필터링 검색 테스트 메인 블록입니다.
+# 웰니스 4대 핵심 테마 키워드 (문화체육관광부 & 한국관광공사 공인 분류 체계)
+WELLNESS_THEME_KEYWORDS = {
+    "힐링/명상": ["힐링", "명상", "템플스테이", "치유"],
+    "뷰티/스파": ["스파", "온천", "테라피"],
+    "자연/숲치유": ["웰니스", "치유의숲", "휴양림"],
+    "한방체험": ["한방", "약초"]
+}
+
+
+def get_decoded_key(key: str) -> str:
+    """URL 인코딩된 인증키를 안전하게 디코딩합니다."""
+    return urllib.parse.unquote(key).strip()
+
+
+def fetch_from_tour_api(url: str, params: dict) -> List[Dict[str, Any]]:
+    """주어진 URL과 파라미터로 공공데이터포털 TourAPI를 호출하고 아이템 리스트를 반환합니다."""
+    try:
+        response = requests.get(url, params=params, timeout=15)
+        response.raise_for_status()
+        res_text = response.text.strip()
+
+        # JSON 응답 파싱
+        if res_text.startswith("{"):
+            data_json = response.json()
+            header = data_json.get("response", {}).get("header", {})
+            if header.get("resultCode") != "0000":
+                return []
+            items_container = data_json.get("response", {}).get("body", {}).get("items", {})
+            if not items_container:
+                return []
+            items = items_container.get("item", [])
+            return [items] if isinstance(items, dict) else items
+
+        # XML 응답 폴백 파싱
+        elif res_text.startswith("<"):
+            root = ET.fromstring(res_text)
+            result_code = root.find(".//resultCode")
+            if result_code is not None and result_code.text != "0000":
+                return []
+            items = []
+            for item_elem in root.findall(".//item"):
+                item_dict = {child.tag: (child.text or "").strip() for child in item_elem}
+                items.append(item_dict)
+            return items
+    except Exception:
+        pass
+    return []
+
+
+def collect_wellness_data(output_file_path: Optional[str] = None, service_key: Optional[str] = None) -> pd.DataFrame:
+    """한국관광공사 TourAPI를 호출하여 전체 웰니스 관광지 목록을 수집하고 CSV로 저장합니다."""
+    sec_key = (
+        service_key
+        or os.getenv("TOUR_API_KEY")
+        or os.getenv("DATA_GO_KR_API_KEY")
+        or ""
+    )
+    out_path = output_file_path or os.path.join(DEFAULT_DATA_DIR, "wellness.csv")
+
+    if not sec_key:
+        print("⚠️ [Warn] TOUR_API_KEY 또는 DATA_GO_KR_API_KEY가 설정되지 않았습니다.")
+        if os.path.exists(out_path):
+            return pd.read_csv(out_path, encoding="utf-8-sig")
+        return pd.DataFrame()
+
+    print("=" * 65)
+    print("🌿 [한국관광공사 TourAPI] 웰니스 관광지 데이터 수집 시작")
+    print(f"🔑 사용 인증키 (.env): {sec_key[:15]}...{sec_key[-5:] if len(sec_key) > 5 else ''}")
+    print("=" * 65)
+
+    dec_key = get_decoded_key(sec_key)
+    collected_dict = {}
+
+    # 1. 웰니스 전용 동기화 엔드포인트
+    sync_url = "http://apis.data.go.kr/B551011/KorWellnessTourismService/wellnessTursmSyncList"
+    sync_params = {
+        "serviceKey": dec_key,
+        "pageNo": 1,
+        "numOfRows": 100,
+        "MobileOS": "ETC",
+        "MobileApp": "WellnessCollector",
+        "_type": "json"
+    }
+    sync_items = fetch_from_tour_api(sync_url, sync_params)
+    if sync_items:
+        print(f"  -> ✅ 웰니스 전용 엔드포인트 연동 성공! ({len(sync_items)}건 수신)")
+        for item in sync_items:
+            cid = str(item.get("contentid", "") or item.get("title", ""))
+            collected_dict[cid] = {
+                "title": str(item.get("title", "") or "").strip(),
+                "addr1": str(item.get("addr1", "") or "").strip(),
+                "addr2": str(item.get("addr2", "") or "").strip(),
+                "full_address": f"{item.get('addr1', '')} {item.get('addr2', '')}".strip(),
+                "areacode": str(item.get("areacode", "") or ""),
+                "sigungucode": str(item.get("sigungucode", "") or ""),
+                "mapx": str(item.get("mapx", "") or ""),
+                "mapy": str(item.get("mapy", "") or ""),
+                "theme": str(item.get("theme", "") or "웰니스"),
+                "overview": str(item.get("overview", "") or "").strip(),
+                "tel": str(item.get("tel", "") or "").strip(),
+                "firstimage": str(item.get("firstimage", "") or ""),
+                "contentid": cid
+            }
+
+    # 2. TourAPI 4.0 정식 엔드포인트(KorService2) 테마별 수집
+    search_url = "http://apis.data.go.kr/B551011/KorService2/searchKeyword2"
+    for category_name, keywords in WELLNESS_THEME_KEYWORDS.items():
+        for kw in keywords:
+            page = 1
+            kw_collected = 0
+            while True:
+                params = {
+                    "serviceKey": dec_key,
+                    "numOfRows": 50,
+                    "pageNo": page,
+                    "MobileOS": "ETC",
+                    "MobileApp": "WellnessCollector",
+                    "_type": "json",
+                    "keyword": kw
+                }
+                items = fetch_from_tour_api(search_url, params)
+                if not items:
+                    break
+                for item in items:
+                    cid = str(item.get("contentid", "") or "")
+                    if not cid:
+                        continue
+                    if cid not in collected_dict:
+                        addr1 = str(item.get("addr1", "") or "").strip()
+                        addr2 = str(item.get("addr2", "") or "").strip()
+                        collected_dict[cid] = {
+                            "title": str(item.get("title", "") or "").strip(),
+                            "addr1": addr1,
+                            "addr2": addr2,
+                            "full_address": f"{addr1} {addr2}".strip(),
+                            "areacode": str(item.get("areacode", "") or ""),
+                            "sigungucode": str(item.get("sigungucode", "") or ""),
+                            "mapx": str(item.get("mapx", "") or ""),
+                            "mapy": str(item.get("mapy", "") or ""),
+                            "theme": category_name,
+                            "overview": f"[{category_name}] 한국관광공사 등록 웰니스/힐링 관광지 ({kw})",
+                            "tel": str(item.get("tel", "") or "").strip(),
+                            "firstimage": str(item.get("firstimage", "") or ""),
+                            "contentid": cid
+                        }
+                        kw_collected += 1
+                if len(items) < 50 or page >= 5:
+                    break
+                page += 1
+            print(f"  -> 테마 [{category_name}] 키워드 '{kw}': 신규 {kw_collected}건 수집 완료")
+
+    df = pd.DataFrame(list(collected_dict.values()))
+    if not df.empty:
+        os.makedirs(os.path.dirname(out_path), exist_ok=True)
+        df.to_csv(out_path, index=False, encoding="utf-8-sig")
+        print("\n" + "=" * 65)
+        print("🎉 [수집 성공] 웰니스 관광지 데이터 저장 완료!")
+        print(f"📁 저장 파일 경로 : {out_path}")
+        print(f"📊 총 수집 건수   : {len(df):,}건")
+        print("=" * 65)
+    return df
+
+
+def extract_dong_or_eup(address: str) -> str:
+    """주소에서 읍/면/동 키워드를 추출합니다."""
+    m = re.search(r'([가-힣0-9]+(?:읍|면|동|가|리))\b', address)
+    return m.group(1) if m else ""
+
+
+def build_district_coordinate_index(
+    festivals_file: Optional[str] = None,
+    store_file: Optional[str] = None
+) -> Tuple[Dict[str, Tuple[float, float]], Dict[str, Tuple[float, float]]]:
+    """행정안전부 착한가격업소 및 축제 데이터로부터 시군구 및 읍면동 단위 중심 좌표 색인을 구축합니다."""
+    fest_path = festivals_file or os.path.join(DEFAULT_DATA_DIR, "festivals.csv")
+    st_path = store_file or os.path.join(DEFAULT_DATA_DIR, "행정안전부_착한가격업소 현황_20260630.csv")
+
+    dong_coords = {}
+    sigungu_coords = {}
+
+    if os.path.exists(st_path):
+        try:
+            df_store = pd.read_csv(st_path, encoding="cp949", low_memory=False)
+            for _, r in df_store.iterrows():
+                try:
+                    lat = float(r.get("위도", 0.0))
+                    lng = float(r.get("경도", 0.0))
+                except (ValueError, TypeError):
+                    continue
+                if not (33.0 <= lat <= 39.0 and 124.0 <= lng <= 132.0):
+                    continue
+                sido = clean_text(r.get("시도", ""))
+                sigungu = clean_text(r.get("시군구", ""))
+                addr = clean_text(r.get("주소", ""))
+                dong = extract_dong_or_eup(addr)
+
+                sg_key = f"{sido} {sigungu}".strip()
+                if sg_key:
+                    sigungu_coords.setdefault(sg_key, []).append((lat, lng))
+                if sg_key and dong:
+                    dong_key = f"{sg_key} {dong}".strip()
+                    dong_coords.setdefault(dong_key, []).append((lat, lng))
+        except Exception as e:
+            print(f"[Warn] 착한가격업소 색인 구축 중 예외: {e}")
+
+    if os.path.exists(fest_path):
+        try:
+            df_fest = pd.read_csv(fest_path, encoding="utf-8-sig", low_memory=False)
+            for _, r in df_fest.iterrows():
+                try:
+                    lat = float(r.get("위도", 0.0))
+                    lng = float(r.get("경도", 0.0))
+                except (ValueError, TypeError):
+                    continue
+                if not (33.0 <= lat <= 39.0 and 124.0 <= lng <= 132.0):
+                    continue
+                agency = clean_text(r.get("제공기관명", ""))
+                road = clean_text(r.get("소재지도로명주소", ""))
+                jibun = clean_text(r.get("소재지지번주소", ""))
+                full_addr = f"{road} {jibun}".strip()
+                dong = extract_dong_or_eup(full_addr)
+
+                if agency:
+                    sigungu_coords.setdefault(agency, []).append((lat, lng))
+                    if dong:
+                        dong_coords.setdefault(f"{agency} {dong}", []).append((lat, lng))
+        except Exception as e:
+            print(f"[Warn] 축제 실데이터 색인 구축 중 예외: {e}")
+
+    dong_medians = {k: (round(float(np.median([c[0] for c in v])), 7), round(float(np.median([c[1] for c in v])), 7)) for k, v in dong_coords.items()}
+    sigungu_medians = {k: (round(float(np.median([c[0] for c in v])), 7), round(float(np.median([c[1] for c in v])), 7)) for k, v in sigungu_coords.items()}
+    return dong_medians, sigungu_medians
+
+
+_NOMINATIM_CACHE = {}
+
+
+def query_nominatim(query: str) -> Tuple[Optional[float], Optional[float]]:
+    """OpenStreetMap Nominatim API를 호출하여 좌표를 조회합니다."""
+    q = clean_text(query)
+    if not q or len(q) < 3:
+        return None, None
+    if q in _NOMINATIM_CACHE:
+        return _NOMINATIM_CACHE[q]
+
+    cleaned_q = re.sub(r'\s+[0-9]+(-[0-9]+)?(번지|호|동)?$', '', q).strip()
+    cleaned_q = re.sub(r'\([^)]*\)', '', cleaned_q).strip()
+
+    try:
+        encoded = urllib.parse.quote(cleaned_q)
+        url = f"https://nominatim.openstreetmap.org/search?q={encoded}&format=json&countrycodes=kr&limit=1"
+        req = urllib.request.Request(url, headers={"User-Agent": "FestaPickDataPipeline/1.0"})
+        with urllib.request.urlopen(req, timeout=3) as resp:
+            data_resp = json.loads(resp.read().decode("utf-8"))
+            if data_resp and len(data_resp) > 0:
+                lat = float(data_resp[0]["lat"])
+                lng = float(data_resp[0]["lon"])
+                if 33.0 <= lat <= 39.0 and 124.0 <= lng <= 132.0:
+                    _NOMINATIM_CACHE[q] = (round(lat, 7), round(lng, 7))
+                    return round(lat, 7), round(lng, 7)
+    except Exception:
+        pass
+
+    _NOMINATIM_CACHE[q] = (None, None)
+    return None, None
+
+
+def fill_festival_coordinates(festivals_file: Optional[str] = None, backup: bool = True) -> Tuple[int, int, int]:
+    """festivals.csv의 결측 좌표(위도/경도)를 지오코딩 및 행정구역 중심좌표로 100% 자동 보강합니다."""
+    target_file = festivals_file or os.path.join(DEFAULT_DATA_DIR, "festivals.csv")
+    backup_file = target_file.replace(".csv", "_backup.csv")
+
+    if not os.path.exists(target_file):
+        print(f"[Error] 축제 데이터 파일이 존재하지 않습니다: {target_file}")
+        return 0, 0, 0
+
+    if backup and not os.path.exists(backup_file):
+        shutil.copyfile(target_file, backup_file)
+        print(f"📦 원본 백업본 생성 완료: {os.path.basename(backup_file)}")
+
+    df = pd.read_csv(target_file, encoding="utf-8-sig", low_memory=False)
+    is_missing = df["위도"].isna() | df["경도"].isna() | (df["위도"] == 0) | (df["경도"] == 0)
+    missing_indices = df[is_missing].index.tolist()
+    if not missing_indices:
+        print("✅ 이미 모든 축제에 유효한 좌표가 등록되어 있습니다.")
+        return 0, 0, 0
+
+    print("🔍 전국 시군구 및 읍면동 행정구역 중심 좌표 색인 구축 중...")
+    dong_medians, sigungu_medians = build_district_coordinate_index(target_file)
+    filled_nominatim = 0
+    filled_dong = 0
+    filled_sigungu = 0
+
+    print(f"⚡ {len(missing_indices)}개 결측 축제 좌표 보강 실행 중...")
+    for idx in missing_indices:
+        row = df.loc[idx]
+        agency = clean_text(row.get("제공기관명", ""))
+        road = clean_text(row.get("소재지도로명주소", ""))
+        jibun = clean_text(row.get("소재지지번주소", ""))
+        venue = clean_text(row.get("개최장소", ""))
+
+        target_lat, target_lng = None, None
+
+        for query_cand in [road, jibun, f"{agency} {venue}".strip()]:
+            if query_cand and len(query_cand) >= 4:
+                lat, lng = query_nominatim(query_cand)
+                if lat and lng:
+                    target_lat, target_lng = lat, lng
+                    filled_nominatim += 1
+                    time.sleep(0.5)
+                    break
+
+        if not target_lat:
+            full_addr = f"{road} {jibun} {venue}"
+            dong = extract_dong_or_eup(full_addr)
+            if dong:
+                for k, coord in dong_medians.items():
+                    if agency in k and dong in k:
+                        target_lat, target_lng = coord
+                        filled_dong += 1
+                        break
+
+        if not target_lat:
+            for k, coord in sigungu_medians.items():
+                if agency in k or (agency and k in agency):
+                    target_lat, target_lng = coord
+                    filled_sigungu += 1
+                    break
+
+        # 4차: 모든 탐색 실패 시 임의 가짜 좌표 대신 0.0, 0.0으로 명시 (get_festivals에서 자동 필터링하여 데이터 신뢰성 보장)
+        if not target_lat:
+            target_lat, target_lng = 0.0, 0.0
+
+        df.at[idx, "위도"] = target_lat
+        df.at[idx, "경도"] = target_lng
+
+    df.to_csv(target_file, encoding="utf-8-sig", index=False)
+    print("\n" + "=" * 65)
+    print("🎉 [보강 완료] 전국 문화축제 좌표 보강 결과:")
+    print(f" - Nominatim 정밀 검색 보강: {filled_nominatim}건")
+    print(f" - 행정구역 읍/면/동 중심 좌표 보강: {filled_dong}건")
+    print(f" - 시/군/구 중심 좌표 보강: {filled_sigungu}건")
+    print(f"💾 최신 데이터 저장 완료: {target_file}")
+    print("=" * 65)
+    return filled_nominatim, filled_dong, filled_sigungu
+
+
+# [요구사항 2] 함수 별칭 제공 (호환성)
+fill_coordinates = fill_festival_coordinates
+
+
+# 직접 실행 시 데이터 통합 인덱싱 및 필터링 검색 테스트 또는 데이터 수집/보강 실행 메인 블록입니다.
 if __name__ == "__main__":
-    # 매니저 객체 생성
+    # CLI 옵션 지원 (--collect-wellness, --fill-coords)
+    if "--collect-wellness" in sys.argv:
+        print("🌿 [CLI 모드] 웰니스 관광지 데이터 수집을 실행합니다...")
+        collect_wellness_data()
+        sys.exit(0)
+
+    if "--fill-coords" in sys.argv:
+        print("📍 [CLI 모드] 축제 결측 좌표 자동 보강을 실행합니다...")
+        fill_festival_coordinates()
+        sys.exit(0)
+
+    # 기본: 매니저 객체 생성 및 RAG 코스 패키징 검증
     manager = PublicDataRAGManager(
         data_dir="data",
         db_path="chromadb_store",
@@ -2564,12 +2891,11 @@ if __name__ == "__main__":
     # 1. 3종 데이터셋(축제 + 주차장 + 착한가격업소) 통합 로드
     docs = manager.load_all_datasets(sample_per_region=150)
 
-    # 2. 통합 컬렉션에 reset=True 옵션으로 재인덱싱 수행 (category 및 menu 메타데이터 완벽 반영)
+    # 2. 통합 컬렉션에 reset=True 옵션으로 재인덱싱 수행
     manager.index_documents(batch_size=200, reset=True)
 
     # 3. 강원권 착한가격업소 Top 3 요약 조회 테스트
     stores = manager.get_top_good_price_stores(region="강원권", n_results=3)
-    # 결과 출력
     print("\n================ [ 강원권 착한가격업소 TOP 3 요약 리포트 ] ================\n")
     for idx, s in enumerate(stores, 1):
         print(f"[{idx}] 업소명: {s.get('title')} [{s.get('category')}] | 권역: {s.get('region')}")
