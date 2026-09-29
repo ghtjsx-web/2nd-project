@@ -2169,10 +2169,13 @@ def _load_adapter_csv(filename_patterns: List[str]) -> pd.DataFrame:
     """지정된 파일명 패턴 중 존재하는 CSV 파일을 다양한 인코딩으로 안전하게 로드합니다."""
     target_path = None
     for pattern in filename_patterns:
-        # data 폴더, 기본 데이터 디렉터리 및 현재 작업 디렉터리 탐색
+        # data 폴더, 기본 데이터 디렉터리 및 현재 작업 디렉터리, datafile, 상위 디렉터리 탐색
         candidates = (
             glob.glob(os.path.join(DEFAULT_DATA_DIR, pattern))
             + glob.glob(os.path.join("data", pattern))
+            + glob.glob(os.path.join("datafile", pattern))
+            + glob.glob(os.path.join("..", "datafile", pattern))
+            + glob.glob(os.path.join("..", "data", pattern))
             + glob.glob(pattern)
         )
         if candidates:
@@ -2180,6 +2183,7 @@ def _load_adapter_csv(filename_patterns: List[str]) -> pd.DataFrame:
             break
 
     if not target_path or not os.path.exists(target_path):
+        print(f"[Error] CSV 파일을 찾을 수 없습니다: {filename_patterns}")
         return pd.DataFrame()
 
     for enc in ["utf-8-sig", "utf-8", "cp949", "euc-kr"]:
@@ -2187,13 +2191,15 @@ def _load_adapter_csv(filename_patterns: List[str]) -> pd.DataFrame:
             return pd.read_csv(target_path, encoding=enc, low_memory=False).fillna("")
         except Exception:
             continue
+
+    print(f"[Error] CSV 파일을 찾을 수 없습니다: {filename_patterns}")
     return pd.DataFrame()
 
 
 def get_festivals(region: str = "전국 전체", month: Optional[int] = None, *args: Any, **kwargs: Any) -> List[Dict[str, Any]]:
     """전국 17개 행정구역 및 월별 필터링을 거친 유효 위경도 축제 목록을 반환합니다."""
     global _ADAPTER_FEST_CACHE
-    if _ADAPTER_FEST_CACHE is None:
+    if _ADAPTER_FEST_CACHE is None or _ADAPTER_FEST_CACHE.empty:
         _ADAPTER_FEST_CACHE = _load_adapter_csv(["*문화축제*.csv", "festivals.csv", "*공연행사*.csv"])
 
     if _ADAPTER_FEST_CACHE.empty:
@@ -2203,27 +2209,56 @@ def get_festivals(region: str = "전국 전체", month: Optional[int] = None, *a
     
     # 1. 행정구역 필터링
     if region and region != "전국 전체":
+        region_map = {
+            "강원특별자치도": ["강원특별자치도", "강원도", "강원"],
+            "전북특별자치도": ["전북특별자치도", "전라북도", "전북"],
+            "전라남도": ["전라남도", "전남"],
+            "경상북도": ["경상북도", "경북"],
+            "경상남도": ["경상남도", "경남"],
+            "충청북도": ["충청북도", "충북"],
+            "충청남도": ["충청남도", "충남"],
+            "제주특별자치도": ["제주특별자치도", "제주도", "제주"],
+            "서울특별시": ["서울특별시", "서울시", "서울"],
+            "부산광역시": ["부산광역시", "부산시", "부산"],
+            "대구광역시": ["대구광역시", "대구시", "대구"],
+            "인천광역시": ["인천광역시", "인천시", "인천"],
+            "광주광역시": ["광주광역시", "광주시", "광주"],
+            "대전광역시": ["대전광역시", "대전시", "대전"],
+            "울산광역시": ["울산광역시", "울산시", "울산"],
+            "세종특별자치시": ["세종특별자치시", "세종시", "세종"],
+            "경기도": ["경기도", "경기"],
+        }
         short_region = region.replace("광역시", "").replace("특별자치도", "").replace("특별시", "").replace("도", "")
-        aliases = [region, short_region]
-        pattern = "|".join(aliases)
-        mask = (
-            df.get("소재지도로명주소", pd.Series(dtype=str)).astype(str).str.contains(pattern, na=False) |
-            df.get("소재지지번주소", pd.Series(dtype=str)).astype(str).str.contains(pattern, na=False) |
-            df.get("개최장소", pd.Series(dtype=str)).astype(str).str.contains(pattern, na=False) |
-            df.get("축제명", pd.Series(dtype=str)).astype(str).str.contains(pattern, na=False)
-        )
+        aliases = region_map.get(region, [region, short_region])
+        pattern = "|".join(list(set(aliases)))
+        
+        target_cols = ["소재지도로명주소", "소재지지번주소", "개최장소", "축제명"]
+        mask = pd.Series(False, index=df.index)
+        for col in target_cols:
+            if col in df.columns:
+                mask = mask | df[col].astype(str).str.contains(pattern, na=False)
         df = df[mask]
 
     # 2. 날짜(월) 필터링
     if month and 1 <= month <= 12:
-        s_date = pd.to_datetime(df.get("축제시작일자"), errors="coerce")
-        e_date = pd.to_datetime(df.get("축제종료일자"), errors="coerce")
-        mask_month = (
-            ((s_date.dt.month <= month) & (e_date.dt.month >= month)) |
-            (s_date.dt.month == month) |
-            (e_date.dt.month == month) |
-            (s_date.isna() & e_date.isna())
-        )
+        s_col = df["축제시작일자"] if "축제시작일자" in df.columns else pd.Series(index=df.index, dtype=object)
+        e_col = df["축제종료일자"] if "축제종료일자" in df.columns else pd.Series(index=df.index, dtype=object)
+        s_date = pd.to_datetime(s_col, errors="coerce")
+        e_date = pd.to_datetime(e_col, errors="coerce")
+        
+        # 1) 시작일이나 종료일이 누락된(NaN) 축제는 무조건 필터링에서 제외(Drop)
+        valid_dates = s_date.notna() & e_date.notna()
+        
+        s_month = s_date.dt.month
+        e_month = e_date.dt.month
+        
+        # 2) s_month <= e_month 인 경우 (일반): s_month <= month <= e_month
+        normal_mask = (s_month <= e_month) & (s_month <= month) & (month <= e_month)
+        
+        # 3) s_month > e_month 인 경우 (연도 교차 축제, 예: 11월~2월): month >= s_month 이거나 month <= e_month
+        cross_mask = (s_month > e_month) & ((month >= s_month) | (month <= e_month))
+        
+        mask_month = valid_dates & (normal_mask | cross_mask)
         df = df[mask_month]
 
     results: List[Dict[str, Any]] = []
@@ -2275,7 +2310,7 @@ def get_festivals(region: str = "전국 전체", month: Optional[int] = None, *a
 def get_nearby_parking(target_lat: float, target_lng: float, radius_m: int = 2000) -> List[Dict[str, Any]]:
     """축제장 좌표 기준 radius_m 이내에 존재하는 공영주차장 목록을 면수/거리순으로 반환합니다."""
     global _ADAPTER_PARKING_CACHE
-    if _ADAPTER_PARKING_CACHE is None:
+    if _ADAPTER_PARKING_CACHE is None or _ADAPTER_PARKING_CACHE.empty:
         df = _load_adapter_csv(["*주차장*.csv", "parkings.csv"])
         if not df.empty:
             df["_lat_num"] = pd.to_numeric(df.get("위도"), errors="coerce")
@@ -2315,10 +2350,10 @@ def get_nearby_parking(target_lat: float, target_lng: float, radius_m: int = 200
     return nearby
 
 
-def get_nearby_restaurants(target_lat: float, target_lng: float, radius_m: int = 2000) -> List[Dict[str, Any]]:
+def get_nearby_restaurants(target_lat: float, target_lng: float, radius_m: int = 2000, target_address: str = "") -> List[Dict[str, Any]]:
     """축제장 좌표 기준 radius_m 이내 또는 동일 시군구에 존재하는 착한가격업소(음식점/카페) 목록을 반환합니다."""
     global _ADAPTER_STORE_CACHE
-    if _ADAPTER_STORE_CACHE is None:
+    if _ADAPTER_STORE_CACHE is None or _ADAPTER_STORE_CACHE.empty:
         df = _load_adapter_csv(["*착한가격업소*.csv", "good_price_stores.csv"])
         if not df.empty:
             lat_col = "위도" if "위도" in df.columns else ("lat" if "lat" in df.columns else None)
@@ -2368,13 +2403,17 @@ def get_nearby_restaurants(target_lat: float, target_lng: float, radius_m: int =
                 "_dist": dist
             })
 
-    # 2. 위경도 매칭 건수가 적고 주차장 데이터 등에서 시군구를 유추할 수 있는 경우 시군구 기반 매칭
+    # 2. 위경도 매칭 건수가 적고 축제 주소 또는 인근 주차장 등에서 시군구를 유추할 수 있는 경우 시군구 기반 매칭
     if len(nearby) < 3:
-        # target 좌표 인근의 가장 가까운 주차장 위치에서 시군구 명칭 추출
-        target_sigungu = ""
-        parkings = get_nearby_parking(target_lat, target_lng, radius_m=5000)
-        if parkings:
-            target_sigungu = extract_sigungu(parkings[0].get("name", ""))
+        target_sigungu = extract_sigungu(target_address) if target_address else ""
+        if not target_sigungu:
+            parkings = get_nearby_parking(target_lat, target_lng, radius_m=max(radius_m, 20000))
+            if parkings:
+                for p in parkings:
+                    sig = extract_sigungu(p.get("name", ""))
+                    if sig:
+                        target_sigungu = sig
+                        break
 
         if target_sigungu:
             sigungu_matches = _ADAPTER_STORE_CACHE[
@@ -2412,11 +2451,11 @@ def get_nearby_restaurants(target_lat: float, target_lng: float, radius_m: int =
 def get_wellness_spots(lat: float, lng: float, radius: int = 5000) -> List[Dict[str, Any]]:
     """축제장 기준 반경 내 웰니스 관광지 및 쉼터 정보를 반환합니다."""
     global _ADAPTER_WELLNESS_CACHE
-    if _ADAPTER_WELLNESS_CACHE is None:
+    if _ADAPTER_WELLNESS_CACHE is None or _ADAPTER_WELLNESS_CACHE.empty:
         df = _load_adapter_csv(["*웰니스*.csv", "*wellness*.csv"])
         if not df.empty:
-            lat_col = "위도" if "위도" in df.columns else ("lat" if "lat" in df.columns else None)
-            lng_col = "경도" if "경도" in df.columns else ("lng" if "lng" in df.columns else None)
+            lat_col = "위도" if "위도" in df.columns else ("lat" if "lat" in df.columns else ("mapy" if "mapy" in df.columns else None))
+            lng_col = "경도" if "경도" in df.columns else ("lng" if "lng" in df.columns else ("mapx" if "mapx" in df.columns else None))
             if lat_col and lng_col:
                 df["_lat_num"] = pd.to_numeric(df[lat_col], errors="coerce")
                 df["_lng_num"] = pd.to_numeric(df[lng_col], errors="coerce")
@@ -2488,8 +2527,8 @@ def get_wellness_spots(lat: float, lng: float, radius: int = 5000) -> List[Dict[
     return spots
 
 
-def get_festival_infra_bundle(fest_lat: float, fest_lng: float, radius_m: int = 3000) -> Dict[str, List[Dict[str, Any]]]:
-    """축제 좌표를 기준으로 주차장, 모범식당, 웰니스 쉼터를 3종 패키지 번들로 반환합니다."""
+def get_festival_infra_bundle(fest_lat: float, fest_lng: float, radius_m: int = 3000, target_address: str = "") -> Dict[str, List[Dict[str, Any]]]:
+    """축제 좌표를 기준으로 주차장, 모범식당, 웰니스 쉼터를 3종 패키지 번들로 반환합니다. (반경 최대 20km 확장 지원)"""
     if not fest_lat or abs(fest_lat) < 1.0 or not fest_lng or abs(fest_lng) < 1.0:
         return {
             "parking_lots": [],
@@ -2497,8 +2536,13 @@ def get_festival_infra_bundle(fest_lat: float, fest_lng: float, radius_m: int = 
             "tourist_spots": []
         }
 
-    parking = get_nearby_parking(fest_lat, fest_lng, radius_m=radius_m)[:15]
-    restaurants = get_nearby_restaurants(fest_lat, fest_lng, radius_m=radius_m)[:15]
+    # 주차장은 축제장 바로 앞 주차장을 우선 확보(최대 5km 이내 우선, 없으면 radius_m 확장)
+    parking = get_nearby_parking(fest_lat, fest_lng, radius_m=min(radius_m, 5000))
+    if not parking and radius_m > 5000:
+        parking = get_nearby_parking(fest_lat, fest_lng, radius_m=radius_m)
+    parking = parking[:15]
+
+    restaurants = get_nearby_restaurants(fest_lat, fest_lng, radius_m=radius_m, target_address=target_address)[:15]
     wellness = get_wellness_spots(fest_lat, fest_lng, radius=radius_m)[:6]
 
     return {

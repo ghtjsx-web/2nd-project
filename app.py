@@ -16,12 +16,20 @@ import streamlit as st
 import folium
 from streamlit_folium import st_folium
 
-# 백엔드(backend) 및 데이터(datafile) 모듈 경로 자동 등록
+# 백엔드 및 공공데이터 모듈 경로 최우선 순위 보장 (상위 폴더 모듈 간섭 차단)
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT = os.path.abspath(os.path.join(CURRENT_DIR, ".."))
-for p in [PROJECT_ROOT, os.path.join(PROJECT_ROOT, "backend"), os.path.join(PROJECT_ROOT, "datafile")]:
-    if p not in sys.path:
-        sys.path.insert(0, p)
+if CURRENT_DIR in sys.path:
+    sys.path.remove(CURRENT_DIR)
+sys.path.insert(0, CURRENT_DIR)
+
+festapick_dir = os.path.join(CURRENT_DIR, "festapick")
+if os.path.exists(festapick_dir) and festapick_dir not in sys.path:
+    sys.path.insert(1, festapick_dir)
+
+# 보조 디렉터리 후순위 등록
+for p in [os.path.join(CURRENT_DIR, "backend"), os.path.join(CURRENT_DIR, "datafile")]:
+    if os.path.exists(p) and p not in sys.path:
+        sys.path.append(p)
 
 # agent.py 백엔드 파이프라인 정식 인터페이스 임포트
 try:
@@ -218,7 +226,15 @@ with st.sidebar:
         index=0
     )
 
-    # 7. 세부 요구사항 텍스트
+    # 7. 이동 수단 선택 UI
+    transport = st.radio(
+        "🚗 주된 이동 수단",
+        options=["도보 (대중교통)", "자가용 (렌터카)"],
+        index=0,
+        help="자가용 선택 시 차량 20~30분 거리(축제장 반경 20km) 내 주차가 확보된 로컬 맛집·쉼터를 광역 탐색하며, 도보 이용 시 최단거리 중심 힐링 동선을 제공합니다."
+    )
+
+    # 8. 세부 요구사항 텍스트
     st.markdown("💬 **세부 요청사항**")
     default_request = "부모님이 무릎이 안 좋으셔서 계단은 피하고 오래 못 걸어요. 차는 주차하기 편하고 넓은 곳이 좋겠습니다." if "부모님" in companion else "무리 없이 편안하게 즐기고 싶어요."
     extra_details = st.text_area(
@@ -273,6 +289,7 @@ if run_button:
             user_inputs = {
                 "stamina": stamina,
                 "companion": companion,
+                "transport": transport,
                 "region": fest_data.get("region", selected_region),
                 "selected_festival": {
                     "name": fest_data.get("name", "로컬 축제"),
@@ -287,13 +304,23 @@ if run_button:
 
             p_lots, m_rests, t_spots = [], [], []
 
+            # [이동 수단별 동적 검색 반경 결정]
+            # 자가용: 축제장 반경 20km(20,000m) 드라이브 권역으로 대폭 확장 / 도보: 체력 30 이하는 1km, 그 외는 2km 동적 할당
+            if "자가용" in transport:
+                dynamic_radius = 20000
+            elif stamina <= 30:
+                dynamic_radius = 1000
+            else:
+                dynamic_radius = 2000
+
             # [지침 2 준수] 100% 실제 공공데이터 조회 (가짜/샘플 폴백 완전 배제)
             # 결과가 0건이면 억지로 채우지 않고 정직하게 빈 리스트([])를 전달함
             try:
                 infra = get_festival_infra_bundle(
                     fest_lat=fest_data.get("lat", 0.0),
                     fest_lng=fest_data.get("lng", 0.0),
-                    radius_m=3000
+                    radius_m=dynamic_radius,
+                    target_address=fest_data.get("address", "")
                 )
                 p_lots = infra.get("parking_lots", [])
                 m_rests = infra.get("model_restaurants", [])
