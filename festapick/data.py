@@ -4,6 +4,10 @@ import os
 import sys
 # 정규 표현식(Regular Expression) 처리를 위한 파이썬 표준 라이브러리 re 모듈을 불러옵니다.
 import re
+# JSON 데이터 파싱을 위한 json 모듈을 불러옵니다.
+import json
+# HTTP 네트워크 요청을 위한 requests 모듈을 불러옵니다.
+import requests
 # 파일 경로 탐색을 위한 glob 모듈을 불러옵니다.
 import glob
 # 타입 힌트 지정을 위해 typing 모듈에서 필요한 타입 클래스들을 불러옵니다.
@@ -2842,9 +2846,9 @@ def fill_festival_coordinates(festivals_file: Optional[str] = None, backup: bool
                     filled_sigungu += 1
                     break
 
+        # 4차: 모든 탐색 실패 시 임의 가짜 좌표 대신 0.0, 0.0으로 명시 (get_festivals에서 자동 필터링하여 데이터 신뢰성 보장)
         if not target_lat:
-            target_lat, target_lng = 36.5000000, 127.5000000
-            filled_sigungu += 1
+            target_lat, target_lng = 0.0, 0.0
 
         df.at[idx, "위도"] = target_lat
         df.at[idx, "경도"] = target_lng
