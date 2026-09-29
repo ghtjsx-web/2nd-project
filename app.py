@@ -379,11 +379,13 @@ if result and active_fest:
         # [지침 4 준수] 축제 좌표 확인 및 임의 하드코딩 제거 (좌표 누락 시 대한민국 전도 중심 [36.5, 127.5], zoom=7로 줌아웃)
         fest_lat = active_fest.get("lat")
         fest_lng = active_fest.get("lng")
+        is_invalid_coord = (not fest_lat or not fest_lng or abs(float(fest_lat)) < 1.0 or abs(float(fest_lng)) < 1.0)
 
-        if not fest_lat or not fest_lng:
+        if is_invalid_coord:
+            st.info("ℹ️ 축제장의 상세 위경도 좌표가 제공되지 않아 대한민국 전도 중심으로 지도를 표시합니다.")
             m = folium.Map(location=[36.5, 127.5], zoom_start=7, tiles="OpenStreetMap")
         else:
-            m = folium.Map(location=[fest_lat, fest_lng], zoom_start=14, tiles="OpenStreetMap")
+            m = folium.Map(location=[float(fest_lat), float(fest_lng)], zoom_start=14, tiles="OpenStreetMap")
 
         # agent.py가 정제한 map_markers를 100% 활용하여 마커 렌더링
         for pin in map_markers:
@@ -489,20 +491,28 @@ if result and active_fest:
         # [지침 2, 5 준수] 착한가격업소 & 인근 관광·휴식 명소 추천 UI 카드
         st.markdown("### 🍽️ 착한가격업소 & 🌿 인근 관광·휴식 명소 추천")
 
-        restaurant_pins = [p for p in map_markers if p.get("category") == "restaurant"]
+        # 착한가격업소는 좌표가 없어도(동일 시군구 소재) 텍스트 목록에 노출
+        restaurants_list = result.get("model_restaurants") or [p for p in map_markers if p.get("category") == "restaurant"]
         rest_spot_pins = [p for p in map_markers if p.get("category") == "rest_spot"]
 
         tab_rest, tab_spot = st.tabs([
-            f"🍽️ 착한가격업소 ({len(restaurant_pins)})",
+            f"🍽️ 착한가격업소 ({len(restaurants_list)})",
             f"🌿 인근 관광·휴식 명소 ({len(rest_spot_pins)})"
         ])
 
         with tab_rest:
-            if restaurant_pins:
-                for r in restaurant_pins:
+            if restaurants_list:
+                for r in restaurants_list:
                     r_name = html.escape(str(r.get("name", "착한가격업소")))
                     r_menu = html.escape(str(r.get("menu", "대표메뉴")))
                     r_price = html.escape(str(r.get("price", "가격 정보 없음")))
+                    r_addr = html.escape(str(r.get("address", "")))
+                    r_dist = r.get("_dist")
+                    if r_dist is not None and r_dist != float('inf'):
+                        dist_label = f"축제장 직선거리 약 {int(r_dist)}m"
+                    else:
+                        dist_label = "거리 미상 (동일 시군구 소재)"
+                    addr_info = f" · {r_addr}" if r_addr else ""
                     st.markdown(f"""
                     <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:12px 16px; margin-bottom:10px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
@@ -510,7 +520,8 @@ if result and active_fest:
                             <span style="background:#dcfce7; color:#15803d; font-weight:700; padding:2px 8px; border-radius:6px; font-size:0.78rem;">착한가격업소</span>
                         </div>
                         <div style="font-size:0.85rem; color:#374151; margin-bottom:3px;"><strong>대표메뉴:</strong> {r_menu}</div>
-                        <div style="font-size:0.82rem; color:#15803d; font-weight:600;">💰 가격: {r_price}</div>
+                        <div style="font-size:0.82rem; color:#15803d; font-weight:600; margin-bottom:2px;">💰 가격: {r_price}</div>
+                        <div style="font-size:0.8rem; color:#64748b;">📍 {dist_label}{addr_info}</div>
                     </div>
                     """, unsafe_allow_html=True)
             else:

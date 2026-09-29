@@ -11,14 +11,26 @@ import os
 import sys
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+if CURRENT_DIR not in sys.path:
+    sys.path.insert(0, CURRENT_DIR)
+
 FESTAPICK_DIR = os.path.join(CURRENT_DIR, "festapick")
 if FESTAPICK_DIR not in sys.path:
-    sys.path.insert(0, FESTAPICK_DIR)
+    sys.path.append(FESTAPICK_DIR)
 
-from festapick.data import *
+try:
+    from festapick.data_festival import *
+except ImportError:
+    try:
+        # pyrefly: ignore [missing-import]
+        from data_festival import *
+    except ImportError:
+        from festapick.data import *
 
 if __name__ == "__main__":
-    data_target_path = os.path.join(FESTAPICK_DIR, "data.py")
+    data_target_path = os.path.join(FESTAPICK_DIR, "data_festival.py")
+    if not os.path.exists(data_target_path):
+        data_target_path = os.path.join(FESTAPICK_DIR, "data.py")
     with open(data_target_path, "r", encoding="utf-8") as f:
         code = f.read()
     exec(compile(code, data_target_path, "exec"), globals())

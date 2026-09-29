@@ -215,13 +215,19 @@ def sanitize_infra_bundle(api_data: Optional[Dict[str, Any]]) -> Dict[str, List[
                 continue
             if item.get("is_empty") is True or item.get("is_dummy") is True:
                 continue
-            lat, lng = item.get("lat"), item.get("lng")
-            if not is_valid_korea_coord(lat, lng):
-                continue
-
             r = dict(item)
-            r["lat"] = float(lat)
-            r["lng"] = float(lng)
+            lat, lng = item.get("lat"), item.get("lng")
+            if is_valid_korea_coord(lat, lng):
+                r["lat"] = float(lat)
+                r["lng"] = float(lng)
+            else:
+                # [지침 3 준수] 위경도 결측치 안전 보존 (상호명, 메뉴가 유효하면 Drop하지 않고 lat: None, lng: None 보존)
+                name = str(r.get("name") or "").strip()
+                menu = str(r.get("menu") or "").strip()
+                if not name and not menu:
+                    continue
+                r["lat"] = None
+                r["lng"] = None
 
             r["price"] = str(r.get("price") if r.get("price") is not None else "가격 정보 없음")
             if "fee" in r:
@@ -298,7 +304,8 @@ def _calc_distance(lat1: Optional[float], lon1: Optional[float], lat2: Optional[
     phi1, phi2 = math.radians(lat1), math.radians(lat2)
     dphi, dlam = math.radians(lat2 - lat1), math.radians(lon2 - lon1)
     a = math.sin(dphi / 2)**2 + math.cos(phi1) * math.cos(phi2) * math.sin(dlam / 2)**2
-    return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    # [지침 3 준수] 부동소수점 오차로 인한 math domain error 방어
+    return R * 2 * math.atan2(math.sqrt(a), math.sqrt(max(0.0, 1.0 - a)))
 
 
 # ==============================================================================
@@ -309,9 +316,10 @@ def analyze_stamina_and_intent(state: PipelineState) -> Dict[str, Any]:
     transport = str(state.get("transport", "도보 (대중교통)"))
     is_car = "자가용" in transport
 
-    # [지침 3 준수] DoS 방어 1,000자 제한 적용
+    # [지침 3 준수] DoS 방어 1,000자 제한 및 중괄호 치환(프롬프트 인젝션 방어) 적용
     raw_extra = str(state.get("extra_details", "")).strip()
     extra = (raw_extra[:1000] if raw_extra else "특별한 요청 없음")
+    extra = extra.replace("{", "【").replace("}", "】")
 
     # [이동 수단(차량 유무) 및 체력 기반 분기 - 자가용 선택 시 축제장 반경 20km 드라이브 권역 적용]
     if is_car:
@@ -449,9 +457,10 @@ def generate_magazine_article_node(state: PipelineState) -> Dict[str, Any]:
             continue
         r = dict(item)
         r_lat, r_lng = _safe_lat(r.get("lat")), _safe_lng(r.get("lng"))
-        if r_lat is None or r_lng is None:
-            continue
-        r["_dist"] = _calc_distance(fest_lat, fest_lng, r_lat, r_lng)
+        if r_lat is not None and r_lng is not None and fest_lat is not None and fest_lng is not None:
+            r["_dist"] = _calc_distance(fest_lat, fest_lng, r_lat, r_lng)
+        else:
+            r["_dist"] = float('inf')
         restaurants.append(r)
 
     # 2. 이동 수단(차량 유무) 및 체력 기반 동적 데이터 정렬
@@ -487,13 +496,16 @@ def generate_magazine_article_node(state: PipelineState) -> Dict[str, Any]:
         else:
             parking_str = "도보 및 대중교통 이용 권장 일정으로, 별도 주차장 이용이 불필요합니다."
 
-    # [지침 5 준수] 가짜 기본값 방지 -> "메뉴 정보 없음"
+    # [지침 1, 3, 5 준수] 가짜 기본값 방지 및 결측 좌표 식당 정직한 거리 표기
     rest_str_list = []
     for r in top_restaurants:
-        dist_str = f"약 {int(r['_dist'])}m" if r["_dist"] != float('inf') else "거리 미상"
+        if r.get("_dist") != float('inf') and r.get("_dist") is not None:
+            dist_str = f"축제장 직선거리 약 {int(r['_dist'])}m"
+        else:
+            dist_str = "거리 미상 (동일 시군구 소재)"
         menu_str = str(r.get('menu') or '메뉴 정보 없음')[:300]
         price_str = str(r.get('price') if r.get('price') is not None else '가격 정보 없음')
-        rest_str_list.append(f"- {r.get('name')}: {menu_str} / 축제장 직선거리 {dist_str} ({price_str})")
+        rest_str_list.append(f"- {r.get('name')}: {menu_str} / {dist_str} ({price_str})")
     rest_str = "\n".join(rest_str_list) if rest_str_list else "인근에 등록된 착한가격업소 정보가 없습니다."
 
     # [지침 4 준수] 쉼터(관광지) 데이터 주입 문자열 생성 (도보일 경우 최근접 순 정렬 고려)
