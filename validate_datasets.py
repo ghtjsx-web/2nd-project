@@ -132,7 +132,10 @@ def validate_good_price_stores() -> Tuple[bool, Dict[str, Any]]:
     else:
         # data.py의 is_food_related 필터 적용
         try:
-            from festapick.data import is_food_related, clean_text
+            try:
+                from festapick.data_pipeline import is_food_related, clean_text
+            except ImportError:
+                from festapick.data import is_food_related, clean_text
             filtered_rows = []
             for _, r in df.iterrows():
                 c = clean_text(r.get("업종", ""))
