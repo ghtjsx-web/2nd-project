@@ -38,12 +38,15 @@ except ImportError as e:
     st.error(f"agent.py 임포트 오류: {e}")
     st.stop()
 
-# data.py 실제 공공데이터 엔지니어링 모듈 연동
+# data.py 실제 공공데이터 엔지니어링 모듈 연동 (루트 브릿지 및 festapick/data_pipeline 모두 지원)
 try:
     from data import get_festival_infra_bundle, get_festivals
-except ImportError as e:
-    st.error(f"data.py 임포트 오류: {e}")
-    st.stop()
+except ImportError:
+    try:
+        from festapick.data_pipeline import get_festival_infra_bundle, get_festivals
+    except ImportError as e:
+        st.error(f"data.py 임포트 오류: {e}")
+        st.stop()
 
 
 # ==============================================================================

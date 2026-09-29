@@ -26,16 +26,23 @@ CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 if CURRENT_DIR not in sys.path:
     sys.path.insert(0, CURRENT_DIR)
 
-# data.py 및 agent.py 모듈 연동 (핫 리로드 강제)
+# data_pipeline.py 및 agent.py 모듈 연동 (핫 리로드 강제)
 import agent
-import data
+try:
+    import data_pipeline as data
+except ImportError:
+    try:
+        from festapick import data_pipeline as data
+    except ImportError:
+        import data
+
 try:
     importlib.reload(agent)
     importlib.reload(data)
 except Exception:
     pass
 
-from data import PublicDataRAGManager
+PublicDataRAGManager = getattr(data, "PublicDataRAGManager")
 from agent import (
     build_user_prompt,
     get_system_prompt,

@@ -93,12 +93,12 @@ MAGAZINE_EDITOR_SYSTEM_PROMPT = """너는 감각적이고 트렌디한 로컬 �
 4. 오직 제공된 [관광·휴식 명소 목록] 명단 내에서만 쉼터를 추천할 것. 명단 밖의 장소를 새로 만들어 추천하지 말 것.
 5. 프로그램 정보가 없는 경우 임의로 가상의 이벤트를 지어내지 말고 '프로그램 정보 없음'으로 정직하게 표기할 것.
 6. 타임라인의 시각은 사용자를 위한 '추천 방문 시각'이며 공식 행사 시작 시간이 아님을 명시할 것.
-7. 공식 운영/행사 시간이 데이터에 제공되지 않은 프로그램에는 실제 시작 시간인 것처럼 특정 시각을 부여하지 말 것.
+7. 공식 운영/행사 시간이 명시되지 않은 프로그램에는 실제 시작 시간인 것처럼 단정하지 말고 '추천 방문 시각(예: 오전 11:00 무렵)' 또는 '권장 체류 시간(예: 약 1~1.5시간 소요)' 형식으로 자연스럽게 안내할 것.
 
 [매거진 기사 필수 구성]
 # 🌿 [헤드라인: 감각적인 메인 타이틀 & 서브헤드]
 ### 🖋️ Editor's Letter: [오늘의 여정을 시작하며]
-### 🗺️ Fest & Rest Curated Timeline: [시간이 머무는 맞춤 동선 (반드시 10:30 AM, 12:30 PM 등 구체적인 시간대별 추천 일정표 형식으로 작성하되, 해당 시각은 사용자를 위한 '추천 방문 시각'이며 공식 행사 시작 시간이 아님을 명시할 것. 공식 운영/행사 시간이 데이터에 제공되지 않은 프로그램에는 실제 시작 시간인 것처럼 특정 시각을 부여하지 말 것. 단, 제공된 실제 공영주차장과 착한가격업소, 쉼터 및 행사 데이터만 활용하여 동선을 조립할 것)]
+### 🗺️ Fest & Rest Curated Timeline: [시간이 머무는 맞춤 동선 (10:30 AM 등 구체적인 시간대별 추천 일정표 형식으로 작성하되, 공식 운영/행사 시간이 명시되지 않은 프로그램에는 실제 시작 시간인 것처럼 단정하지 말고 '추천 방문 시각(예: 오전 11:00 무렵)' 또는 '권장 체류 시간(예: 약 1~1.5시간 소요)' 형식으로 자연스럽게 안내할 것. 단, 제공된 실제 공영주차장과 착한가격업소, 쉼터 및 행사 데이터만 활용하여 동선을 조립할 것)]
 ### 📌 Event Guide: [프로그램 체크리스트 (사전 예약 vs 자유 참여)]
 ### 🛡️ Safe & Relax Tips: [현장 안심 꿀팁 브리핑 (주차면수 및 직선거리 중심)]
 """
@@ -198,6 +198,7 @@ def sanitize_infra_bundle(api_data: Optional[Dict[str, Any]]) -> Dict[str, List[
                 p["total_spaces"] = 0
 
             p["fee"] = str(p.get("fee") if p.get("fee") is not None else "요금 정보 없음")
+            p["address"] = str(item.get("address") or item.get("소재지도로명주소") or item.get("소재지지번주소") or "")
             if "price" in p:
                 p["price"] = str(p.get("price") or "")
 
@@ -221,7 +222,7 @@ def sanitize_infra_bundle(api_data: Optional[Dict[str, Any]]) -> Dict[str, List[
                 r["lat"] = float(lat)
                 r["lng"] = float(lng)
             else:
-                # [지침 3 준수] 위경도 결측치 안전 보존 (상호명, 메뉴가 유효하면 Drop하지 않고 lat: None, lng: None 보존)
+                # [지침 1 준수] 위경도 결측치 안전 보존 (상호명, 메뉴가 유효하면 Drop하지 않고 lat: None, lng: None 보존)
                 name = str(r.get("name") or "").strip()
                 menu = str(r.get("menu") or "").strip()
                 if not name and not menu:
@@ -229,6 +230,8 @@ def sanitize_infra_bundle(api_data: Optional[Dict[str, Any]]) -> Dict[str, List[
                 r["lat"] = None
                 r["lng"] = None
 
+            # [지침 1 준수] 주소 필드 명시적 보존
+            r["address"] = str(item.get("address") or "")
             r["price"] = str(r.get("price") if r.get("price") is not None else "가격 정보 없음")
             if "fee" in r:
                 r["fee"] = str(r.get("fee") or "")
@@ -249,14 +252,22 @@ def sanitize_infra_bundle(api_data: Optional[Dict[str, Any]]) -> Dict[str, List[
                 continue
             if item.get("is_empty") is True or item.get("is_dummy") is True:
                 continue
-            lat, lng = item.get("lat"), item.get("lng")
-            if not is_valid_korea_coord(lat, lng):
-                continue
-
             s = dict(item)
-            s["lat"] = float(lat)
-            s["lng"] = float(lng)
+            lat, lng = item.get("lat"), item.get("lng")
+            if is_valid_korea_coord(lat, lng):
+                s["lat"] = float(lat)
+                s["lng"] = float(lng)
+            else:
+                # [지침 1 준수] 위경도 결측치 안전 보존 (명소명, 설명 유효 시 lat: None, lng: None 보존)
+                name = str(s.get("name") or "").strip()
+                overview = str(s.get("overview") or s.get("description") or "").strip()
+                if not name and not overview:
+                    continue
+                s["lat"] = None
+                s["lng"] = None
 
+            # [지침 1 준수] 주소 필드 명시적 보존
+            s["address"] = str(item.get("address") or item.get("addr1") or "")
             if "fee" in s:
                 s["fee"] = str(s.get("fee") or "")
             if "price" in s:
@@ -318,8 +329,8 @@ def analyze_stamina_and_intent(state: PipelineState) -> Dict[str, Any]:
 
     # [지침 3 준수] DoS 방어 1,000자 제한 및 중괄호 치환(프롬프트 인젝션 방어) 적용
     raw_extra = str(state.get("extra_details", "")).strip()
+    raw_extra = raw_extra.replace("{", "【").replace("}", "】")
     extra = (raw_extra[:1000] if raw_extra else "특별한 요청 없음")
-    extra = extra.replace("{", "【").replace("}", "】")
 
     # [이동 수단(차량 유무) 및 체력 기반 분기 - 자가용 선택 시 축제장 반경 20km 드라이브 권역 적용]
     if is_car:
@@ -568,7 +579,7 @@ def generate_magazine_article_node(state: PipelineState) -> Dict[str, Any]:
 - 관광·휴식 장소는 위 명단 밖의 장소를 새로 만들어 추천하지 말 것.
 - 예약 정보가 미상(Unknown)인 이벤트는 임의로 추측하지 말고 '현장 문의 필요'라고 명시할 것.
 - 타임라인의 시각은 사용자를 위한 '추천 방문 시각'이며 공식 행사 시작 시간이 아님을 명시하세요.
-- 공식 운영/행사 시간이 데이터에 제공되지 않은 프로그램에는 실제 시작 시간인 것처럼 특정 시각을 부여하지 마세요.""")
+- 공식 운영/행사 시간이 명시되지 않은 프로그램에는 실제 시작 시간인 것처럼 단정하지 말고 '추천 방문 시각(예: 오전 11:00 무렵)' 또는 '권장 체류 시간(예: 약 1~1.5시간 소요)' 형식으로 자연스럽게 안내하세요.""")
         ])
 
         chain = prompt | _get_llm(0.3) | StrOutputParser()
@@ -816,18 +827,35 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"  - analyze 테스트 알림: {e}")
 
-    # 4. 가짜 기본값 박멸 검증
-    print("\n▶ [지침 5 검증] 가짜 기본값 박멸:")
+    # 4. 가짜 기본값 박멸 및 결측치/주소 보존 검증
+    print("\n▶ [지침 1, 5 검증] 결측 좌표 식당/쉼터 보존 및 주소 복사 검증:")
     test_infra = {
-        "parking_lots": [{"lat": 35.19, "lng": 128.08, "total_spaces": 10}],
-        "model_restaurants": [{"lat": 35.19, "lng": 128.08, "price": "8000"}],
-        "tourist_spots": [{"lat": 35.19, "lng": 128.08}]
+        "parking_lots": [{"name": "테스트주차장", "lat": 35.19, "lng": 128.08, "total_spaces": 10, "address": "주차장주소"}],
+        "model_restaurants": [
+            {"name": "광양식당", "lat": 0.0, "lng": 0.0, "menu": "재첩국", "price": "8000", "address": "전남 광양시"},
+            {"name": "정상식당", "lat": 35.19, "lng": 128.08, "price": "8000"}
+        ],
+        "tourist_spots": [
+            {"name": "광양쉼터", "lat": None, "lng": None, "overview": "숲속 쉼터", "address": "전남 광양시 백운산"},
+            {"lat": 35.19, "lng": 128.08}
+        ]
     }
     san = sanitize_infra_bundle(test_infra)
-    assert san["model_restaurants"][0]["menu"] == "메뉴 정보 없음"
-    assert san["tourist_spots"][0]["overview"] == "설명 정보 없음"
-    print("  - 모범식당 기본 메뉴: '메뉴 정보 없음' 확인")
-    print("  - 쉼터 기본 설명: '설명 정보 없음' 확인")
+    assert len(san["model_restaurants"]) == 2, "결측 좌표 식당이 Drop되지 않고 보존되어야 함!"
+    assert san["model_restaurants"][0]["lat"] is None, "결측 좌표 식당 lat은 None이어야 함!"
+    assert san["model_restaurants"][0]["address"] == "전남 광양시", "식당 주소가 보존되어야 함!"
+    assert san["model_restaurants"][1]["menu"] == "메뉴 정보 없음", "가짜 기본값 메뉴 정보 없음 확인!"
+    assert len(san["tourist_spots"]) == 2, "결측 좌표 쉼터가 Drop되지 않고 보존되어야 함!"
+    assert san["tourist_spots"][0]["lat"] is None, "결측 좌표 쉼터 lat은 None이어야 함!"
+    assert san["tourist_spots"][0]["address"] == "전남 광양시 백운산", "쉼터 주소가 보존되어야 함!"
+    assert san["tourist_spots"][1]["overview"] == "설명 정보 없음", "가짜 기본값 설명 정보 없음 확인!"
+    print("  - 결측 좌표 식당/쉼터 Drop 방지 및 주소 필드 명시적 보존 확인 완료!")
+
+    # 5. _calc_distance 부동소수점 도메인 에러 방어 검증
+    print("\n▶ [지침 2 검증] Haversine math domain error 방어:")
+    dist_overflow = _calc_distance(37.5, 127.0, 37.5, 127.0)
+    assert dist_overflow == 0.0, "동일 좌표 거리는 0이어야 함!"
+    print("  - 부동소수점 오차로 인한 math domain error 방어 확인 완료!")
 
     print("\n" + "=" * 70)
     print("🎉 agent.py 최종 배포용 보안 및 데이터 무결성 100% 검증 통과!")
