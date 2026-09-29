@@ -42,6 +42,7 @@ load_dotenv()
 class PipelineState(TypedDict):
     stamina: int
     companion: str
+    transport: str  # 이동 수단: "도보 (대중교통)" 또는 "자가용 (렌터카)"
     region: str
     selected_festival: Dict[str, Any]
     extra_details: str
@@ -61,22 +62,25 @@ class PipelineState(TypedDict):
 # ==============================================================================
 # 2. 프롬프트 템플릿 정의
 # ==============================================================================
-INTENT_ANALYSIS_PROMPT = """너는 여행자의 체력 상태와 동반자 유형, 자연어 요청사항을 분석하여
+INTENT_ANALYSIS_PROMPT = """너는 여행자의 체력 상태와 동반자 유형, 이동 수단, 자연어 요청사항을 분석하여
 'Fest & Rest(축제와 쉼터의 공존)' 맞춤 동선 전략을 수립하는 여행 컨설턴트야.
 
 [입력 정보]
 - 체력 수치: {stamina}% (0~100)
 - 동반자 유형: {companion}
+- 이동 수단: {transport}
 - 자유 요청사항: "{extra_details}"
 
 [분석 지침]
-1. 체력과 자유 요청사항에 숨겨진 보행 제약 수준(없음/경미/보통/심각)을 도출할 것.
-2. 실시간 혼잡도 추론은 절대 하지 말고, 체력(stamina)이 30% 이하일 경우 "최단거리 주차장 우선"으로, 30% 초과일 경우 "대규모 주차면수 우선"으로 주차 선호도를 정직하게 명시할 것.
+1. 체력과 이동 수단, 자유 요청사항에 숨겨진 보행 제약 수준(없음/경미/보통/심각)을 도출할 것.
+2. 실시간 혼잡도 추론은 절대 하지 말고, 주차 선호도를 정직하게 명시할 것:
+   - 자가용 이용 시: 체력이 30% 이하이면 "최단거리 주차장 우선", 30% 초과이면 "대규모 주차면수 우선"으로 명시.
+   - 도보(대중교통) 이용 시: "도보 접근성 우선 (주차장 이용 불필요)"으로 명시.
 3. 반드시 아래 JSON 형식으로만 응답할 것 (마크다운 백틱 없이 순수 JSON 문자열만 출력):
 {{
     "core_needs": "핵심 니즈 요약 (한 줄)",
     "mobility_constraint": "보행 제약 사항 (없음, 경미, 보통, 심각 중 택1)",
-    "parking_focus": "주차장 선호도 (최단거리 주차장 우선 / 대규모 주차면수 우선)"
+    "parking_focus": "주차장 선호도 (최단거리 주차장 우선 / 대규모 주차면수 우선 / 도보 접근성 우선)"
 }}"""
 
 MAGAZINE_EDITOR_SYSTEM_PROMPT = """너는 감각적이고 트렌디한 로컬 라이프스타일 매거진의 수석 여행 에디터야.
@@ -302,25 +306,53 @@ def _calc_distance(lat1: Optional[float], lon1: Optional[float], lat2: Optional[
 # ==============================================================================
 def analyze_stamina_and_intent(state: PipelineState) -> Dict[str, Any]:
     stamina = state.get("stamina", 50)
+    transport = str(state.get("transport", "도보 (대중교통)"))
+    is_car = "자가용" in transport
+
     # [지침 3 준수] DoS 방어 1,000자 제한 적용
     raw_extra = str(state.get("extra_details", "")).strip()
     extra = (raw_extra[:1000] if raw_extra else "특별한 요청 없음")
 
-    if stamina <= 30:
-        level, radius, ratio = "Low", "도보 500m 이내", "Activity 20% : Healing 80%"
-        guide = "- 도보 이동을 최소화하고, 축제장 핵심 관람 후 쉼터에서 여유로운 휴식 위주로 구성. (최단거리 인프라 우선)"
-    elif stamina <= 70:
-        level, radius, ratio = "Moderate", "반경 2~3km", "Activity 50% : Healing 50%"
-        guide = "- 축제장 관람(1~1.5시간)과 여유로운 쉼터(1시간)를 50:50으로 교차 배치. (주차면수 및 거리 균형 고려)"
+    # [이동 수단(차량 유무) 및 체력 기반 분기 - 자가용 선택 시 축제장 반경 20km 드라이브 권역 적용]
+    if is_car:
+        if stamina <= 30:
+            level = "Low"
+            radius = "차량 이동 중심 (축제장 반경 20km 드라이브 권역 활용, 도보 이동은 최소화)"
+            ratio = "Activity 20% : Healing 80%"
+            guide = "- 축제장 도보 관람은 핵심 위주로 최소화하되, 차량으로 15~20분 거리(반경 20km) 내 주차가 편리하고 쾌적한 로컬 식당 및 쉼터로 드라이브 연계. (축제장 최단거리 주차장 확보 필수)"
+        elif stamina <= 70:
+            level = "Moderate"
+            radius = "차량 이동 중심 (축제장 반경 20km 내외 힐링 드라이브 코스)"
+            ratio = "Activity 50% : Healing 50%"
+            guide = "- 축제장 관람(1~1.5시간)과 반경 20km 로컬 힐링 드라이브 및 쉼터 휴식을 50:50으로 균형 있게 배치. (쾌적한 주차 편의 우선)"
+        else:
+            level = "High"
+            radius = "차량 이동 중심 (축제장 반경 20km+ 광역 로컬 로드트립)"
+            ratio = "Activity 80% : Healing 20%"
+            guide = "- 축제 메인 프로그램과 반경 20km 권역의 대표 명소, 맛집, 웰니스 쉼터를 종횡무진 누비는 풀코스 로드트립."
     else:
-        level, radius, ratio = "High", "반경 5km 이상", "Activity 80% : Healing 20%"
-        guide = "- 축제 메인 프로그램과 인근 명소를 80% 비율로 탐방하는 풀코스. (대규모 주차장 우선)"
+        if stamina <= 30:
+            level = "Low"
+            radius = "도보 500m~1km 이내"
+            ratio = "Activity 20% : Healing 80%"
+            guide = "- 도보 이동을 최소화하고, 축제장 핵심 관람 후 최단거리 인접 쉼터에서 여유로운 휴식 위주로 구성. (도보 최단거리 인프라 우선, 주차장 비중 축소)"
+        elif stamina <= 70:
+            level = "Moderate"
+            radius = "도보 1~2km 및 대중교통"
+            ratio = "Activity 50% : Healing 50%"
+            guide = "- 축제장 관람과 도보로 접근 가능한 쉼터를 50:50으로 교차 배치. (도보 접근성 및 대중교통 동선 고려)"
+        else:
+            level = "High"
+            radius = "도보 2~3km 이상 및 대중교통 풀코스"
+            ratio = "Activity 80% : Healing 20%"
+            guide = "- 축제장과 인근 명소를 활발하게 걷는 풀코스. (도보 접근성 우수 명소 우선)"
 
     try:
         chain = ChatPromptTemplate.from_messages([("system", INTENT_ANALYSIS_PROMPT)]) | _get_llm(0.2) | StrOutputParser()
         raw_output = chain.invoke({
             "stamina": stamina,
             "companion": state.get("companion", "일반"),
+            "transport": transport,
             "extra_details": extra
         })
         json_match = re.search(r"\{.*\}", raw_output, re.DOTALL)
@@ -332,7 +364,7 @@ def analyze_stamina_and_intent(state: PipelineState) -> Dict[str, Any]:
         intent_data = {
             "core_needs": "무리 없는 안심 쉼표 중심 힐링 여행",
             "mobility_constraint": "보통" if stamina <= 30 else "경미",
-            "parking_focus": "최단거리 주차장 우선" if stamina <= 30 else "대규모 주차면수 우선"
+            "parking_focus": ("최단거리 주차장 우선" if stamina <= 30 else "대규모 주차면수 우선") if is_car else "도보 접근성 우선 (주차장 이용 불필요)"
         }
 
     # [지침 3 준수] 잘라낸 1,000자 텍스트를 반환하여 State 전체를 안전하게 덮어쓰도록(Update) 적용
@@ -340,7 +372,8 @@ def analyze_stamina_and_intent(state: PipelineState) -> Dict[str, Any]:
         "activity_level": level, "movement_radius": radius,
         "activity_ratio": ratio, "strategy_guideline": guide,
         "intent_analysis": intent_data,
-        "extra_details": extra
+        "extra_details": extra,
+        "transport": transport
     }
 
 
@@ -421,14 +454,22 @@ def generate_magazine_article_node(state: PipelineState) -> Dict[str, Any]:
         r["_dist"] = _calc_distance(fest_lat, fest_lng, r_lat, r_lng)
         restaurants.append(r)
 
-    # 2. 체력 기반 동적 데이터 정렬
+    # 2. 이동 수단(차량 유무) 및 체력 기반 동적 데이터 정렬
+    transport = str(state.get("transport", "도보 (대중교통)"))
+    is_car = "자가용" in transport
     is_low_stamina = stamina <= 30
-    if is_low_stamina:
-        sorted_parking = sorted(parking_lots, key=lambda x: x.get("_dist", float('inf')))[:5]
-    else:
-        sorted_parking = sorted(parking_lots, key=lambda x: (-get_parking_size(x), x.get("_dist", float('inf'))))[:5]
 
-    top_restaurants = sorted(restaurants, key=lambda x: x.get("_dist", float('inf')))[:5]
+    if is_car:
+        # 자가용 이용자: 주차장이 필수이므로 저체력은 최단거리, 일반은 대규모 주차면수/거리순 정렬 유지
+        if is_low_stamina:
+            sorted_parking = sorted(parking_lots, key=lambda x: x.get("_dist", float('inf')))[:5]
+        else:
+            sorted_parking = sorted(parking_lots, key=lambda x: (-get_parking_size(x), x.get("_dist", float('inf'))))[:5]
+        top_restaurants = sorted(restaurants, key=lambda x: x.get("_dist", float('inf')))[:5]
+    else:
+        # 도보(대중교통) 이용자: 주차장 비중 대폭 축소 (최대 2개 참고용), 식당 및 쉼터는 '최단거리(도보 접근성)'를 1순위로 엄격 정렬
+        sorted_parking = sorted(parking_lots, key=lambda x: x.get("_dist", float('inf')))[:2]
+        top_restaurants = sorted(restaurants, key=lambda x: x.get("_dist", float('inf')))[:5]
 
     # 3. LLM 컨텍스트 데이터 문자열 변환
     parking_str_list = []
@@ -437,7 +478,14 @@ def generate_magazine_article_node(state: PipelineState) -> Dict[str, Any]:
         dist_str = f"약 {int(p['_dist'])}m" if p["_dist"] != float('inf') else "거리 미상"
         fee_str = str(p.get('fee') if p.get('fee') is not None else '요금 정보 없음')
         parking_str_list.append(f"- {p.get('name')}: 총 주차면수 {size}면 / 축제장 직선거리 {dist_str} ({fee_str})")
-    parking_str = "\n".join(parking_str_list) if parking_str_list else "현재 등록된 공영주차장 정보가 없습니다."
+    
+    if is_car:
+        parking_str = "\n".join(parking_str_list) if parking_str_list else "현재 등록된 공영주차장 정보가 없습니다. (현장 안내 요원의 지시를 확인하세요.)"
+    else:
+        if parking_str_list:
+            parking_str = "(도보/대중교통 코스 안내 - 자가용 이용 시 인접 주차장 참고용)\n" + "\n".join(parking_str_list)
+        else:
+            parking_str = "도보 및 대중교통 이용 권장 일정으로, 별도 주차장 이용이 불필요합니다."
 
     # [지침 5 준수] 가짜 기본값 방지 -> "메뉴 정보 없음"
     rest_str_list = []
@@ -448,7 +496,7 @@ def generate_magazine_article_node(state: PipelineState) -> Dict[str, Any]:
         rest_str_list.append(f"- {r.get('name')}: {menu_str} / 축제장 직선거리 {dist_str} ({price_str})")
     rest_str = "\n".join(rest_str_list) if rest_str_list else "인근에 등록된 착한가격업소 정보가 없습니다."
 
-    # [지침 4 준수] 쉼터(관광지) 데이터 주입 문자열 생성
+    # [지침 4 준수] 쉼터(관광지) 데이터 주입 문자열 생성 (도보일 경우 최근접 순 정렬 고려)
     raw_spots = state.get("tourist_spots", [])
     spot_str_list = []
     for s in raw_spots[:5]:
@@ -480,6 +528,7 @@ def generate_magazine_article_node(state: PipelineState) -> Dict[str, Any]:
 - 축제 소개: {fest_desc}
 - 체력 수치: {stamina}% (활동 수준: {activity_level})
 - 동반자: {companion}
+- 이동 수단: {transport}
 - 자유 세부사항: "{extra_details}" (의도 분석: {intent_analysis})
 - 전략 지침: {strategy_guideline}
 
@@ -497,6 +546,9 @@ def generate_magazine_article_node(state: PipelineState) -> Dict[str, Any]:
 {unknown_str}
 
 [작성 가이드]
+- 이동 수단({transport})에 맞추어 맞춤형 동선 팁을 제공하세요:
+  * '자가용' 선택 시: 축제장 반경 20km(차량 15~25분 거리) 권역의 로컬 힐링 드라이브 및 인접 명소/맛집 연계를 감성적으로 작성하고, 주차장 팁을 명확히 제공하세요.
+  * '도보' 선택 시: 걷기 편한 최단거리 안심 동선(도보 500m~1km)을 강조하세요.
 - 실시간 혼잡도 추론이나 '혼잡을 피해' 같은 근거 없는 문구는 절대 사용하지 마세요.
 - 오직 제공된 주차면수와 축제장 직선거리(m)를 기반으로 정직한 이동 팁을 제시하세요.
 - 계산된 거리는 지도상 최단 '직선거리'이므로 실제 보행/도로 거리와 다를 수 있음을 자연스럽게 안내하세요.
@@ -515,6 +567,7 @@ def generate_magazine_article_node(state: PipelineState) -> Dict[str, Any]:
             "stamina": stamina,
             "activity_level": state.get("activity_level", ""),
             "companion": state.get("companion", "일반"),
+            "transport": transport,
             "extra_details": state.get("extra_details", ""),
             "intent_analysis": str(state.get("intent_analysis", {})),
             "strategy_guideline": state.get("strategy_guideline", ""),
@@ -672,6 +725,7 @@ def run_processing_pipeline(user_inputs: Dict[str, Any], api_data: Optional[Dict
     initial_state = {
         "stamina": stamina_val,
         "companion": str(user_inputs.get("companion", "나홀로")),
+        "transport": str(user_inputs.get("transport", "도보 (대중교통)")),
         "region": str(user_inputs.get("region", "전국")),
         "selected_festival": fest_clean,
         "extra_details": str(user_inputs.get("extra_details", "")),
@@ -722,6 +776,7 @@ if __name__ == "__main__":
     test_state: PipelineState = {
         "stamina": 30,
         "companion": "부모님",
+        "transport": "자가용 (렌터카)",
         "region": "강원도",
         "selected_festival": {"name": "테스트"},
         "extra_details": long_text,
