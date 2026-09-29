@@ -14,12 +14,10 @@
 ├── 📄 requirements.txt            # 필수 파이썬 라이브러리 목록
 ├── 📄 run_festapick.bat           # 원클릭 실행 배치 파일
 │
-└── 📁 festapick/                  # 페스타픽(FestaPick) 메인 애플리케이션
+└── 📁 festapick/                  # 페스타픽(FestaPick) 핵심 3대 실행 파일 체제
     ├── 🐍 app.py                  # Streamlit 메인 웹 대시보드
-    ├── 🐍 data.py                 # 4대 공공데이터 전처리 및 ChromaDB 벡터 RAG 파이프라인
-    ├── 🐍 prompt.py               # AI 맞춤형 스토리텔링 프롬프트 및 폴백 생성 모듈
-    ├── 🐍 collect_wellness.py      # 한국관광공사 TourAPI 웰니스 공공데이터 수집 스크립트
-    ├── 🐍 fill_festival_coordinates.py # 결측 좌표 100% 자동 보강 배치 스크립트
+    ├── 🐍 data.py                 # 4대 공공데이터 전처리, ChromaDB RAG, 웰니스 수집 & 좌표 보강
+    ├── 🐍 agent.py                # AI 에이전트 추론, 프롬프트 엔지니어링 및 스토리텔링 생성기
     ├── 📄 DATA_PIPELINE_BRIEFING.md # 데이터 파이프라인 아키텍처 브리핑 문서
     │
     └── 📁 data/                   # 전수 정제 완료된 4대 공공데이터 CSV
