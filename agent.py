@@ -638,7 +638,9 @@ def format_folium_pins_node(state: PipelineState) -> Dict[str, Any]:
             "lat": f_lat, "lng": f_lng,
             "icon": "flag", "color": "red",
             "desc": fest_desc,
-            "popup_title": f"🎪 {fest.get('name', '축제장')}"
+            "popup_title": f"🎪 {fest.get('name', '축제장')}",
+            "homepage": str(fest.get("homepage") or ""),
+            "phone": str(fest.get("phone") or "")
         })
 
     # 2. 공영주차장 핀 (상위 6개)
@@ -765,7 +767,9 @@ def run_processing_pipeline(user_inputs: Dict[str, Any], api_data: Optional[Dict
         "map_markers": final_state.get("map_markers", []),
         "parking_lots": final_state.get("parking_lots", []),
         "model_restaurants": final_state.get("model_restaurants", []),
-        "tourist_spots": final_state.get("tourist_spots", [])
+        "tourist_spots": final_state.get("tourist_spots", []),
+        "festival_homepage": str(fest.get("homepage") or "") if isinstance(fest, dict) else "",
+        "festival_phone": str(fest.get("phone") or "") if isinstance(fest, dict) else ""
     }
 
 
