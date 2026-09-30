@@ -16,6 +16,7 @@ import sys
 import re
 import json
 import math
+from datetime import datetime
 from typing import Dict, Any, List, Optional
 from typing_extensions import TypedDict
 from dotenv import load_dotenv
@@ -158,6 +159,72 @@ def _safe_lng(val: Any) -> Optional[float]:
         return f if 124.0 <= f <= 132.0 else None
     except (ValueError, TypeError):
         return None
+
+
+# ==============================================================================
+# 공공데이터 축제 목록 연도 필터링 패치 (agent.py 단독 해결 안전장치)
+# ==============================================================================
+def _filter_outdated_festivals(fest_list: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """
+    [agent.py 단독 해결 안전장치]
+    공공데이터 CSV 원천에 포함된 2015년 등 3년 이상 경과한 오래된 과거 축제를 목록에서 제외하고,
+    최근 2025~2026년 축제(종료된 축제는 AI 비밀 지령 적용 대상)는 유지합니다.
+    """
+    current_year = datetime.today().year
+    filtered = []
+    for fest in fest_list:
+        if not isinstance(fest, dict):
+            continue
+        dates_str = str(fest.get("dates", ""))
+        name_str = str(fest.get("name", ""))
+
+        # dates 문자열 및 축제명에서 4자리 연도 추출
+        years = [int(y) for y in re.findall(r"\b(19\d\d|20\d\d)\b", dates_str)]
+        name_years = [int(y) for y in re.findall(r"\b(19\d\d|20\d\d)\b", name_str)]
+        all_years = years + name_years
+
+        if all_years:
+            max_year = max(all_years)
+            # 최근 3년 이내(2024년 이후: 2025년, 2026년 등) 축제만 유지 (2015년 등 오래된 과거 축제 제거)
+            if max_year < (current_year - 2):
+                continue
+
+        filtered.append(fest)
+    return filtered
+
+
+def _patch_data_pipeline_get_festivals():
+    """
+    app.py 및 data.py 수정 없이 agent.py 임포트 시점에
+    data_pipeline.get_festivals를 안전하게 가로채 10년 전 등 오래된 축제를 필터링합니다.
+    """
+    try:
+        import festapick.data_pipeline as fdp
+        orig_func = getattr(fdp, "get_festivals", None)
+        if orig_func and not getattr(orig_func, "_is_agent_filtered", False):
+            def safe_get_festivals(*args, **kwargs):
+                raw_festivals = orig_func(*args, **kwargs)
+                return _filter_outdated_festivals(raw_festivals)
+
+            safe_get_festivals._is_agent_filtered = True
+            fdp.get_festivals = safe_get_festivals
+
+            if "data" in sys.modules:
+                d_mod = sys.modules["data"]
+                if hasattr(d_mod, "get_festivals"):
+                    d_mod.get_festivals = safe_get_festivals
+    except Exception:
+        pass
+
+
+_patch_data_pipeline_get_festivals()
+
+
+def get_festivals(*args, **kwargs) -> List[Dict[str, Any]]:
+    """agent.py의 필터링이 적용된 안전한 축제 목록 반환 인터페이스"""
+    import festapick.data_pipeline as fdp
+    _patch_data_pipeline_get_festivals()
+    return fdp.get_festivals(*args, **kwargs)
 
 
 def sanitize_infra_bundle(api_data: Optional[Dict[str, Any]]) -> Dict[str, List[Dict[str, Any]]]:
@@ -743,6 +810,21 @@ def run_processing_pipeline(user_inputs: Dict[str, Any], api_data: Optional[Dict
     else:
         fest_clean = {"name": str(fest or "지역 축제"), "description": "설명 정보 없음"}
 
+    # [종료된 과거 축제 감지 및 비밀 지령 주입 로직]
+    extra_details = str(user_inputs.get("extra_details", ""))
+    if isinstance(fest, dict):
+        dates = fest.get("dates")
+        date_matches = re.findall(r"(\d{4})[-./](\d{1,2})[-./](\d{1,2})", str(dates))
+        if date_matches:
+            try:
+                y, m, d = date_matches[-1]
+                end_date = datetime(int(y), int(m), int(d))
+                if end_date.date() < datetime.today().date():
+                    secret_prompt = "[AI 에디터 필수 지침: 이 축제는 올해 공식 일정이 이미 종료된 상태입니다. 기사 서두에 올해 행사가 종료되었음을 자연스럽게 알리고, '내년 정기 개최를 기대하며 축제장 주변의 상설 명소와 쉼터를 미리 여유롭게 즐겨보는 사전 답사 힐링 여행' 컨셉으로 전체 기사를 작성해 주세요.] "
+                    extra_details = secret_prompt + extra_details
+            except Exception:
+                pass
+
     sanitized = sanitize_infra_bundle(api)
 
     initial_state = {
@@ -751,7 +833,7 @@ def run_processing_pipeline(user_inputs: Dict[str, Any], api_data: Optional[Dict
         "transport": str(user_inputs.get("transport", "도보 (대중교통)")),
         "region": str(user_inputs.get("region", "전국")),
         "selected_festival": fest_clean,
-        "extra_details": str(user_inputs.get("extra_details", "")),
+        "extra_details": extra_details,
         "parking_lots": sanitized["parking_lots"],          # 최대 10개
         "model_restaurants": sanitized["model_restaurants"],# 최대 10개
         "tourist_spots": sanitized["tourist_spots"]         # 최대 5개
