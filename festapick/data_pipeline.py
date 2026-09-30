@@ -2291,6 +2291,22 @@ def get_festivals(region: str = "전국 전체", month: Optional[int] = None, *a
 
         desc = clean_text(row.get("축제내용", row.get("description", ""))) or "상세 축제 소개 정보가 준비 중입니다."
 
+        # 전화번호 및 홈페이지 정제 추출
+        raw_phone = clean_text(row.get("전화번호", row.get("phone", row.get("연락처", row.get("문의처", "")))))
+        phone = raw_phone if raw_phone and raw_phone.lower() not in ["nan", "none", "null", "-", "없음"] else ""
+
+        raw_hp = clean_text(row.get("홈페이지주소", row.get("homepage", row.get("홈페이지", row.get("웹사이트", "")))))
+        homepage = ""
+        if raw_hp and raw_hp.lower() not in ["nan", "none", "null", "-", "없음"]:
+            if raw_hp.startswith("http://") or raw_hp.startswith("https://"):
+                homepage = raw_hp
+            elif raw_hp.startswith("www."):
+                homepage = "https://" + raw_hp
+            elif "." in raw_hp and "/" not in raw_hp:
+                homepage = "https://" + raw_hp
+            else:
+                homepage = raw_hp
+
         results.append({
             "name": name,
             "lat": round(lat, 7),
@@ -2301,7 +2317,9 @@ def get_festivals(region: str = "전국 전체", month: Optional[int] = None, *a
             "region": region if region != "전국 전체" else classify_region(address),
             "is_indoor": classify_indoor_outdoor(name, venue),
             "theme": classify_festival_theme(name, venue, desc),
-            "programs": []
+            "programs": [],
+            "phone": phone,
+            "homepage": homepage
         })
 
     return results
