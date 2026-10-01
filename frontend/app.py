@@ -16,20 +16,12 @@ import streamlit as st
 import folium
 from streamlit_folium import st_folium
 
-# 백엔드 및 공공데이터 모듈 경로 최우선 순위 보장 (상위 폴더 모듈 간섭 차단)
+# 백엔드(backend) 및 데이터(datafile) 모듈 경로 자동 등록
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-if CURRENT_DIR in sys.path:
-    sys.path.remove(CURRENT_DIR)
-sys.path.insert(0, CURRENT_DIR)
-
-festapick_dir = os.path.join(CURRENT_DIR, "festapick")
-if os.path.exists(festapick_dir) and festapick_dir not in sys.path:
-    sys.path.insert(1, festapick_dir)
-
-# 보조 디렉터리 후순위 등록
-for p in [os.path.join(CURRENT_DIR, "backend"), os.path.join(CURRENT_DIR, "datafile")]:
-    if os.path.exists(p) and p not in sys.path:
-        sys.path.append(p)
+PROJECT_ROOT = os.path.abspath(os.path.join(CURRENT_DIR, ".."))
+for p in [PROJECT_ROOT, os.path.join(PROJECT_ROOT, "backend"), os.path.join(PROJECT_ROOT, "datafile")]:
+    if p not in sys.path:
+        sys.path.insert(0, p)
 
 # agent.py 백엔드 파이프라인 정식 인터페이스 임포트
 try:
@@ -38,15 +30,12 @@ except ImportError as e:
     st.error(f"agent.py 임포트 오류: {e}")
     st.stop()
 
-# data.py 실제 공공데이터 엔지니어링 모듈 연동 (루트 브릿지 및 festapick/data_pipeline 모두 지원)
+# data.py 실제 공공데이터 엔지니어링 모듈 연동
 try:
     from data import get_festival_infra_bundle, get_festivals
-except ImportError:
-    try:
-        from festapick.data_pipeline import get_festival_infra_bundle, get_festivals
-    except ImportError as e:
-        st.error(f"data.py 임포트 오류: {e}")
-        st.stop()
+except ImportError as e:
+    st.error(f"data.py 임포트 오류: {e}")
+    st.stop()
 
 
 # ==============================================================================
@@ -229,15 +218,7 @@ with st.sidebar:
         index=0
     )
 
-    # 7. 이동 수단 선택 UI
-    transport = st.radio(
-        "🚗 주된 이동 수단",
-        options=["도보 (대중교통)", "자가용 (렌터카)"],
-        index=0,
-        help="자가용 선택 시 차량 20~30분 거리(축제장 반경 20km) 내 주차가 확보된 로컬 맛집·쉼터를 광역 탐색하며, 도보 이용 시 최단거리 중심 힐링 동선을 제공합니다."
-    )
-
-    # 8. 세부 요구사항 텍스트
+    # 7. 세부 요구사항 텍스트
     st.markdown("💬 **세부 요청사항**")
     default_request = "부모님이 무릎이 안 좋으셔서 계단은 피하고 오래 못 걸어요. 차는 주차하기 편하고 넓은 곳이 좋겠습니다." if "부모님" in companion else "무리 없이 편안하게 즐기고 싶어요."
     extra_details = st.text_area(
@@ -292,7 +273,6 @@ if run_button:
             user_inputs = {
                 "stamina": stamina,
                 "companion": companion,
-                "transport": transport,
                 "region": fest_data.get("region", selected_region),
                 "selected_festival": {
                     "name": fest_data.get("name", "로컬 축제"),
@@ -307,23 +287,13 @@ if run_button:
 
             p_lots, m_rests, t_spots = [], [], []
 
-            # [이동 수단별 동적 검색 반경 결정]
-            # 자가용: 축제장 반경 20km(20,000m) 드라이브 권역으로 대폭 확장 / 도보: 체력 30 이하는 1km, 그 외는 2km 동적 할당
-            if "자가용" in transport:
-                dynamic_radius = 20000
-            elif stamina <= 30:
-                dynamic_radius = 1000
-            else:
-                dynamic_radius = 2000
-
             # [지침 2 준수] 100% 실제 공공데이터 조회 (가짜/샘플 폴백 완전 배제)
             # 결과가 0건이면 억지로 채우지 않고 정직하게 빈 리스트([])를 전달함
             try:
                 infra = get_festival_infra_bundle(
                     fest_lat=fest_data.get("lat", 0.0),
                     fest_lng=fest_data.get("lng", 0.0),
-                    radius_m=dynamic_radius,
-                    target_address=fest_data.get("address", "")
+                    radius_m=3000
                 )
                 p_lots = infra.get("parking_lots", [])
                 m_rests = infra.get("model_restaurants", [])
@@ -382,13 +352,11 @@ if result and active_fest:
         # [지침 4 준수] 축제 좌표 확인 및 임의 하드코딩 제거 (좌표 누락 시 대한민국 전도 중심 [36.5, 127.5], zoom=7로 줌아웃)
         fest_lat = active_fest.get("lat")
         fest_lng = active_fest.get("lng")
-        is_invalid_coord = (not fest_lat or not fest_lng or abs(float(fest_lat)) < 1.0 or abs(float(fest_lng)) < 1.0)
 
-        if is_invalid_coord:
-            st.info("ℹ️ 축제장의 상세 위경도 좌표가 제공되지 않아 대한민국 전도 중심으로 지도를 표시합니다.")
+        if not fest_lat or not fest_lng:
             m = folium.Map(location=[36.5, 127.5], zoom_start=7, tiles="OpenStreetMap")
         else:
-            m = folium.Map(location=[float(fest_lat), float(fest_lng)], zoom_start=14, tiles="OpenStreetMap")
+            m = folium.Map(location=[fest_lat, fest_lng], zoom_start=14, tiles="OpenStreetMap")
 
         # agent.py가 정제한 map_markers를 100% 활용하여 마커 렌더링
         for pin in map_markers:
@@ -420,95 +388,94 @@ if result and active_fest:
 
         st.markdown("---")
 
-        st.markdown("### 📌 축제 주요 프로그램 안내")
+        st.markdown("### 📌 프로그램 & 명소 예약 체크리스트")
         req_list = event_info.get("reservation_required", [])
         walk_list = event_info.get("walk_in", [])
         unknown_list = event_info.get("unknown", [])
 
-        # 순서대로 하나로 합치기
-        all_programs = []
-        for p in req_list:
-            all_programs.append((p, "req"))
-        for p in walk_list:
-            all_programs.append((p, "walk"))
-        for p in unknown_list:
-            all_programs.append((p, "unknown"))
+        # [지침 2 준수] 예약 필수 vs 자유 참여 vs 현장 확인 필요 3단계 탭 구성
+        tab1, tab2, tab3 = st.tabs([
+            f"🔒 사전 예약 필수 ({len(req_list)})",
+            f"🔓 자유 참여 가능 ({len(walk_list)})",
+            f"🤔 현장 확인 필요 ({len(unknown_list)})"
+        ])
 
-        if all_programs:
-            for item, p_type in all_programs:
-                prog_name = html.escape(str(item.get('name', '프로그램')))
-                prog_desc = html.escape(str(item.get('description', '세부 정보 없음')))
-                prog_tip = html.escape(str(item.get('booking_tip', '')))
-
-                if p_type == "req":
-                    card_bg = "#fff5f5"
-                    card_border = "#fed7d7"
-                    title_color = "#991b1b"
-                    badge_html = '<span class="event-badge-req">사전 예약 필수</span>'
-                    tip_color = "#c53030"
-                    tip_text = prog_tip or "공식 누리집 사전 예약 필수"
-                elif p_type == "walk":
-                    card_bg = "#f0fdf4"
-                    card_border = "#bbf7d0"
-                    title_color = "#166534"
-                    badge_html = '<span class="event-badge-walk">자유 참여 가능</span>'
-                    tip_color = "#15803d"
-                    tip_text = prog_tip or "현장 자유 참여 가능"
-                else:
-                    card_bg = "#fffbeb"
-                    card_border = "#fef3c7"
-                    title_color = "#b45309"
-                    badge_html = '<span class="event-badge-req" style="background:#fef3c7; color:#92400e;">현장 확인 필요</span>'
-                    tip_color = "#b45309"
-                    tip_text = prog_tip or "공식 누리집 또는 현장 안내소 문의 요망"
-
-                st.markdown(f"""
-                <div style="background:{card_bg}; border:1px solid {card_border}; border-radius:8px; padding:12px 16px; margin-bottom:10px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                        <span style="font-weight:700; font-size:0.95rem; color:{title_color};">{prog_name}</span>
-                        {badge_html}
+        with tab1:
+            if req_list:
+                for item in req_list:
+                    req_name = html.escape(str(item.get('name', '')))
+                    req_desc = html.escape(str(item.get('description', '')))
+                    req_tip = html.escape(str(item.get('booking_tip', '')))
+                    st.markdown(f"""
+                    <div style="background:#fff5f5; border:1px solid #fed7d7; border-radius:8px; padding:12px 16px; margin-bottom:10px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                            <span style="font-weight:700; font-size:0.95rem; color:#991b1b;">{req_name}</span>
+                            <span class="event-badge-req">사전 예약 필수</span>
+                        </div>
+                        <div style="font-size:0.85rem; color:#4a5568; margin-bottom:4px;">{req_desc}</div>
+                        <div style="font-size:0.8rem; color:#c53030; font-weight:600;">💡 Tip: {req_tip}</div>
                     </div>
-                    <div style="font-size:0.85rem; color:#4a5568; margin-bottom:4px;">{prog_desc}</div>
-                    <div style="font-size:0.8rem; color:{tip_color}; font-weight:600;">💡 Tip: {tip_text}</div>
-                </div>
-                """, unsafe_allow_html=True)
-        else:
-            st.info("등록된 세부 프로그램 정보가 없습니다.")
+                    """, unsafe_allow_html=True)
+            else:
+                st.info("등록된 사전 예약 필수 프로그램이 없습니다.")
 
-        # 공식 누리집 / 예매처 이동 CTA 버튼 연동
-        festival_homepage = result.get("festival_homepage", "") or active_fest.get("homepage", "")
-        if festival_homepage:
-            st.link_button("🌐 공식 누리집 / 예매처 바로가기", festival_homepage, use_container_width=True, type="primary")
-        else:
-            st.caption("ℹ️ 공식 홈페이지 정보가 제공되지 않습니다. 상세 일정 및 예매는 현장 종합안내소를 이용해 주세요.")
+        with tab2:
+            if walk_list:
+                for item in walk_list:
+                    walk_name = html.escape(str(item.get('name', '')))
+                    walk_desc = html.escape(str(item.get('description', '')))
+                    walk_tip = html.escape(str(item.get('booking_tip', '')))
+                    st.markdown(f"""
+                    <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:12px 16px; margin-bottom:10px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                            <span style="font-weight:700; font-size:0.95rem; color:#166534;">{walk_name}</span>
+                            <span class="event-badge-walk">자유 참여 가능</span>
+                        </div>
+                        <div style="font-size:0.85rem; color:#4a5568; margin-bottom:4px;">{walk_desc}</div>
+                        <div style="font-size:0.8rem; color:#15803d; font-weight:600;">💡 Tip: {walk_tip}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+            else:
+                st.info("등록된 자유 참여 프로그램이 없습니다.")
+
+        with tab3:
+            if unknown_list:
+                for item in unknown_list:
+                    unk_name = html.escape(str(item.get('name', '')))
+                    unk_desc = html.escape(str(item.get('description', '')))
+                    unk_tip = html.escape(str(item.get('booking_tip', '공식 누리집 또는 현장 안내소 문의 요망')))
+                    st.markdown(f"""
+                    <div style="background:#fffbeb; border:1px solid #fef3c7; border-radius:8px; padding:12px 16px; margin-bottom:10px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                            <span style="font-weight:700; font-size:0.95rem; color:#b45309;">{unk_name}</span>
+                            <span class="event-badge-req" style="background:#fef3c7; color:#92400e;">현장 확인 필요</span>
+                        </div>
+                        <div style="font-size:0.85rem; color:#4a5568; margin-bottom:4px;">{unk_desc}</div>
+                        <div style="font-size:0.8rem; color:#b45309; font-weight:600;">💡 Tip: {unk_tip}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+            else:
+                st.info("등록된 현장 확인 필요 프로그램이 없습니다.")
 
         st.markdown("---")
 
         # [지침 2, 5 준수] 착한가격업소 & 인근 관광·휴식 명소 추천 UI 카드
         st.markdown("### 🍽️ 착한가격업소 & 🌿 인근 관광·휴식 명소 추천")
 
-        # 착한가격업소는 좌표가 없어도(동일 시군구 소재) 텍스트 목록에 노출
-        restaurants_list = result.get("model_restaurants") or [p for p in map_markers if p.get("category") == "restaurant"]
+        restaurant_pins = [p for p in map_markers if p.get("category") == "restaurant"]
         rest_spot_pins = [p for p in map_markers if p.get("category") == "rest_spot"]
 
         tab_rest, tab_spot = st.tabs([
-            f"🍽️ 착한가격업소 ({len(restaurants_list)})",
+            f"🍽️ 착한가격업소 ({len(restaurant_pins)})",
             f"🌿 인근 관광·휴식 명소 ({len(rest_spot_pins)})"
         ])
 
         with tab_rest:
-            if restaurants_list:
-                for r in restaurants_list:
+            if restaurant_pins:
+                for r in restaurant_pins:
                     r_name = html.escape(str(r.get("name", "착한가격업소")))
                     r_menu = html.escape(str(r.get("menu", "대표메뉴")))
                     r_price = html.escape(str(r.get("price", "가격 정보 없음")))
-                    r_addr = html.escape(str(r.get("address", "")))
-                    r_dist = r.get("_dist")
-                    if r_dist is not None and r_dist != float('inf'):
-                        dist_label = f"축제장 직선거리 약 {int(r_dist)}m"
-                    else:
-                        dist_label = "거리 미상 (동일 시군구 소재)"
-                    addr_info = f" · {r_addr}" if r_addr else ""
                     st.markdown(f"""
                     <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:12px 16px; margin-bottom:10px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
@@ -516,8 +483,7 @@ if result and active_fest:
                             <span style="background:#dcfce7; color:#15803d; font-weight:700; padding:2px 8px; border-radius:6px; font-size:0.78rem;">착한가격업소</span>
                         </div>
                         <div style="font-size:0.85rem; color:#374151; margin-bottom:3px;"><strong>대표메뉴:</strong> {r_menu}</div>
-                        <div style="font-size:0.82rem; color:#15803d; font-weight:600; margin-bottom:2px;">💰 가격: {r_price}</div>
-                        <div style="font-size:0.8rem; color:#64748b;">📍 {dist_label}{addr_info}</div>
+                        <div style="font-size:0.82rem; color:#15803d; font-weight:600;">💰 가격: {r_price}</div>
                     </div>
                     """, unsafe_allow_html=True)
             else:
