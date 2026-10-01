@@ -16,6 +16,7 @@ import sys
 import re
 import json
 import math
+from datetime import datetime
 from typing import Dict, Any, List, Optional
 from typing_extensions import TypedDict
 from dotenv import load_dotenv
@@ -93,13 +94,13 @@ MAGAZINE_EDITOR_SYSTEM_PROMPT = """너는 감각적이고 트렌디한 로컬 �
 4. 오직 제공된 [관광·휴식 명소 목록] 명단 내에서만 쉼터를 추천할 것. 명단 밖의 장소를 새로 만들어 추천하지 말 것.
 5. 프로그램 정보가 없는 경우 임의로 가상의 이벤트를 지어내지 말고 '프로그램 정보 없음'으로 정직하게 표기할 것.
 6. 타임라인의 시각은 사용자를 위한 '추천 방문 시각'이며 공식 행사 시작 시간이 아님을 명시할 것.
-7. 공식 운영/행사 시간이 데이터에 제공되지 않은 프로그램에는 실제 시작 시간인 것처럼 특정 시각을 부여하지 말 것.
+7. 공식 운영/행사 시간이 명시되지 않은 프로그램에는 실제 시작 시간인 것처럼 단정하지 말고 '추천 방문 시각(예: 오전 11:00 무렵)' 또는 '권장 체류 시간(예: 약 1~1.5시간 소요)' 형식으로 자연스럽게 안내할 것.
 
 [매거진 기사 필수 구성]
 # 🌿 [헤드라인: 감각적인 메인 타이틀 & 서브헤드]
 ### 🖋️ Editor's Letter: [오늘의 여정을 시작하며]
-### 🗺️ Fest & Rest Curated Timeline: [시간이 머무는 맞춤 동선 (반드시 10:30 AM, 12:30 PM 등 구체적인 시간대별 추천 일정표 형식으로 작성하되, 해당 시각은 사용자를 위한 '추천 방문 시각'이며 공식 행사 시작 시간이 아님을 명시할 것. 공식 운영/행사 시간이 데이터에 제공되지 않은 프로그램에는 실제 시작 시간인 것처럼 특정 시각을 부여하지 말 것. 단, 제공된 실제 공영주차장과 착한가격업소, 쉼터 및 행사 데이터만 활용하여 동선을 조립할 것)]
-### 📌 Event Guide: [프로그램 체크리스트 (사전 예약 vs 자유 참여)]
+### 🗺️ Fest & Rest Curated Timeline: [시간이 머무는 맞춤 동선 (10:30 AM 등 구체적인 시간대별 추천 일정표 형식으로 작성하되, 공식 운영/행사 시간이 명시되지 않은 프로그램에는 실제 시작 시간인 것처럼 단정하지 말고 '추천 방문 시각(예: 오전 11:00 무렵)' 또는 '권장 체류 시간(예: 약 1~1.5시간 소요)' 형식으로 자연스럽게 안내할 것. 단, 제공된 실제 공영주차장과 착한가격업소, 쉼터 및 행사 데이터만 활용하여 동선을 조립할 것)]
+### 🎉 Highlight Events: [주요 프로그램 및 행사 안내 (제공된 이벤트 데이터를 바탕으로 축제의 핵심 프로그램과 행사를 감각적으로 소개할 것. 예약 여부에 대한 상세 안내는 제외하고, 프로그램 자체의 매력에 집중할 것)]
 ### 🛡️ Safe & Relax Tips: [현장 안심 꿀팁 브리핑 (주차면수 및 직선거리 중심)]
 """
 
@@ -160,6 +161,72 @@ def _safe_lng(val: Any) -> Optional[float]:
         return None
 
 
+# ==============================================================================
+# 공공데이터 축제 목록 연도 필터링 패치 (agent.py 단독 해결 안전장치)
+# ==============================================================================
+def _filter_outdated_festivals(fest_list: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """
+    [agent.py 단독 해결 안전장치]
+    공공데이터 CSV 원천에 포함된 2015년 등 3년 이상 경과한 오래된 과거 축제를 목록에서 제외하고,
+    최근 2025~2026년 축제(종료된 축제는 AI 비밀 지령 적용 대상)는 유지합니다.
+    """
+    current_year = datetime.today().year
+    filtered = []
+    for fest in fest_list:
+        if not isinstance(fest, dict):
+            continue
+        dates_str = str(fest.get("dates", ""))
+        name_str = str(fest.get("name", ""))
+
+        # dates 문자열 및 축제명에서 4자리 연도 추출
+        years = [int(y) for y in re.findall(r"\b(19\d\d|20\d\d)\b", dates_str)]
+        name_years = [int(y) for y in re.findall(r"\b(19\d\d|20\d\d)\b", name_str)]
+        all_years = years + name_years
+
+        if all_years:
+            max_year = max(all_years)
+            # 최근 3년 이내(2024년 이후: 2025년, 2026년 등) 축제만 유지 (2015년 등 오래된 과거 축제 제거)
+            if max_year < (current_year - 2):
+                continue
+
+        filtered.append(fest)
+    return filtered
+
+
+def _patch_data_pipeline_get_festivals():
+    """
+    app.py 및 data.py 수정 없이 agent.py 임포트 시점에
+    data_pipeline.get_festivals를 안전하게 가로채 10년 전 등 오래된 축제를 필터링합니다.
+    """
+    try:
+        import festapick.data_pipeline as fdp
+        orig_func = getattr(fdp, "get_festivals", None)
+        if orig_func and not getattr(orig_func, "_is_agent_filtered", False):
+            def safe_get_festivals(*args, **kwargs):
+                raw_festivals = orig_func(*args, **kwargs)
+                return _filter_outdated_festivals(raw_festivals)
+
+            safe_get_festivals._is_agent_filtered = True
+            fdp.get_festivals = safe_get_festivals
+
+            if "data" in sys.modules:
+                d_mod = sys.modules["data"]
+                if hasattr(d_mod, "get_festivals"):
+                    d_mod.get_festivals = safe_get_festivals
+    except Exception:
+        pass
+
+
+_patch_data_pipeline_get_festivals()
+
+
+def get_festivals(*args, **kwargs) -> List[Dict[str, Any]]:
+    """agent.py의 필터링이 적용된 안전한 축제 목록 반환 인터페이스"""
+    import festapick.data_pipeline as fdp
+    _patch_data_pipeline_get_festivals()
+    return fdp.get_festivals(*args, **kwargs)
+
+
 def sanitize_infra_bundle(api_data: Optional[Dict[str, Any]]) -> Dict[str, List[Dict[str, Any]]]:
     """
     [5대 데이터 무결성 및 LLM 컨텍스트 안전화 지침 준수]
@@ -198,6 +265,7 @@ def sanitize_infra_bundle(api_data: Optional[Dict[str, Any]]) -> Dict[str, List[
                 p["total_spaces"] = 0
 
             p["fee"] = str(p.get("fee") if p.get("fee") is not None else "요금 정보 없음")
+            p["address"] = str(item.get("address") or item.get("소재지도로명주소") or item.get("소재지지번주소") or "")
             if "price" in p:
                 p["price"] = str(p.get("price") or "")
 
@@ -215,14 +283,22 @@ def sanitize_infra_bundle(api_data: Optional[Dict[str, Any]]) -> Dict[str, List[
                 continue
             if item.get("is_empty") is True or item.get("is_dummy") is True:
                 continue
-            lat, lng = item.get("lat"), item.get("lng")
-            if not is_valid_korea_coord(lat, lng):
-                continue
-
             r = dict(item)
-            r["lat"] = float(lat)
-            r["lng"] = float(lng)
+            lat, lng = item.get("lat"), item.get("lng")
+            if is_valid_korea_coord(lat, lng):
+                r["lat"] = float(lat)
+                r["lng"] = float(lng)
+            else:
+                # [지침 1 준수] 위경도 결측치 안전 보존 (상호명, 메뉴가 유효하면 Drop하지 않고 lat: None, lng: None 보존)
+                name = str(r.get("name") or "").strip()
+                menu = str(r.get("menu") or "").strip()
+                if not name and not menu:
+                    continue
+                r["lat"] = None
+                r["lng"] = None
 
+            # [지침 1 준수] 주소 필드 명시적 보존
+            r["address"] = str(item.get("address") or "")
             r["price"] = str(r.get("price") if r.get("price") is not None else "가격 정보 없음")
             if "fee" in r:
                 r["fee"] = str(r.get("fee") or "")
@@ -243,14 +319,22 @@ def sanitize_infra_bundle(api_data: Optional[Dict[str, Any]]) -> Dict[str, List[
                 continue
             if item.get("is_empty") is True or item.get("is_dummy") is True:
                 continue
-            lat, lng = item.get("lat"), item.get("lng")
-            if not is_valid_korea_coord(lat, lng):
-                continue
-
             s = dict(item)
-            s["lat"] = float(lat)
-            s["lng"] = float(lng)
+            lat, lng = item.get("lat"), item.get("lng")
+            if is_valid_korea_coord(lat, lng):
+                s["lat"] = float(lat)
+                s["lng"] = float(lng)
+            else:
+                # [지침 1 준수] 위경도 결측치 안전 보존 (명소명, 설명 유효 시 lat: None, lng: None 보존)
+                name = str(s.get("name") or "").strip()
+                overview = str(s.get("overview") or s.get("description") or "").strip()
+                if not name and not overview:
+                    continue
+                s["lat"] = None
+                s["lng"] = None
 
+            # [지침 1 준수] 주소 필드 명시적 보존
+            s["address"] = str(item.get("address") or item.get("addr1") or "")
             if "fee" in s:
                 s["fee"] = str(s.get("fee") or "")
             if "price" in s:
@@ -298,7 +382,8 @@ def _calc_distance(lat1: Optional[float], lon1: Optional[float], lat2: Optional[
     phi1, phi2 = math.radians(lat1), math.radians(lat2)
     dphi, dlam = math.radians(lat2 - lat1), math.radians(lon2 - lon1)
     a = math.sin(dphi / 2)**2 + math.cos(phi1) * math.cos(phi2) * math.sin(dlam / 2)**2
-    return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    # [지침 3 준수] 부동소수점 오차로 인한 math domain error 방어
+    return R * 2 * math.atan2(math.sqrt(a), math.sqrt(max(0.0, 1.0 - a)))
 
 
 # ==============================================================================
@@ -309,8 +394,9 @@ def analyze_stamina_and_intent(state: PipelineState) -> Dict[str, Any]:
     transport = str(state.get("transport", "도보 (대중교통)"))
     is_car = "자가용" in transport
 
-    # [지침 3 준수] DoS 방어 1,000자 제한 적용
+    # [지침 3 준수] DoS 방어 1,000자 제한 및 중괄호 치환(프롬프트 인젝션 방어) 적용
     raw_extra = str(state.get("extra_details", "")).strip()
+    raw_extra = raw_extra.replace("{", "【").replace("}", "】")
     extra = (raw_extra[:1000] if raw_extra else "특별한 요청 없음")
 
     # [이동 수단(차량 유무) 및 체력 기반 분기 - 자가용 선택 시 축제장 반경 20km 드라이브 권역 적용]
@@ -449,9 +535,10 @@ def generate_magazine_article_node(state: PipelineState) -> Dict[str, Any]:
             continue
         r = dict(item)
         r_lat, r_lng = _safe_lat(r.get("lat")), _safe_lng(r.get("lng"))
-        if r_lat is None or r_lng is None:
-            continue
-        r["_dist"] = _calc_distance(fest_lat, fest_lng, r_lat, r_lng)
+        if r_lat is not None and r_lng is not None and fest_lat is not None and fest_lng is not None:
+            r["_dist"] = _calc_distance(fest_lat, fest_lng, r_lat, r_lng)
+        else:
+            r["_dist"] = float('inf')
         restaurants.append(r)
 
     # 2. 이동 수단(차량 유무) 및 체력 기반 동적 데이터 정렬
@@ -487,13 +574,16 @@ def generate_magazine_article_node(state: PipelineState) -> Dict[str, Any]:
         else:
             parking_str = "도보 및 대중교통 이용 권장 일정으로, 별도 주차장 이용이 불필요합니다."
 
-    # [지침 5 준수] 가짜 기본값 방지 -> "메뉴 정보 없음"
+    # [지침 1, 3, 5 준수] 가짜 기본값 방지 및 결측 좌표 식당 정직한 거리 표기
     rest_str_list = []
     for r in top_restaurants:
-        dist_str = f"약 {int(r['_dist'])}m" if r["_dist"] != float('inf') else "거리 미상"
+        if r.get("_dist") != float('inf') and r.get("_dist") is not None:
+            dist_str = f"축제장 직선거리 약 {int(r['_dist'])}m"
+        else:
+            dist_str = "거리 미상 (동일 시군구 소재)"
         menu_str = str(r.get('menu') or '메뉴 정보 없음')[:300]
         price_str = str(r.get('price') if r.get('price') is not None else '가격 정보 없음')
-        rest_str_list.append(f"- {r.get('name')}: {menu_str} / 축제장 직선거리 {dist_str} ({price_str})")
+        rest_str_list.append(f"- {r.get('name')}: {menu_str} / {dist_str} ({price_str})")
     rest_str = "\n".join(rest_str_list) if rest_str_list else "인근에 등록된 착한가격업소 정보가 없습니다."
 
     # [지침 4 준수] 쉼터(관광지) 데이터 주입 문자열 생성 (도보일 경우 최근접 순 정렬 고려)
@@ -538,11 +628,9 @@ def generate_magazine_article_node(state: PipelineState) -> Dict[str, Any]:
 {rest_str}
 ■ 확인된 관광·휴식 명소:
 {spot_str}
-■ 예약 필수 프로그램:
+■ 축제 주요 프로그램 안내:
 {req_str}
-■ 자유 참여 프로그램:
 {walk_str}
-■ 현장 확인 필요(미상) 프로그램:
 {unknown_str}
 
 [작성 가이드]
@@ -556,7 +644,7 @@ def generate_magazine_article_node(state: PipelineState) -> Dict[str, Any]:
 - 관광·휴식 장소는 위 명단 밖의 장소를 새로 만들어 추천하지 말 것.
 - 예약 정보가 미상(Unknown)인 이벤트는 임의로 추측하지 말고 '현장 문의 필요'라고 명시할 것.
 - 타임라인의 시각은 사용자를 위한 '추천 방문 시각'이며 공식 행사 시작 시간이 아님을 명시하세요.
-- 공식 운영/행사 시간이 데이터에 제공되지 않은 프로그램에는 실제 시작 시간인 것처럼 특정 시각을 부여하지 마세요.""")
+- 공식 운영/행사 시간이 명시되지 않은 프로그램에는 실제 시작 시간인 것처럼 단정하지 말고 '추천 방문 시각(예: 오전 11:00 무렵)' 또는 '권장 체류 시간(예: 약 1~1.5시간 소요)' 형식으로 자연스럽게 안내하세요.""")
         ])
 
         chain = prompt | _get_llm(0.3) | StrOutputParser()
@@ -615,7 +703,9 @@ def format_folium_pins_node(state: PipelineState) -> Dict[str, Any]:
             "lat": f_lat, "lng": f_lng,
             "icon": "flag", "color": "red",
             "desc": fest_desc,
-            "popup_title": f"🎪 {fest.get('name', '축제장')}"
+            "popup_title": f"🎪 {fest.get('name', '축제장')}",
+            "homepage": str(fest.get("homepage") or ""),
+            "phone": str(fest.get("phone") or "")
         })
 
     # 2. 공영주차장 핀 (상위 6개)
@@ -720,6 +810,21 @@ def run_processing_pipeline(user_inputs: Dict[str, Any], api_data: Optional[Dict
     else:
         fest_clean = {"name": str(fest or "지역 축제"), "description": "설명 정보 없음"}
 
+    # [종료된 과거 축제 감지 및 비밀 지령 주입 로직]
+    extra_details = str(user_inputs.get("extra_details", ""))
+    if isinstance(fest, dict):
+        dates = fest.get("dates")
+        date_matches = re.findall(r"(\d{4})[-./](\d{1,2})[-./](\d{1,2})", str(dates))
+        if date_matches:
+            try:
+                y, m, d = date_matches[-1]
+                end_date = datetime(int(y), int(m), int(d))
+                if end_date.date() < datetime.today().date():
+                    secret_prompt = "[AI 에디터 필수 지침: 이 축제는 올해 공식 일정이 이미 종료된 상태입니다. 기사 서두에 올해 행사가 종료되었음을 자연스럽게 알리고, '내년 정기 개최를 기대하며 축제장 주변의 상설 명소와 쉼터를 미리 여유롭게 즐겨보는 사전 답사 힐링 여행' 컨셉으로 전체 기사를 작성해 주세요.] "
+                    extra_details = secret_prompt + extra_details
+            except Exception:
+                pass
+
     sanitized = sanitize_infra_bundle(api)
 
     initial_state = {
@@ -728,7 +833,7 @@ def run_processing_pipeline(user_inputs: Dict[str, Any], api_data: Optional[Dict
         "transport": str(user_inputs.get("transport", "도보 (대중교통)")),
         "region": str(user_inputs.get("region", "전국")),
         "selected_festival": fest_clean,
-        "extra_details": str(user_inputs.get("extra_details", "")),
+        "extra_details": extra_details,
         "parking_lots": sanitized["parking_lots"],          # 최대 10개
         "model_restaurants": sanitized["model_restaurants"],# 최대 10개
         "tourist_spots": sanitized["tourist_spots"]         # 최대 5개
@@ -742,7 +847,9 @@ def run_processing_pipeline(user_inputs: Dict[str, Any], api_data: Optional[Dict
         "map_markers": final_state.get("map_markers", []),
         "parking_lots": final_state.get("parking_lots", []),
         "model_restaurants": final_state.get("model_restaurants", []),
-        "tourist_spots": final_state.get("tourist_spots", [])
+        "tourist_spots": final_state.get("tourist_spots", []),
+        "festival_homepage": str(fest.get("homepage") or "") if isinstance(fest, dict) else "",
+        "festival_phone": str(fest.get("phone") or "") if isinstance(fest, dict) else ""
     }
 
 
@@ -804,18 +911,35 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"  - analyze 테스트 알림: {e}")
 
-    # 4. 가짜 기본값 박멸 검증
-    print("\n▶ [지침 5 검증] 가짜 기본값 박멸:")
+    # 4. 가짜 기본값 박멸 및 결측치/주소 보존 검증
+    print("\n▶ [지침 1, 5 검증] 결측 좌표 식당/쉼터 보존 및 주소 복사 검증:")
     test_infra = {
-        "parking_lots": [{"lat": 35.19, "lng": 128.08, "total_spaces": 10}],
-        "model_restaurants": [{"lat": 35.19, "lng": 128.08, "price": "8000"}],
-        "tourist_spots": [{"lat": 35.19, "lng": 128.08}]
+        "parking_lots": [{"name": "테스트주차장", "lat": 35.19, "lng": 128.08, "total_spaces": 10, "address": "주차장주소"}],
+        "model_restaurants": [
+            {"name": "광양식당", "lat": 0.0, "lng": 0.0, "menu": "재첩국", "price": "8000", "address": "전남 광양시"},
+            {"name": "정상식당", "lat": 35.19, "lng": 128.08, "price": "8000"}
+        ],
+        "tourist_spots": [
+            {"name": "광양쉼터", "lat": None, "lng": None, "overview": "숲속 쉼터", "address": "전남 광양시 백운산"},
+            {"lat": 35.19, "lng": 128.08}
+        ]
     }
     san = sanitize_infra_bundle(test_infra)
-    assert san["model_restaurants"][0]["menu"] == "메뉴 정보 없음"
-    assert san["tourist_spots"][0]["overview"] == "설명 정보 없음"
-    print("  - 모범식당 기본 메뉴: '메뉴 정보 없음' 확인")
-    print("  - 쉼터 기본 설명: '설명 정보 없음' 확인")
+    assert len(san["model_restaurants"]) == 2, "결측 좌표 식당이 Drop되지 않고 보존되어야 함!"
+    assert san["model_restaurants"][0]["lat"] is None, "결측 좌표 식당 lat은 None이어야 함!"
+    assert san["model_restaurants"][0]["address"] == "전남 광양시", "식당 주소가 보존되어야 함!"
+    assert san["model_restaurants"][1]["menu"] == "메뉴 정보 없음", "가짜 기본값 메뉴 정보 없음 확인!"
+    assert len(san["tourist_spots"]) == 2, "결측 좌표 쉼터가 Drop되지 않고 보존되어야 함!"
+    assert san["tourist_spots"][0]["lat"] is None, "결측 좌표 쉼터 lat은 None이어야 함!"
+    assert san["tourist_spots"][0]["address"] == "전남 광양시 백운산", "쉼터 주소가 보존되어야 함!"
+    assert san["tourist_spots"][1]["overview"] == "설명 정보 없음", "가짜 기본값 설명 정보 없음 확인!"
+    print("  - 결측 좌표 식당/쉼터 Drop 방지 및 주소 필드 명시적 보존 확인 완료!")
+
+    # 5. _calc_distance 부동소수점 도메인 에러 방어 검증
+    print("\n▶ [지침 2 검증] Haversine math domain error 방어:")
+    dist_overflow = _calc_distance(37.5, 127.0, 37.5, 127.0)
+    assert dist_overflow == 0.0, "동일 좌표 거리는 0이어야 함!"
+    print("  - 부동소수점 오차로 인한 math domain error 방어 확인 완료!")
 
     print("\n" + "=" * 70)
     print("🎉 agent.py 최종 배포용 보안 및 데이터 무결성 100% 검증 통과!")
