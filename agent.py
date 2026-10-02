@@ -467,6 +467,29 @@ def classify_events_node(state: PipelineState) -> Dict[str, Any]:
     fest = state.get("selected_festival", {})
     fest_programs = fest.get("programs", [])
 
+    # [데이터 타입 정규화] 문자열(str) 또는 List[str] 형태의 programs를 List[Dict] 형태로 파싱 및 변환
+    if isinstance(fest_programs, str):
+        split_items = [p.strip() for p in re.split(r'[+,/;\n]', fest_programs) if p.strip()]
+        fest_programs = [
+            {"name": p, "category": "축제 프로그램", "description": "세부 정보 없음", "reservation_required": None}
+            for p in split_items
+        ]
+    elif isinstance(fest_programs, list):
+        normalized_programs = []
+        for item in fest_programs:
+            if isinstance(item, str):
+                split_items = [p.strip() for p in re.split(r'[+,/;\n]', item) if p.strip()]
+                for p in split_items:
+                    normalized_programs.append({
+                        "name": p,
+                        "category": "축제 프로그램",
+                        "description": "세부 정보 없음",
+                        "reservation_required": None
+                    })
+            elif isinstance(item, dict):
+                normalized_programs.append(item)
+        fest_programs = normalized_programs
+
     if not fest_programs:
         return {"event_info": {"reservation_required": [], "walk_in": [], "unknown": []}}
 

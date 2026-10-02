@@ -2307,6 +2307,32 @@ def get_festivals(region: str = "전국 전체", month: Optional[int] = None, *a
             else:
                 homepage = raw_hp
 
+        # 원본 데이터로부터 프로그램 추출 및 딕셔너리 리스트 구성
+        prog_raw = (
+            clean_text(row.get("주요프로그램", ""))
+            or clean_text(row.get("프로그램내용", ""))
+            or clean_text(row.get("프로그램명", ""))
+            or clean_text(row.get("행사내용", ""))
+            or desc
+        )
+        parsed_programs = []
+        if prog_raw:
+            stopwords = {"등", "기타", "체험행사", "축제내용", "행사내용"}
+            split_candidates = re.split(r'[+,/;\n]', str(prog_raw))
+            seen_progs = set()
+            for cand in split_candidates:
+                p_name = cand.strip()
+                if len(p_name) >= 2 and p_name not in stopwords and p_name not in seen_progs:
+                    seen_progs.add(p_name)
+                    parsed_programs.append({
+                        "name": p_name,
+                        "category": "축제 프로그램",
+                        "description": "세부 정보 없음",
+                        "reservation_required": None
+                    })
+                    if len(parsed_programs) >= 7:
+                        break
+
         results.append({
             "name": name,
             "lat": round(lat, 7),
@@ -2317,7 +2343,7 @@ def get_festivals(region: str = "전국 전체", month: Optional[int] = None, *a
             "region": region if region != "전국 전체" else classify_region(address),
             "is_indoor": classify_indoor_outdoor(name, venue),
             "theme": classify_festival_theme(name, venue, desc),
-            "programs": [],
+            "programs": parsed_programs,
             "phone": phone,
             "homepage": homepage
         })
