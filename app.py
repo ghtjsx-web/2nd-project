@@ -90,7 +90,14 @@ HOT_FESTIVALS_PRESET = [
         "companion": "부모님 (연로하심)",
         "transport": "🚗 자가용 (렌터카)",
         "img": "https://images.unsplash.com/photo-1470240731273-7821a6eeb6bd?q=80&w=1200",
-        "desc": "바람과 은빛 갈대숲이 머무는 곳, 체력에 맞추어 가장 안심하고 누리는 1일 힐링 에디토리얼 여정."
+        "desc": "바람과 은빛 갈대숲이 머무는 곳, 체력에 맞추어 가장 안심하고 누리는 1일 힐링 에디토리얼 여정.",
+        "dates": "2026-10-25 ~ 2026-11-03",
+        "address": "전라남도 순천시 순천만길 513-25",
+        "lat": 34.9272,
+        "lng": 127.5085,
+        "phone": "061-749-6052",
+        "homepage": "https://scbay.suncheon.go.kr",
+        "programs": ["황금빛 갈대길 데크 산책", "순천만 노을 포토 아일랜드", "흑두루미 갈대 생태 체험"]
     },
     {
         "name": "화담숲 가을 단풍축제",
@@ -102,7 +109,14 @@ HOT_FESTIVALS_PRESET = [
         "companion": "연인/커플",
         "transport": "🚗 자가용 (렌터카)",
         "img": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1200",
-        "desc": "모노레일로 오르는 붉은 단풍 파노라마. 경사로 없는 완만한 나무 데크 숲길에서 마주하는 깊은 가을 쉼표."
+        "desc": "모노레일로 오르는 붉은 단풍 파노라마. 경사로 없는 완만한 나무 데크 숲길에서 마주하는 깊은 가을 쉼표.",
+        "dates": "2026-10-18 ~ 2026-11-17",
+        "address": "경기도 광주시 도척면 도척윗로 278-1 화담숲",
+        "lat": 37.2982,
+        "lng": 127.2922,
+        "phone": "031-8026-6666",
+        "homepage": "https://www.hwadamsup.com",
+        "programs": ["화담숲 가을 모노레일 투어", "오색 단풍 데크 숲길 걷기", "분재원 가을 산책"]
     },
     {
         "name": "진주 남강유등축제",
@@ -114,7 +128,14 @@ HOT_FESTIVALS_PRESET = [
         "companion": "친구들과 함께",
         "transport": "🚶 도보 (대중교통)",
         "img": "https://images.unsplash.com/photo-1514565131-fce0801e5785?q=80&w=1200",
-        "desc": "천 년의 역사를 품은 남강 물결 위에 수놓아진 수만 개의 유등. 물빛과 달빛이 어우러진 낭만적인 밤 산책 코스."
+        "desc": "천 년의 역사를 품은 남강 물결 위에 수놓아진 수만 개의 유등. 물빛과 달빛이 어우러진 낭만적인 밤 산책 코스.",
+        "dates": "2026-10-03 ~ 2026-10-18",
+        "address": "경상남도 진주시 남강로 626",
+        "lat": 35.1802,
+        "lng": 128.0818,
+        "phone": "055-755-9111",
+        "homepage": "http://www.yudeung.com",
+        "programs": ["초혼점등식 및 수상 불꽃놀이", "소망등 달기 체험", "남강 부교 배다리 건너기"]
     }
 ]
 
@@ -675,6 +696,24 @@ div[data-baseweb="input"] > div {
     color: #FFFFFF;
 }
 
+/* Streamlit 모든 버튼 고대비 및 가독성 강제 고정 */
+div.stButton > button, div.stLinkButton > a {
+    color: #FFFFFF !important;
+    background-color: #012D1D !important;
+    border: 1.5px solid #3A674F !important;
+    font-weight: 800 !important;
+}
+div.stButton > button *, div.stLinkButton > a * {
+    color: #FFFFFF !important;
+    -webkit-text-fill-color: #FFFFFF !important;
+}
+div.stButton > button:hover, div.stLinkButton > a:hover {
+    background-color: #1B4332 !important;
+    border-color: #7DD89F !important;
+    color: #FFFFFF !important;
+}
+
+
 /* 메인 발행 버튼 */
 div.stButton > button[kind="primary"] {
     background: linear-gradient(135deg, #012D1D 0%, #1B4332 100%) !important;
@@ -722,6 +761,7 @@ div.stButton button:has(p:contains("처음으로")):hover {
     color: #FFFFFF !important;
     transform: translateY(-1px);
 }
+
 
 /* 뱃지 시스템 */
 .editorial-badge {
@@ -1020,6 +1060,12 @@ if "stamina_state" not in st.session_state:
 if "trigger_quick_run" not in st.session_state:
     st.session_state.trigger_quick_run = False
 
+# [위젯 생명주기 충돌 방어] 위젯이 인스턴스화되기 전에 pending_fest 세션 동기화
+if st.session_state.get("pending_fest"):
+    st.session_state.main_fest = st.session_state.pending_fest
+    st.session_state.selected_fest_name_state = st.session_state.pending_fest
+    del st.session_state["pending_fest"]
+
 
 # ==============================================================================
 # 7. 3열 대칭형 제어 패널 (Where ➔ Energy ➔ How & Action)
@@ -1038,9 +1084,9 @@ with col_where:
             "목적지 (Region)", 
             options=ADMIN_REGIONS, 
             index=region_idx, 
-            key="main_region",
             help="방문하고 싶은 광역 행정구역을 선택하세요."
         )
+        st.session_state.selected_region_state = selected_region
 
         month_options = ["전체"] + [f"{m}월" for m in range(1, 13)]
         month_idx = month_options.index(st.session_state.selected_month_state) if st.session_state.selected_month_state in month_options else 10
@@ -1048,9 +1094,9 @@ with col_where:
             "방문시기 (Month)", 
             options=month_options, 
             index=month_idx, 
-            key="main_month",
             help="축제 개최 월을 기준으로 필터링합니다."
         )
+        st.session_state.selected_month_state = selected_month
         selected_month_int = int(selected_month.replace("월", "")) if selected_month != "전체" else None
 
         try:
@@ -1059,12 +1105,51 @@ with col_where:
             festivals_list = []
 
         fest_data = None
-        if not festivals_list:
+        festival_options = {f["name"]: f for f in festivals_list}
+
+        # [에디터 추천 및 대표 프리셋 축제 데이터 보장]
+        for hot in HOT_FESTIVALS_PRESET:
+            if hot["region"] == selected_region and (selected_month_int is None or hot["month"] == selected_month_int):
+                if hot["name"] not in festival_options:
+                    festival_options[hot["name"]] = {
+                        "name": hot["name"],
+                        "region": hot["region"],
+                        "dates": hot.get("dates", "2026-10-25 ~ 2026-11-03"),
+                        "address": hot.get("address", "전라남도 순천시 순천만길 513-25"),
+                        "lat": hot.get("lat", 34.9272),
+                        "lng": hot.get("lng", 127.5085),
+                        "description": hot.get("desc", ""),
+                        "programs": hot.get("programs", ["황금빛 갈대길 데크 산책", "순천만 노을 포토 아일랜드"]),
+                        "phone": hot.get("phone", "061-749-6052"),
+                        "homepage": hot.get("homepage", "")
+                    }
+
+        # [프리셋 데이터 주입 방어] 세션에 prefilled_fest_data가 있다면 옵션에 등록
+        prefilled = st.session_state.get("prefilled_fest_data")
+        if prefilled:
+            festival_options[prefilled["name"]] = prefilled
+
+        if not festival_options and not prefilled:
             st.warning("선택하신 조건에 등록된 축제가 없습니다.")
         else:
-            festival_options = {f["name"]: f for f in festivals_list}
             fest_keys = list(festival_options.keys())
-            def_fest_idx = fest_keys.index(st.session_state.selected_fest_name_state) if st.session_state.selected_fest_name_state in fest_keys else 0
+
+            # prefilled_fest_data가 세션에 있으면 최우선 대상 축제로 고정
+            if prefilled and prefilled.get("name") in fest_keys:
+                target_fest = prefilled["name"]
+                st.session_state.selected_fest_name_state = target_fest
+            else:
+                target_fest = st.session_state.get("selected_fest_name_state")
+                if target_fest not in fest_keys:
+                    target_fest = fest_keys[0]
+                    st.session_state.selected_fest_name_state = target_fest
+
+            # 위젯 키 동기화: selectbox 생성 전 main_fest가 fest_keys에 없으면 보정
+            if "main_fest" in st.session_state and st.session_state.main_fest not in fest_keys:
+                st.session_state.main_fest = target_fest
+
+            def_fest_idx = fest_keys.index(target_fest) if target_fest in fest_keys else 0
+
             selected_fest_name = st.selectbox(
                 f"로컬 축제 ({len(festival_options)}개)", 
                 options=fest_keys, 
@@ -1072,7 +1157,15 @@ with col_where:
                 key="main_fest",
                 help="원하는 로컬 축제를 선택하면 해당 거점 인프라가 자동 조회됩니다."
             )
-            fest_data = festival_options[selected_fest_name]
+            st.session_state.selected_fest_name_state = selected_fest_name
+
+            # [프리셋 우선 할당 방어] prefilled_fest_data가 존재하고 선택 축제와 일치하면 100% 최우선 할당
+            if prefilled and prefilled.get("name") == selected_fest_name:
+                fest_data = prefilled
+            else:
+                fest_data = festival_options.get(selected_fest_name, prefilled)
+                if prefilled and prefilled.get("name") != selected_fest_name:
+                    st.session_state.pop("prefilled_fest_data", None)
 
         if fest_data:
             dates_raw = str(fest_data.get("dates", "일정 확인 중"))
@@ -1292,6 +1385,10 @@ if st.session_state.trigger_quick_run:
     run_button = True
     st.session_state.trigger_quick_run = False
 
+# [파이프라인 연동부 방어] prefilled_fest_data가 존재하면 fest_data에 최우선 할당
+if st.session_state.get("prefilled_fest_data"):
+    fest_data = st.session_state.prefilled_fest_data
+
 if run_button and fest_data:
     with st.spinner("🖋️ 오늘의 걸음 속도에 맞추어, 나만의 쉼표 매거진이 만들어지는 중입니다..."):
         user_inputs = {
@@ -1391,6 +1488,8 @@ if result and active_fest:
 
     if st.button("🔄 다른 축제 찾아보기 (처음으로)", key="reset_curation_btn", use_container_width=True):
         st.session_state.curation_result = None
+        st.session_state.active_fest = None
+        st.session_state.pop("prefilled_fest_data", None)
         st.rerun()
 
     article_content = result.get("article_content", "")
@@ -1527,9 +1626,9 @@ if result and active_fest:
 
         if is_invalid_coord:
             st.info("ℹ️ 축제장의 정밀 좌표가 제공되지 않아 대한민국 전도 중심으로 지도를 표시합니다.")
-            m = folium.Map(location=[36.5, 127.5], zoom_start=7, tiles="CartoDB positron")
+            m = folium.Map(location=[36.5, 127.5], zoom_start=7, tiles="OpenStreetMap")
         else:
-            m = folium.Map(location=[float(fest_lat), float(fest_lng)], zoom_start=14, tiles="CartoDB positron")
+            m = folium.Map(location=[float(fest_lat), float(fest_lng)], zoom_start=14, tiles="OpenStreetMap")
 
         for pin in map_markers:
             p_lat, p_lng = pin.get("lat"), pin.get("lng")
@@ -1733,11 +1832,58 @@ else:
             </div>
             """, unsafe_allow_html=True)
 
-            if st.button(f"🗞️ {hot['name']} 코스 세팅하기", key=f"quick_btn_{idx}", use_container_width=True):
+            def apply_editor_preset(hot_item=hot):
+                st.session_state.selected_region_state = hot_item["region"]
+                st.session_state.selected_month_state = f"{hot_item['month']}월"
+                st.session_state.selected_fest_name_state = hot_item["name"]
+                st.session_state.stamina_state = hot_item["stamina"]
+                st.session_state.main_fest = hot_item["name"]
+                st.session_state.pending_fest = hot_item["name"]
+                st.session_state.prefilled_fest_data = {
+                    "name": hot_item["name"],
+                    "region": hot_item["region"],
+                    "dates": hot_item.get("dates", "2026-10-25 ~ 2026-11-03"),
+                    "address": hot_item.get("address", "전라남도 순천시 순천만길 513-25"),
+                    "lat": hot_item.get("lat", 34.9272),
+                    "lng": hot_item.get("lng", 127.5085),
+                    "description": hot_item.get("desc", ""),
+                    "programs": hot_item.get("programs", ["황금빛 갈대길 데크 산책", "순천만 노을 포토 아일랜드"]),
+                    "phone": hot_item.get("phone", "061-749-6052"),
+                    "homepage": hot_item.get("homepage", "https://scbay.suncheon.go.kr")
+                }
+                st.session_state.trigger_quick_run = True
+                st.session_state.curation_result = None
+                st.session_state.active_fest = None
+
+            if st.button(
+                f"🗞️ {hot['name']} 코스 세팅하기", 
+                key=f"quick_btn_{idx}", 
+                use_container_width=True,
+                on_click=apply_editor_preset,
+                args=(hot,)
+            ):
                 st.session_state.selected_region_state = hot["region"]
                 st.session_state.selected_month_state = f"{hot['month']}월"
                 st.session_state.selected_fest_name_state = hot["name"]
-                st.session_state.main_fest = hot["name"]
                 st.session_state.stamina_state = hot["stamina"]
+                st.session_state.prefilled_fest_data = {
+                    "name": hot["name"],
+                    "region": hot["region"],
+                    "dates": hot.get("dates", "2026-10-25 ~ 2026-11-03"),
+                    "address": hot.get("address", "전라남도 순천시 순천만길 513-25"),
+                    "lat": hot.get("lat", 34.9272),
+                    "lng": hot.get("lng", 127.5085),
+                    "description": hot.get("desc", ""),
+                    "programs": hot.get("programs", ["황금빛 갈대길 데크 산책", "순천만 노을 포토 아일랜드"]),
+                    "phone": hot.get("phone", "061-749-6052"),
+                    "homepage": hot.get("homepage", "https://scbay.suncheon.go.kr")
+                }
+                try:
+                    st.session_state.main_fest = hot["name"]
+                except Exception:
+                    pass
+                st.session_state.pending_fest = hot["name"]
                 st.session_state.trigger_quick_run = True
-                st.rerun()
+                st.session_state.curation_result = None
+                st.session_state.active_fest = None
+                st.rerun()
