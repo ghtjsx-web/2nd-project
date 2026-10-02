@@ -2469,6 +2469,8 @@ def get_nearby_restaurants(target_lat: float, target_lng: float, radius_m: int =
                 "lng": r_lng,
                 "menu": m1 or "로컬 대표 메뉴",
                 "price": price_str,
+                "address": clean_text(row.get("주소", "")),
+                "phone": clean_text(row.get("연락처", "")),
                 "_dist": dist
             })
 
@@ -2506,6 +2508,8 @@ def get_nearby_restaurants(target_lat: float, target_lng: float, radius_m: int =
                         "lng": round(target_lng + (len(nearby) * 0.002), 7),
                         "menu": m1 or "로컬 착한 메뉴",
                         "price": price_str,
+                        "address": clean_text(row.get("주소", "")),
+                        "phone": clean_text(row.get("연락처", "")),
                         "_dist": 500.0 + (len(nearby) * 100)
                     })
                     if len(nearby) >= 6:

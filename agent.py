@@ -96,6 +96,9 @@ MAGAZINE_EDITOR_SYSTEM_PROMPT = """너는 감각적이고 트렌디한 로컬 �
 6. 타임라인의 시각은 사용자를 위한 '추천 방문 시각'이며 공식 행사 시작 시간이 아님을 명시할 것.
 7. 공식 운영/행사 시간이 명시되지 않은 프로그램에는 실제 시작 시간인 것처럼 단정하지 말고 '추천 방문 시각(예: 오전 11:00 무렵)' 또는 '권장 체류 시간(예: 약 1~1.5시간 소요)' 형식으로 자연스럽게 안내할 것.
 
+[작성 가이드]
+- 식당 추천 시 데이터에 제공된 주소(📍)와 전화번호(📞)를 기사 본문에 자연스럽게 포함하여 안내할 것.
+
 [매거진 기사 필수 구성]
 # 🌿 [헤드라인: 감각적인 메인 타이틀 & 서브헤드]
 ### 🖋️ Editor's Letter: [오늘의 여정을 시작하며]
@@ -297,8 +300,9 @@ def sanitize_infra_bundle(api_data: Optional[Dict[str, Any]]) -> Dict[str, List[
                 r["lat"] = None
                 r["lng"] = None
 
-            # [지침 1 준수] 주소 필드 명시적 보존
+            # [지침 1 준수] 주소 및 전화번호 필드 명시적 보존
             r["address"] = str(item.get("address") or "")
+            r["phone"] = str(item.get("phone") or "전화번호 미상")
             r["price"] = str(r.get("price") if r.get("price") is not None else "가격 정보 없음")
             if "fee" in r:
                 r["fee"] = str(r.get("fee") or "")
@@ -606,7 +610,7 @@ def generate_magazine_article_node(state: PipelineState) -> Dict[str, Any]:
             dist_str = "거리 미상 (동일 시군구 소재)"
         menu_str = str(r.get('menu') or '메뉴 정보 없음')[:300]
         price_str = str(r.get('price') if r.get('price') is not None else '가격 정보 없음')
-        rest_str_list.append(f"- {r.get('name')}: {menu_str} / {dist_str} ({price_str})")
+        rest_str_list.append(f"- {r.get('name')}: {menu_str} / {dist_str} ({price_str}) / 📍 주소: {r.get('address')} / 📞 전화: {r.get('phone')}")
     rest_str = "\n".join(rest_str_list) if rest_str_list else "인근에 등록된 착한가격업소 정보가 없습니다."
 
     # [지침 4 준수] 쉼터(관광지) 데이터 주입 문자열 생성 (도보일 경우 최근접 순 정렬 고려)
@@ -657,6 +661,7 @@ def generate_magazine_article_node(state: PipelineState) -> Dict[str, Any]:
 {unknown_str}
 
 [작성 가이드]
+- 식당 추천 시 데이터에 제공된 주소(📍)와 전화번호(📞)를 기사 본문에 자연스럽게 포함하여 안내하세요.
 - 이동 수단({transport})에 맞추어 맞춤형 동선 팁을 제공하세요:
   * '자가용' 선택 시: 축제장 반경 20km(차량 15~25분 거리) 권역의 로컬 힐링 드라이브 및 인접 명소/맛집 연계를 감성적으로 작성하고, 주차장 팁을 명확히 제공하세요.
   * '도보' 선택 시: 걷기 편한 최단거리 안심 동선(도보 500m~1km)을 강조하세요.
@@ -760,12 +765,16 @@ def format_folium_pins_node(state: PipelineState) -> Dict[str, Any]:
             price = str(r.get("price") if r.get("price") is not None else "가격 정보 없음")
             # [지침 5 준수] 가짜 기본값 제거
             menu = str(r.get("menu") or "메뉴 정보 없음")[:300]
+            phone = str(r.get("phone") or "전화번호 미상")
+            phone_desc = f" | 📞 {phone}" if phone and phone != "전화번호 미상" else ""
             markers.append({
                 "name": r.get("name", "착한가격업소"), "category": "restaurant",
                 "lat": lat, "lng": lng,
                 "icon": "cutlery", "color": "green",
                 "menu": menu, "price": price,
-                "desc": f"메뉴: {menu} ({price})"[:300],
+                "phone": phone,
+                "address": str(r.get("address") or ""),
+                "desc": f"메뉴: {menu} ({price}){phone_desc}"[:300],
                 "popup_title": f"🍲 [착한가격업소] {r.get('name')}"
             })
 

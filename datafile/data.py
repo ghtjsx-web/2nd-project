@@ -450,6 +450,8 @@ def get_nearby_restaurants(target_lat: float, target_lng: float, radius_m: int =
                 "lng": r_lng,
                 "menu": menu,
                 "price": price_str,
+                "address": str(row.get("주소", "")).strip(),
+                "phone": str(row.get("연락처", "")).strip(),
                 "_dist": dist
             })
 

@@ -1760,6 +1760,7 @@ if result and active_fest:
                     r_menu = html.escape(str(r.get("menu", "대표메뉴")))
                     r_price = html.escape(str(r.get("price", "가격 정보 없음")))
                     r_addr = html.escape(str(r.get("address", "")))
+                    r_phone = html.escape(str(r.get("phone", "전화번호 미상")))
                     r_dist = r.get("_dist")
                     dist_label = f"축제장 직선거리 약 {int(r_dist)}m" if (r_dist is not None and r_dist != float('inf')) else "동일 시군구 소재"
                     addr_info = f" · {r_addr}" if r_addr else ""
@@ -1771,7 +1772,7 @@ if result and active_fest:
                             <span style="font-size:0.70rem; background:#BCEECF; color:#002112; font-weight:800; padding:2px 6px; border-radius:4px;">착한가격</span>
                         </div>
                         <div style="font-size:0.80rem; color:#2B2F2C; margin-top:3px;">{r_menu} · <strong>{r_price}</strong></div>
-                        <div style="font-size:0.74rem; color:#717973; margin-top:2px;">📍 {dist_label}{addr_info}</div>
+                        <div style="font-size:0.74rem; color:#717973; margin-top:2px;">📍 {dist_label}{addr_info} | 📞 {r_phone}</div>
                     </div>
                     """, unsafe_allow_html=True)
             else:
