@@ -88,9 +88,16 @@ HOT_FESTIVALS_PRESET = [
         "tag": "황금빛 갈대 데크로드 · 흑두루미 생태 쉼터",
         "stamina": 35,
         "companion": "부모님 (연로하심)",
-        "transport": "🚗 자가용 (렌터카)",
+        "transport": "🚗 자가용 (편한 주차)",
         "img": "https://images.unsplash.com/photo-1470240731273-7821a6eeb6bd?q=80&w=1200",
-        "desc": "바람과 은빛 갈대숲이 머무는 곳, 체력에 맞추어 가장 안심하고 누리는 1일 힐링 에디토리얼 여정."
+        "desc": "바람과 은빛 갈대숲이 머무는 곳, 체력에 맞추어 가장 안심하고 누리는 1일 힐링 에디토리얼 여정.",
+        "dates": "2026-10-25 ~ 2026-11-03",
+        "address": "전라남도 순천시 순천만길 513-25",
+        "lat": 34.9272,
+        "lng": 127.5085,
+        "phone": "061-749-6052",
+        "homepage": "https://scbay.suncheon.go.kr",
+        "programs": ["황금빛 갈대길 데크 산책", "순천만 노을 포토 아일랜드", "흑두루미 갈대 생태 체험"]
     },
     {
         "name": "화담숲 가을 단풍축제",
@@ -99,10 +106,17 @@ HOT_FESTIVALS_PRESET = [
         "badge": "VOL. 02 · 가을의 색",
         "tag": "모노레일 안심 관람 · 오색 단풍 숲길",
         "stamina": 40,
-        "companion": "연인/커플",
-        "transport": "🚗 자가용 (렌터카)",
+        "companion": "연인 / 커플",
+        "transport": "🚗 자가용 (편한 주차)",
         "img": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1200",
-        "desc": "모노레일로 오르는 붉은 단풍 파노라마. 경사로 없는 완만한 나무 데크 숲길에서 마주하는 깊은 가을 쉼표."
+        "desc": "모노레일로 오르는 붉은 단풍 파노라마. 경사로 없는 완만한 나무 데크 숲길에서 마주하는 깊은 가을 쉼표.",
+        "dates": "2026-10-18 ~ 2026-11-17",
+        "address": "경기도 광주시 도척면 도척윗로 278-1 화담숲",
+        "lat": 37.2982,
+        "lng": 127.2922,
+        "phone": "031-8026-6666",
+        "homepage": "https://www.hwadamsup.com",
+        "programs": ["화담숲 가을 모노레일 투어", "오색 단풍 데크 숲길 걷기", "분재원 가을 산책"]
     },
     {
         "name": "진주 남강유등축제",
@@ -114,7 +128,14 @@ HOT_FESTIVALS_PRESET = [
         "companion": "친구들과 함께",
         "transport": "🚶 도보 (대중교통)",
         "img": "https://images.unsplash.com/photo-1514565131-fce0801e5785?q=80&w=1200",
-        "desc": "천 년의 역사를 품은 남강 물결 위에 수놓아진 수만 개의 유등. 물빛과 달빛이 어우러진 낭만적인 밤 산책 코스."
+        "desc": "천 년의 역사를 품은 남강 물결 위에 수놓아진 수만 개의 유등. 물빛과 달빛이 어우러진 낭만적인 밤 산책 코스.",
+        "dates": "2026-10-03 ~ 2026-10-18",
+        "address": "경상남도 진주시 남강로 626",
+        "lat": 35.1802,
+        "lng": 128.0818,
+        "phone": "055-755-9111",
+        "homepage": "http://www.yudeung.com",
+        "programs": ["초혼점등식 및 수상 불꽃놀이", "소망등 달기 체험", "남강 부교 배다리 건너기"]
     }
 ]
 
@@ -675,6 +696,24 @@ div[data-baseweb="input"] > div {
     color: #FFFFFF;
 }
 
+/* Streamlit 모든 버튼 고대비 및 가독성 강제 고정 */
+div.stButton > button, div.stLinkButton > a {
+    color: #FFFFFF !important;
+    background-color: #012D1D !important;
+    border: 1.5px solid #3A674F !important;
+    font-weight: 800 !important;
+}
+div.stButton > button *, div.stLinkButton > a * {
+    color: #FFFFFF !important;
+    -webkit-text-fill-color: #FFFFFF !important;
+}
+div.stButton > button:hover, div.stLinkButton > a:hover {
+    background-color: #1B4332 !important;
+    border-color: #7DD89F !important;
+    color: #FFFFFF !important;
+}
+
+
 /* 메인 발행 버튼 */
 div.stButton > button[kind="primary"] {
     background: linear-gradient(135deg, #012D1D 0%, #1B4332 100%) !important;
@@ -691,6 +730,38 @@ div.stButton > button[kind="primary"]:hover {
     transform: translateY(-1px);
     box-shadow: 0 6px 18px rgba(1, 45, 29, 0.35) !important;
 }
+
+/* 결과 화면 '다른 축제 찾아보기 (처음으로)' 복귀 버튼 시인성 극대화 */
+.st-key-reset_curation_btn button,
+div[data-testid="stButton"] button[key="reset_curation_btn"],
+div.stButton button:has(p:contains("처음으로")) {
+    background-color: #012D1D !important;
+    background: #012D1D !important;
+    color: #FFFFFF !important;
+    border: 1.5px solid #3A674F !important;
+    border-radius: 8px !important;
+    font-weight: 800 !important;
+    font-size: 1.02rem !important;
+    padding: 12px 20px !important;
+    box-shadow: 0 4px 14px rgba(1, 45, 29, 0.22) !important;
+    transition: all 0.2s ease !important;
+}
+.st-key-reset_curation_btn button *,
+div[data-testid="stButton"] button[key="reset_curation_btn"] *,
+div.stButton button:has(p:contains("처음으로")) * {
+    color: #FFFFFF !important;
+    -webkit-text-fill-color: #FFFFFF !important;
+    font-weight: 800 !important;
+}
+.st-key-reset_curation_btn button:hover,
+div.stButton button:has(p:contains("처음으로")):hover {
+    background-color: #1B4332 !important;
+    background: #1B4332 !important;
+    border-color: #7DD89F !important;
+    color: #FFFFFF !important;
+    transform: translateY(-1px);
+}
+
 
 /* 뱃지 시스템 */
 .editorial-badge {
@@ -980,6 +1051,8 @@ if "curation_result" not in st.session_state:
     st.session_state.curation_result = None
 if "selected_region_state" not in st.session_state:
     st.session_state.selected_region_state = "전라남도"
+if "selected_year_state" not in st.session_state:
+    st.session_state.selected_year_state = "2026년"
 if "selected_month_state" not in st.session_state:
     st.session_state.selected_month_state = "10월"
 if "selected_fest_name_state" not in st.session_state:
@@ -988,6 +1061,12 @@ if "stamina_state" not in st.session_state:
     st.session_state.stamina_state = 35
 if "trigger_quick_run" not in st.session_state:
     st.session_state.trigger_quick_run = False
+
+# [위젯 생명주기 충돌 방어] 위젯이 인스턴스화되기 전에 pending_fest 세션 동기화
+if st.session_state.get("pending_fest"):
+    st.session_state.main_fest = st.session_state.pending_fest
+    st.session_state.selected_fest_name_state = st.session_state.pending_fest
+    del st.session_state["pending_fest"]
 
 
 # ==============================================================================
@@ -1007,33 +1086,90 @@ with col_where:
             "목적지 (Region)", 
             options=ADMIN_REGIONS, 
             index=region_idx, 
-            key="main_region",
             help="방문하고 싶은 광역 행정구역을 선택하세요."
         )
+        st.session_state.selected_region_state = selected_region
 
-        month_options = ["전체"] + [f"{m}월" for m in range(1, 13)]
-        month_idx = month_options.index(st.session_state.selected_month_state) if st.session_state.selected_month_state in month_options else 10
-        selected_month = st.selectbox(
-            "방문시기 (Month)", 
-            options=month_options, 
-            index=month_idx, 
-            key="main_month",
-            help="축제 개최 월을 기준으로 필터링합니다."
-        )
-        selected_month_int = int(selected_month.replace("월", "")) if selected_month != "전체" else None
+        col_yr, col_mo = st.columns(2)
+        with col_yr:
+            year_options = ["전체", "2026년", "2025년", "2024년"]
+            year_idx = year_options.index(st.session_state.selected_year_state) if st.session_state.selected_year_state in year_options else 1
+            selected_year = st.selectbox(
+                "개최연도 (Year)", 
+                options=year_options, 
+                index=year_idx, 
+                help="축제 개최 연도를 기준으로 필터링합니다."
+            )
+            st.session_state.selected_year_state = selected_year
+            selected_year_int = int(selected_year.replace("년", "")) if selected_year != "전체" else None
+
+        with col_mo:
+            month_options = ["전체"] + [f"{m}월" for m in range(1, 13)]
+            month_idx = month_options.index(st.session_state.selected_month_state) if st.session_state.selected_month_state in month_options else 10
+            selected_month = st.selectbox(
+                "방문월 (Month)", 
+                options=month_options, 
+                index=month_idx, 
+                help="축제 개최 월을 기준으로 필터링합니다."
+            )
+            st.session_state.selected_month_state = selected_month
+            selected_month_int = int(selected_month.replace("월", "")) if selected_month != "전체" else None
 
         try:
-            festivals_list = get_festivals(region=selected_region, month=selected_month_int)
+            festivals_list = get_festivals(region=selected_region, month=selected_month_int, year=selected_year_int)
         except Exception as e:
             festivals_list = []
 
         fest_data = None
-        if not festivals_list:
+        festival_options = {f["name"]: f for f in festivals_list}
+
+        # [에디터 추천 및 대표 프리셋 축제 데이터 보장]
+        for hot in HOT_FESTIVALS_PRESET:
+            hot_year = 2026
+            matches_year = (selected_year_int is None or selected_year_int == hot_year)
+            matches_region = (selected_region == "전국 전체" or hot["region"] == selected_region)
+            matches_month = (selected_month_int is None or hot["month"] == selected_month_int)
+            if matches_region and matches_month and matches_year:
+                if hot["name"] not in festival_options:
+                    festival_options[hot["name"]] = {
+                        "name": hot["name"],
+                        "region": hot["region"],
+                        "dates": hot.get("dates", ""),
+                        "address": hot.get("address", ""),
+                        "lat": hot.get("lat", 0.0),
+                        "lng": hot.get("lng", 0.0),
+                        "description": hot.get("desc", ""),
+                        "programs": hot.get("programs", []),
+                        "phone": hot.get("phone", ""),
+                        "homepage": hot.get("homepage", "")
+                    }
+
+        # [프리셋 데이터 주입 방어] 세션에 prefilled_fest_data가 있다면 옵션에 등록
+        prefilled = st.session_state.get("prefilled_fest_data")
+        if prefilled:
+            festival_options[prefilled["name"]] = prefilled
+
+        if not festival_options and not prefilled:
             st.warning("선택하신 조건에 등록된 축제가 없습니다.")
         else:
-            festival_options = {f["name"]: f for f in festivals_list}
             fest_keys = list(festival_options.keys())
-            def_fest_idx = fest_keys.index(st.session_state.selected_fest_name_state) if st.session_state.selected_fest_name_state in fest_keys else 0
+
+            # prefilled_fest_data가 세션에 있으면 최우선 대상 축제로 고정
+            if prefilled and prefilled.get("name") in fest_keys:
+                target_fest = prefilled["name"]
+                st.session_state.selected_fest_name_state = target_fest
+            else:
+                target_fest = st.session_state.get("selected_fest_name_state")
+                if target_fest not in fest_keys:
+                    target_fest = fest_keys[0]
+                    st.session_state.selected_fest_name_state = target_fest
+
+            # 위젯 키 동기화: selectbox 생성 전 main_fest가 fest_keys에 없으면 보정
+            if "main_fest" in st.session_state and st.session_state.main_fest not in fest_keys:
+                st.session_state.main_fest = target_fest
+
+            def_fest_idx = fest_keys.index(target_fest) if target_fest in fest_keys else 0
+
             selected_fest_name = st.selectbox(
                 f"로컬 축제 ({len(festival_options)}개)", 
                 options=fest_keys, 
@@ -1041,7 +1177,15 @@ with col_where:
                 key="main_fest",
                 help="원하는 로컬 축제를 선택하면 해당 거점 인프라가 자동 조회됩니다."
             )
-            fest_data = festival_options[selected_fest_name]
+            st.session_state.selected_fest_name_state = selected_fest_name
+
+            # [프리셋 우선 할당 방어] prefilled_fest_data가 존재하고 선택 축제와 일치하면 100% 최우선 할당
+            if prefilled and prefilled.get("name") == selected_fest_name:
+                fest_data = prefilled
+            else:
+                fest_data = festival_options.get(selected_fest_name, prefilled)
+                if prefilled and prefilled.get("name") != selected_fest_name:
+                    st.session_state.pop("prefilled_fest_data", None)
 
         if fest_data:
             dates_raw = str(fest_data.get("dates", "일정 확인 중"))
@@ -1212,9 +1356,32 @@ function fixTabColors() {
     } catch(e) {}
 }
 
+function fixResetButton() {
+    try {
+        const doc = window.parent ? window.parent.document : document;
+        if (!doc) return;
+        const resetBtns = doc.querySelectorAll('.st-key-reset_curation_btn button, div[data-testid="stButton"] button');
+        resetBtns.forEach(btn => {
+            if (btn.innerText && btn.innerText.includes('다른 축제 찾아보기')) {
+                btn.style.setProperty('background-color', '#012D1D', 'important');
+                btn.style.setProperty('background', '#012D1D', 'important');
+                btn.style.setProperty('color', '#FFFFFF', 'important');
+                btn.style.setProperty('border', '1.5px solid #3A674F', 'important');
+                btn.style.setProperty('border-radius', '8px', 'important');
+                btn.style.setProperty('font-weight', '800', 'important');
+                btn.querySelectorAll('*').forEach(c => {
+                    c.style.setProperty('color', '#FFFFFF', 'important');
+                    c.style.setProperty('-webkit-text-fill-color', '#FFFFFF', 'important');
+                });
+            }
+        });
+    } catch(e) {}
+}
+
 function runUIFixes() {
     syncCardHeights();
     fixTabColors();
+    fixResetButton();
 }
 
 runUIFixes();
@@ -1238,6 +1405,10 @@ if st.session_state.trigger_quick_run:
     run_button = True
     st.session_state.trigger_quick_run = False
 
+# [파이프라인 연동부 방어] prefilled_fest_data가 존재하면 fest_data에 최우선 할당
+if st.session_state.get("prefilled_fest_data"):
+    fest_data = st.session_state.prefilled_fest_data
+
 if run_button and fest_data:
     with st.spinner("🖋️ 오늘의 걸음 속도에 맞추어, 나만의 쉼표 매거진이 만들어지는 중입니다..."):
         user_inputs = {
@@ -1250,6 +1421,7 @@ if run_button and fest_data:
                 "lat": fest_data.get("lat"),
                 "lng": fest_data.get("lng"),
                 "address": fest_data.get("address", ""),
+                "dates": fest_data.get("dates", ""),
                 "description": fest_data.get("description", ""),
                 "programs": fest_data.get("programs", []),
                 "phone": fest_data.get("phone", ""),
@@ -1306,8 +1478,39 @@ result = st.session_state.get("curation_result")
 active_fest = st.session_state.get("active_fest", fest_data)
 
 if result and active_fest:
-    if st.button("🔄 다른 축제 찾아보기 (처음으로)"):
+    # [시인성 보장] 결과 화면 최상단 처음으로 돌아가기 버튼 (딥 그린 배경 & 순백색 글씨)
+    st.markdown("""
+    <style>
+    .st-key-reset_curation_btn button {
+        background-color: #012D1D !important;
+        background: #012D1D !important;
+        color: #FFFFFF !important;
+        border: 1.5px solid #3A674F !important;
+        border-radius: 8px !important;
+        font-weight: 800 !important;
+        font-size: 1.02rem !important;
+        padding: 12px 20px !important;
+        box-shadow: 0 4px 14px rgba(1, 45, 29, 0.22) !important;
+        margin-bottom: 8px !important;
+    }
+    .st-key-reset_curation_btn button * {
+        color: #FFFFFF !important;
+        -webkit-text-fill-color: #FFFFFF !important;
+        font-weight: 800 !important;
+    }
+    .st-key-reset_curation_btn button:hover {
+        background-color: #1B4332 !important;
+        background: #1B4332 !important;
+        border-color: #7DD89F !important;
+        color: #FFFFFF !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    if st.button("🔄 다른 축제 찾아보기 (처음으로)", key="reset_curation_btn", use_container_width=True):
         st.session_state.curation_result = None
+        st.session_state.active_fest = None
+        st.session_state.pop("prefilled_fest_data", None)
         st.rerun()
 
     article_content = result.get("article_content", "")
@@ -1328,10 +1531,10 @@ if result and active_fest:
     first_restaurant = next((p for p in map_markers if p.get("category") == "restaurant"), None)
     first_spot = next((p for p in map_markers if p.get("category") == "rest_spot"), None)
 
-    rest_name = first_restaurant.get("name", "순천만 도사골 꼬막정식") if first_restaurant else "로컬 착한가격 식당"
-    rest_desc = first_restaurant.get("desc", "정갈한 남도 계절 나물과 따뜻한 솥밥, 입식 테이블 완비") if first_restaurant else "물가안정 모니터링 통과 업소"
-    spot_name = first_spot.get("name", "순천만 약초 온열 족욕장") if first_spot else "웰니스 힐링 쉼터"
-    spot_desc = first_spot.get("desc", "지친 다리의 피로를 씻어내는 은은한 당귀 족욕과 국화차 한 잔") if first_spot else "몸과 마음을 비우는 안심 쉼터"
+    rest_name = (first_restaurant.get("name") if first_restaurant else None) or "지역 추천 착한가격업소"
+    rest_desc = (first_restaurant.get("desc") if first_restaurant else None) or "지역 주민이 즐겨 찾는 착한 가격의 안심 식당"
+    spot_name = (first_spot.get("name") if first_spot else None) or "관광·휴식 명소"
+    spot_desc = (first_spot.get("desc") if first_spot else None) or "여유롭게 머물며 피로를 씻어내는 웰니스 힐링 쉼터"
 
     # [현장 확인 & 홈페이지 연동] 스마트 실사 및 누리집 크롤링 비주얼
     fest_visual = get_smart_curated_image(fest_name, category="festival", desc=fest_desc, homepage=homepage, region=fest_region)
@@ -1367,6 +1570,9 @@ if result and active_fest:
     st.markdown("### ⏱️ 에디터 추천 1일 큐레이션 코스")
     st.caption("축제장부터 착한 식당, 웰니스 쉼터까지 체력에 맞춘 3대 핵심 거점 (현장 실사 & 시맨틱 매칭)")
 
+    fest_timeline_desc = fest_desc if fest_desc else f"{fest_name}의 아름다운 정취와 분위기를 천천히 만끽하는 힐링 코스"
+    fest_badge_text = active_fest.get("tag") or (f"🌿 {fest_region} 로컬 테마" if fest_region and fest_region != "전국" else "🌿 로컬 힐링 여정")
+
     s_col1, s_col2, s_col3 = st.columns(3, gap="medium")
     with s_col1:
         st.markdown(f"""
@@ -1376,10 +1582,10 @@ if result and active_fest:
                 <span style="position:absolute; bottom:8px; right:8px;" class="badge-img-meta">{fest_visual['source']}</span>
             </div>
             <div style="padding:18px;">
-                <span class="editorial-badge badge-live">STEP 01 · 10:30 AM</span>
+                <span class="editorial-badge badge-live">STEP 01 · 추천 10:30 무렵</span>
                 <h4 style="color:#012D1D; margin:8px 0 4px 0;">{fest_name}</h4>
-                <p style="font-size:0.83rem; color:#414844; line-height:1.5;">계단 없이 완만한 목재 데크로드를 따라 천천히 걷는 숲길.</p>
-                <div style="font-size:0.75rem; color:#3A674F; font-weight:700; margin-top:8px;">🌿 무장애 경사도 1.8%</div>
+                <p style="font-size:0.83rem; color:#414844; line-height:1.5;">{fest_timeline_desc}</p>
+                <div style="font-size:0.75rem; color:#3A674F; font-weight:700; margin-top:8px;">{fest_badge_text}</div>
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -1392,7 +1598,7 @@ if result and active_fest:
                 <span style="position:absolute; bottom:8px; right:8px;" class="badge-img-meta">{rest_visual['source']}</span>
             </div>
             <div style="padding:18px;">
-                <span class="editorial-badge badge-live">STEP 02 · 12:30 PM</span>
+                <span class="editorial-badge badge-live">STEP 02 · 추천 12:30 무렵</span>
                 <h4 style="color:#012D1D; margin:8px 0 4px 0;">{rest_name}</h4>
                 <p style="font-size:0.83rem; color:#414844; line-height:1.5;">{rest_desc}</p>
                 <div style="font-size:0.75rem; color:#3A674F; font-weight:700; margin-top:8px;">🍲 행안부 착한가격업소</div>
@@ -1408,7 +1614,7 @@ if result and active_fest:
                 <span style="position:absolute; bottom:8px; right:8px;" class="badge-img-meta">{spot_visual['source']}</span>
             </div>
             <div style="padding:18px;">
-                <span class="editorial-badge badge-live">STEP 03 · 02:30 PM</span>
+                <span class="editorial-badge badge-live">STEP 03 · 추천 14:30 무렵</span>
                 <h4 style="color:#012D1D; margin:8px 0 4px 0;">{spot_name}</h4>
                 <p style="font-size:0.83rem; color:#414844; line-height:1.5;">{spot_desc}</p>
                 <div style="font-size:0.75rem; color:#3A674F; font-weight:700; margin-top:8px;">✨ 웰니스 치유 쉼터</div>
@@ -1444,9 +1650,9 @@ if result and active_fest:
 
         if is_invalid_coord:
             st.info("ℹ️ 축제장의 정밀 좌표가 제공되지 않아 대한민국 전도 중심으로 지도를 표시합니다.")
-            m = folium.Map(location=[36.5, 127.5], zoom_start=7, tiles="CartoDB positron")
+            m = folium.Map(location=[36.5, 127.5], zoom_start=7, tiles="OpenStreetMap")
         else:
-            m = folium.Map(location=[float(fest_lat), float(fest_lng)], zoom_start=14, tiles="CartoDB positron")
+            m = folium.Map(location=[float(fest_lat), float(fest_lng)], zoom_start=14, tiles="OpenStreetMap")
 
         for pin in map_markers:
             p_lat, p_lng = pin.get("lat"), pin.get("lng")
@@ -1471,100 +1677,71 @@ if result and active_fest:
 
         st_folium(m, width="100%", height=330)
 
-        # [현장 확인] 프로그램 사전 확인 3단 탭 (사전예약 / 자유참여 / 현장확인)
-        st.markdown("""
-        <style>
-        /* [중요] 탭 텍스트 가독성 강제 오버라이드: 비선택 탭 짙은 차콜(#1C1C16), 선택 탭 딥그린(#012D1D) */
-        [data-testid="stTabs"] button[role="tab"] p,
-        [data-testid="stTabs"] button[role="tab"] span,
-        [data-testid="stTabs"] button[role="tab"] div,
-        [data-testid="stTabs"] button p,
-        [data-testid="stTabs"] button span,
-        [data-testid="stTabs"] button div,
-        button[role="tab"] p,
-        button[role="tab"] span,
-        button[role="tab"] div {
-            color: #1C1C16 !important;
-            -webkit-text-fill-color: #1C1C16 !important;
-            font-weight: 700 !important;
-            font-size: 0.88rem !important;
-            opacity: 1 !important;
-        }
-        [data-testid="stTabs"] button[role="tab"][aria-selected="true"] p,
-        [data-testid="stTabs"] button[role="tab"][aria-selected="true"] span,
-        [data-testid="stTabs"] button[role="tab"][aria-selected="true"] div,
-        [data-testid="stTabs"] button[aria-selected="true"] p,
-        [data-testid="stTabs"] button[aria-selected="true"] span,
-        [data-testid="stTabs"] button[aria-selected="true"] div,
-        button[role="tab"][aria-selected="true"] p,
-        button[role="tab"][aria-selected="true"] span,
-        button[role="tab"][aria-selected="true"] div {
-            color: #012D1D !important;
-            -webkit-text-fill-color: #012D1D !important;
-            font-weight: 800 !important;
-            font-size: 0.88rem !important;
-            opacity: 1 !important;
-        }
-        </style>
-        <h4 style='color:#012D1D; margin-top:18px; margin-bottom:8px;'>📌 프로그램 일정 및 현장 확인</h4>
-        """, unsafe_allow_html=True)
+        # [현장 확인] 주요 프로그램 & 행사 (단일 리스트 통합)
+        st.markdown("### 🎪 주요 프로그램 & 행사")
+        
         req_list = event_info.get("reservation_required", [])
         walk_list = event_info.get("walk_in", [])
         unknown_list = event_info.get("unknown", [])
 
-        prog_tab1, prog_tab2, prog_tab3 = st.tabs([
-            f"사전 예약 ({len(req_list)})",
-            f"자유 참여 ({len(walk_list)})",
-            f"현장 확인 ({len(unknown_list)})"
-        ])
+        tagged_req = [{**p, "_status": "사전 예약"} for p in req_list]
+        tagged_walk = [{**p, "_status": "자유 참여"} for p in walk_list]
+        tagged_unknown = [{**p, "_status": "현장 확인"} for p in unknown_list]
+        all_programs = tagged_req + tagged_walk + tagged_unknown
 
-        with prog_tab1:
-            if req_list:
-                for it in req_list:
-                    r_name = html.escape(str(it.get('name', '프로그램')))
-                    r_desc = html.escape(str(it.get('description', '세부 정보 없음')))
-                    r_tip = html.escape(str(it.get('booking_tip', '공식 누리집 사전 예약 필수')))
-                    st.markdown(f"""
-                    <div style="background:#FFF5F5; border:1px solid #FECACA; border-left:4px solid #EF4444; border-radius:6px; padding:10px 12px; margin-bottom:8px;">
-                        <strong style="color:#991B1B; font-size:0.88rem;">{r_name}</strong>
-                        <div style="font-size:0.80rem; color:#1F2937; margin:2px 0;">{r_desc}</div>
-                        <div style="font-size:0.75rem; color:#DC2626; font-weight:700;">💡 Tip: {r_tip}</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-            else:
-                st.caption("사전 예약 필수 프로그램이 없습니다.")
+        if all_programs:
+            for p in all_programs:
+                p_name = html.escape(str(p.get('name', '프로그램')))
+                p_desc = html.escape(str(p.get('description', '세부 정보 없음')))
+                p_status = p.get('_status', '현장 확인')
+                
+                if p_status == "사전 예약":
+                    p_tip = html.escape(str(p.get('booking_tip', '공식 누리집 사전 예약 필수')))
+                    bg_color = "#FFF5F5"
+                    border_color = "#FECACA"
+                    left_border = "#EF4444"
+                    title_color = "#991B1B"
+                    tip_color = "#DC2626"
+                    badge_bg = "#FEE2E2"
+                    badge_fg = "#991B1B"
+                elif p_status == "자유 참여":
+                    p_tip = html.escape(str(p.get('booking_tip', '현장 자유 참여 가능')))
+                    bg_color = "#F0FDF4"
+                    border_color = "#BBF7D0"
+                    left_border = "#10B981"
+                    title_color = "#14532D"
+                    tip_color = "#15803D"
+                    badge_bg = "#DCFCE7"
+                    badge_fg = "#14532D"
+                else:
+                    p_tip = html.escape(str(p.get('booking_tip', '현장 종합안내소 문의 요망')))
+                    bg_color = "#FFFBEB"
+                    border_color = "#FDE68A"
+                    left_border = "#F59E0B"
+                    title_color = "#78350F"
+                    tip_color = "#B45309"
+                    badge_bg = "#FEF3C7"
+                    badge_fg = "#78350F"
 
-        with prog_tab2:
-            if walk_list:
-                for it in walk_list:
-                    w_name = html.escape(str(it.get('name', '프로그램')))
-                    w_desc = html.escape(str(it.get('description', '세부 정보 없음')))
-                    w_tip = html.escape(str(it.get('booking_tip', '현장 자유 참여 가능')))
-                    st.markdown(f"""
-                    <div style="background:#F0FDF4; border:1px solid #BBF7D0; border-left:4px solid #10B981; border-radius:6px; padding:10px 12px; margin-bottom:8px;">
-                        <strong style="color:#14532D; font-size:0.88rem;">{w_name}</strong>
-                        <div style="font-size:0.80rem; color:#1F2937; margin:2px 0;">{w_desc}</div>
-                        <div style="font-size:0.75rem; color:#15803D; font-weight:700;">💡 Tip: {w_tip}</div>
+                st.markdown(f"""
+                <div style="background:{bg_color}; border:1px solid {border_color}; border-left:4px solid {left_border}; border-radius:8px; padding:10px 14px; margin-bottom:10px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                        <strong style="color:{title_color}; font-size:0.90rem;">{p_name}</strong>
+                        <span style="font-size:0.72rem; background:{badge_bg}; color:{badge_fg}; font-weight:800; padding:2px 8px; border-radius:4px;">{p_status}</span>
                     </div>
-                    """, unsafe_allow_html=True)
-            else:
-                st.caption("자유 참여 프로그램이 없습니다.")
+                    <div style="font-size:0.81rem; color:#1F2937; margin:3px 0 5px 0; line-height:1.45;">{p_desc}</div>
+                    <div style="font-size:0.75rem; color:{tip_color}; font-weight:700;">💡 Tip: {p_tip}</div>
+                </div>
+                """, unsafe_allow_html=True)
+        else:
+            st.info("등록된 세부 프로그램 정보가 없습니다.")
 
-        with prog_tab3:
-            if unknown_list:
-                for it in unknown_list:
-                    u_name = html.escape(str(it.get('name', '프로그램')))
-                    u_desc = html.escape(str(it.get('description', '세부 정보 없음')))
-                    u_tip = html.escape(str(it.get('booking_tip', '현장 종합안내소 문의 요망')))
-                    st.markdown(f"""
-                    <div style="background:#FFFBEB; border:1px solid #FDE68A; border-left:4px solid #F59E0B; border-radius:6px; padding:10px 12px; margin-bottom:8px;">
-                        <strong style="color:#78350F; font-size:0.88rem;">{u_name}</strong>
-                        <div style="font-size:0.80rem; color:#1F2937; margin:2px 0;">{u_desc}</div>
-                        <div style="font-size:0.75rem; color:#B45309; font-weight:700;">💡 Tip: {u_tip}</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-            else:
-                st.caption("현장 확인 대상 프로그램이 없습니다.")
+        festival_homepage = result.get("festival_homepage", "")
+        if festival_homepage:
+            st.link_button("🌐 공식 누리집 / 예매처 바로가기", festival_homepage, use_container_width=True, type="primary")
+        else:
+            st.caption("ℹ️ 공식 홈페이지 정보가 제공되지 않습니다. 상세 일정 및 예매는 현장 종합안내소를 이용해 주세요.")
+
 
         # [현장 확인] 착한가격업소 & 관광·휴식 명소 상세 탭 (거리/가격/주소 표시)
         st.markdown("<h4 style='color:#012D1D; margin-top:20px; margin-bottom:8px;'>🍽️ 착한가격업소 & 🌿 관광·휴식 명소</h4>", unsafe_allow_html=True)
@@ -1679,11 +1856,38 @@ else:
             </div>
             """, unsafe_allow_html=True)
 
-            if st.button(f"🗞️ {hot['name']} 코스 세팅하기", key=f"quick_btn_{idx}", use_container_width=True):
-                st.session_state.selected_region_state = hot["region"]
-                st.session_state.selected_month_state = f"{hot['month']}월"
-                st.session_state.selected_fest_name_state = hot["name"]
-                st.session_state.main_fest = hot["name"]
-                st.session_state.stamina_state = hot["stamina"]
+            def apply_editor_preset(hot_item=hot):
+                st.session_state.selected_region_state = hot_item["region"]
+                st.session_state.selected_year_state = "2026년"
+                st.session_state.selected_month_state = f"{hot_item['month']}월"
+                st.session_state.selected_fest_name_state = hot_item["name"]
+                st.session_state.stamina_state = hot_item["stamina"]
+                st.session_state.stamina_slider = hot_item["stamina"]
+                st.session_state.main_companion = hot_item.get("companion", "부모님 (연로하심)")
+                st.session_state.main_transport = hot_item.get("transport", "🚗 자가용 (편한 주차)")
+                st.session_state.pop("main_extra", None)
+                st.session_state.main_fest = hot_item["name"]
+                st.session_state.pending_fest = hot_item["name"]
+                st.session_state.prefilled_fest_data = {
+                    "name": hot_item["name"],
+                    "region": hot_item["region"],
+                    "dates": hot_item.get("dates", ""),
+                    "address": hot_item.get("address", ""),
+                    "lat": hot_item.get("lat", 0.0),
+                    "lng": hot_item.get("lng", 0.0),
+                    "description": hot_item.get("desc", ""),
+                    "programs": hot_item.get("programs", []),
+                    "phone": hot_item.get("phone", ""),
+                    "homepage": hot_item.get("homepage", "")
+                }
                 st.session_state.trigger_quick_run = True
-                st.rerun()
+                st.session_state.curation_result = None
+                st.session_state.active_fest = None
+
+            st.button(
+                f"🗞️ {hot['name']} 코스 세팅하기", 
+                key=f"quick_btn_{idx}", 
+                use_container_width=True,
+                on_click=apply_editor_preset,
+                args=(hot,)
+            )

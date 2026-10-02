@@ -12,6 +12,7 @@ import requests
 import glob
 # 타입 힌트 지정을 위해 typing 모듈에서 필요한 타입 클래스들을 불러옵니다.
 from typing import Any, Dict, List, Optional, Tuple
+from datetime import datetime
 
 # 표 형태의 데이터(CSV)를 읽고 가공하기 위해 pandas 라이브러리를 불러옵니다.
 import pandas as pd
@@ -2196,8 +2197,8 @@ def _load_adapter_csv(filename_patterns: List[str]) -> pd.DataFrame:
     return pd.DataFrame()
 
 
-def get_festivals(region: str = "전국 전체", month: Optional[int] = None, *args: Any, **kwargs: Any) -> List[Dict[str, Any]]:
-    """전국 17개 행정구역 및 월별 필터링을 거친 유효 위경도 축제 목록을 반환합니다."""
+def get_festivals(region: str = "전국 전체", month: Optional[int] = None, year: Optional[int] = None, *args: Any, **kwargs: Any) -> List[Dict[str, Any]]:
+    """전국 17개 행정구역, 개최연도 및 월별 필터링을 거친 유효 위경도 축제 목록을 반환합니다."""
     global _ADAPTER_FEST_CACHE
     if _ADAPTER_FEST_CACHE is None or _ADAPTER_FEST_CACHE.empty:
         _ADAPTER_FEST_CACHE = _load_adapter_csv(["*문화축제*.csv", "festivals.csv", "*공연행사*.csv"])
@@ -2232,34 +2233,58 @@ def get_festivals(region: str = "전국 전체", month: Optional[int] = None, *a
         aliases = region_map.get(region, [region, short_region])
         pattern = "|".join(list(set(aliases)))
         
-        target_cols = ["소재지도로명주소", "소재지지번주소", "개최장소", "축제명"]
-        mask = pd.Series(False, index=df.index)
-        for col in target_cols:
+        # 주소 관련 컬럼(소재지도로명주소, 소재지지번주소, 개최장소)을 1순위로 필터링
+        # 축제명에 "경기" 등의 지역명 단어가 포함되어 오매칭되는 현상을 방지
+        addr_cols = ["소재지도로명주소", "소재지지번주소", "개최장소"]
+        addr_mask = pd.Series(False, index=df.index)
+        has_addr = pd.Series(False, index=df.index)
+        for col in addr_cols:
             if col in df.columns:
-                mask = mask | df[col].astype(str).str.contains(pattern, na=False)
-        df = df[mask]
+                col_val = df[col].astype(str).str.strip()
+                is_valid = (col_val != "") & (col_val.str.lower() != "nan") & (col_val.str.lower() != "none")
+                has_addr = has_addr | is_valid
+                addr_mask = addr_mask | (is_valid & col_val.str.contains(pattern, na=False))
 
-    # 2. 날짜(월) 필터링
+        # 주소가 유효한 데이터는 주소 일치 여부만으로 판정하고, 주소 컬럼이 모두 비어있는 경우에만 축제명 매칭 확인
+        name_mask = pd.Series(False, index=df.index)
+        if "축제명" in df.columns:
+            name_mask = df["축제명"].astype(str).str.contains(pattern, na=False)
+
+        region_mask = addr_mask | (~has_addr & name_mask)
+        df = df[region_mask]
+
+    # 2. 날짜(연도 및 월) 필터링
+    year = year or kwargs.get("year")
+    s_col = df["축제시작일자"] if "축제시작일자" in df.columns else pd.Series(index=df.index, dtype=object)
+    e_col = df["축제종료일자"] if "축제종료일자" in df.columns else pd.Series(index=df.index, dtype=object)
+    s_date = pd.to_datetime(s_col, errors="coerce")
+    e_date = pd.to_datetime(e_col, errors="coerce")
+
+    # 시작일이나 종료일이 누락된(NaN) 축제는 무조건 필터링에서 제외(Drop)
+    valid_dates = s_date.notna() & e_date.notna()
+
+    # 연도 조건: 특정 연도가 지정된 경우 해당 연도 축제만, 지정되지 않은 경우 최근 3년 이내 행사 허용
+    current_year = datetime.now().year
+    if year:
+        year_mask = (s_date.dt.year == year) | (e_date.dt.year == year)
+    else:
+        min_year = current_year - 3
+        year_mask = (e_date.dt.year >= min_year) | (s_date.dt.year >= min_year)
+
     if month and 1 <= month <= 12:
-        s_col = df["축제시작일자"] if "축제시작일자" in df.columns else pd.Series(index=df.index, dtype=object)
-        e_col = df["축제종료일자"] if "축제종료일자" in df.columns else pd.Series(index=df.index, dtype=object)
-        s_date = pd.to_datetime(s_col, errors="coerce")
-        e_date = pd.to_datetime(e_col, errors="coerce")
-        
-        # 1) 시작일이나 종료일이 누락된(NaN) 축제는 무조건 필터링에서 제외(Drop)
-        valid_dates = s_date.notna() & e_date.notna()
-        
         s_month = s_date.dt.month
         e_month = e_date.dt.month
         
-        # 2) s_month <= e_month 인 경우 (일반): s_month <= month <= e_month
+        # 일반 기간: s_month <= month <= e_month
         normal_mask = (s_month <= e_month) & (s_month <= month) & (month <= e_month)
-        
-        # 3) s_month > e_month 인 경우 (연도 교차 축제, 예: 11월~2월): month >= s_month 이거나 month <= e_month
+        # 연도 교차 축제 (예: 11월~2월): month >= s_month 이거나 month <= e_month
         cross_mask = (s_month > e_month) & ((month >= s_month) | (month <= e_month))
         
-        mask_month = valid_dates & (normal_mask | cross_mask)
-        df = df[mask_month]
+        mask_date = valid_dates & year_mask & (normal_mask | cross_mask)
+    else:
+        mask_date = valid_dates & year_mask
+
+    df = df[mask_date]
 
     results: List[Dict[str, Any]] = []
     seen = set()
