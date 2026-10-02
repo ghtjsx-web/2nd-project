@@ -1306,6 +1306,10 @@ result = st.session_state.get("curation_result")
 active_fest = st.session_state.get("active_fest", fest_data)
 
 if result and active_fest:
+    if st.button("🔄 다른 축제 찾아보기 (처음으로)"):
+        st.session_state.curation_result = None
+        st.rerun()
+
     article_content = result.get("article_content", "")
     event_info = result.get("event_info", {"reservation_required": [], "walk_in": [], "unknown": []})
     map_markers = result.get("map_markers", [])
@@ -1418,134 +1422,17 @@ if result and active_fest:
     col_left, col_right = st.columns([58, 42], gap="large")
 
     with col_left:
-        # [사용자 편의 강조 UI] 에세이 상단 도구 모음: 전문 복사 & 누리집 바로가기
-        sub_c1, sub_c2 = st.columns([7, 3])
-        with sub_c1:
-            st.markdown('<div style="font-family:\'Playfair Display\', serif; font-size:1.35rem; font-weight:800; color:#012D1D;">Editorial Reading</div>', unsafe_allow_html=True)
-            st.caption("FestaPick 수석 에디터가 현장에서 직접 걸으며 기록한 온기 어린 여정록")
-        with sub_c2:
-            if st.button("📋 기사 전문 복사", use_container_width=True):
-                st.toast("✨ 맞춤 에디토리얼 기사 전문이 복사되었습니다! 소중한 동행에게 공유해보세요.", icon="📋")
-
-        quote_lead = "“부모님의 발걸음 속도에 맞추어 천천히 걷다 보면, 그동안 지나쳤던 갈대 잎사귀 부딪히는 소리가 비로소 들리기 시작합니다.”" if "부모님" in str(st.session_state.get('active_companion', '')) else f"“{fest_name}의 호젓한 숲길을 따라 걷다 보면, 일상의 번잡함이 씻은 듯 사라집니다.”"
-        quote_mid = "“황금빛 갈대 사이로 바람이 스칠 때, 부모님의 걸음은 쉼표가 되었다.”" if "순천만" in fest_name else f"“{fest_name}의 자연 속에 머물 때, 우리의 걸음은 쉼표가 되었다.”"
-        hp_link_html = f'<a href="{html.escape(homepage)}" target="_blank" style="display:inline-flex; align-items:center; gap:4px; background:#EDE8DE; color:#012D1D; padding:6px 12px; border-radius:6px; font-size:0.75rem; font-weight:700; text-decoration:none; border:1px solid #DCD4C7;">🌐 축제 누리집 ↗</a>' if homepage else ''
-
-        essay_html = f"""<article style="background-color:#FAF7F2; padding:28px 32px; border-radius:14px; border:1px solid #EAE4DA; box-shadow:0 2px 10px rgba(0,0,0,0.03); color:#2B2F2C;">
-<div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:1px solid #E5DED3; padding-bottom:18px; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
-<div>
-<div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
-<span class="panel-step-badge">ESSAY &amp; CURATION</span>
-<span style="font-size:0.75rem; color:#717973; font-weight:700;">ISSUE NO. 24 AUTUMN</span>
-</div>
-<h2 style="font-family:'Playfair Display', Georgia, serif; font-size:1.85rem; font-weight:800; color:#012D1D; margin:4px 0 6px 0; letter-spacing:-0.5px;">에디터의 힐링 에세이</h2>
-<p style="font-size:0.83rem; color:#717973; margin:0;">100% 공공데이터 실측 및 보행약자 안심 검증 완료</p>
-</div>
-<div style="display:flex; align-items:center; gap:8px;">
-{hp_link_html}
-</div>
-</div>
-
-<div style="background-color:rgba(243,237,225,0.7); border-left:4px solid #3A674F; border-top:1px solid #E6DECB; border-right:1px solid #E6DECB; border-bottom:1px solid #E6DECB; border-radius:8px; padding:18px 20px; margin-bottom:22px;">
-<blockquote style="font-family:'Playfair Display', Georgia, serif; font-size:1.08rem; color:#012D1D; font-weight:600; font-style:italic; line-height:1.6; margin:0 0 6px 0;">
-{quote_lead}
-</blockquote>
-<span style="font-size:0.75rem; letter-spacing:0.06em; text-transform:uppercase; color:#3A674F; font-weight:700;">— FestaPick Editor Note · {fest_name} 쉼표에서</span>
-</div>
-
-<div style="font-size:0.95rem; line-height:1.95; color:#2B2F2C; margin-bottom:20px;">
-<p style="margin:0;">
-<span style="float:left; font-size:3.2rem; font-family:'Playfair Display', serif; font-weight:bold; color:#012D1D; line-height:0.9; margin-right:12px; margin-top:4px; user-select:none;">가</span>을 {fest_name}은 언제나 바람의 방향으로 먼저 말을 건넵니다. 자연 위로 끝없이 펼쳐진 수려한 풍광은 해 질 무렵이 되면 황금빛으로 물들며 장관을 이룹니다. 하지만 거동이 불편하거나 관절이 약하신 동행과 함께하는 여행길은 늘 마음속 걱정이 앞서기 마련입니다. 계단은 얼마나 되는지, 주차장에서 행사장까지 멀지는 않은지, 중간에 쉴 수 있는 벤치는 충분한지 꼼꼼하게 따져보게 됩니다.
-</p>
-</div>
-
-<div style="text-align:center; padding:20px 16px; margin:22px 0; border-top:1px solid #E2D9CC; border-bottom:1px solid #E2D9CC; background-color:#FBF9F4;">
-<p style="font-family:'Playfair Display', Georgia, serif; font-style:italic; font-size:1.15rem; color:#012D1D; font-weight:700; margin:0 0 6px 0; letter-spacing:-0.3px;">
-{quote_mid}
-</p>
-<span style="font-size:0.72rem; letter-spacing:0.12em; text-transform:uppercase; color:#717973;">Slow Travel Memoir · {fest_region}</span>
-</div>
-
-<div style="font-size:0.95rem; line-height:1.95; color:#2B2F2C; margin-bottom:24px;">
-<p style="margin:0;">
-축제를 둘러본 뒤에는 차로 5~10분 거리에 위치한 착한가격 지정 식당에서 담백하고 정갈한 로컬 계절 정식으로 점심을 권합니다. 과하지 않은 양념과 부드럽게 삶아낸 제철 요리는 소화가 잘되어 연로하신 어르신들께도 안성맞춤입니다. 마지막 코스로 들르는 웰니스 족욕 테라피는 여행 내내 긴장했던 발과 무릎의 피로를 사르르 풀어줄 것입니다.
-</p>
-</div>
-
-<div style="background-color:#F2ECDF; border:1px solid rgba(58,103,79,0.25); border-radius:12px; padding:18px; margin-bottom:24px;">
-<div style="display:flex; align-items:center; gap:8px; border-bottom:1px solid #DED6C7; padding-bottom:10px; margin-bottom:14px;">
-<span class="material-symbols-outlined" style="color:#3A674F; font-size:22px;">volunteer_activism</span>
-<strong style="color:#012D1D; font-size:0.92rem;">에디터의 안심 동행 팁 (공공데이터 실측 기반)</strong>
-</div>
-<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:10px;">
-<div style="background:#FAF7F2; padding:12px; border-radius:8px; border:1px solid #DED6C7;">
-<span style="font-size:0.68rem; color:#3A674F; font-weight:800; display:block; margin-bottom:4px;">TIP 01 · 무장애 보행</span>
-<strong style="font-size:0.82rem; color:#012D1D; display:block; margin-bottom:4px;">전 구간 평지 데크</strong>
-<p style="font-size:0.75rem; color:#414844; margin:0; line-height:1.4;">턱이 전혀 없어 전동휠체어·실버카 주행이 매우 수월합니다.</p>
-</div>
-<div style="background:#FAF7F2; padding:12px; border-radius:8px; border:1px solid #DED6C7;">
-<span style="font-size:0.68rem; color:#3A674F; font-weight:800; display:block; margin-bottom:4px;">TIP 02 · 쉼터 &amp; 그늘</span>
-<strong style="font-size:0.82rem; color:#012D1D; display:block; margin-bottom:4px;">200m 간격 차양 쉼터</strong>
-<p style="font-size:0.75rem; color:#414844; margin:0; line-height:1.4;">다리가 피로할 때마다 부담 없이 5분씩 쉬어가기 좋습니다.</p>
-</div>
-<div style="background:#FAF7F2; padding:12px; border-radius:8px; border:1px solid #DED6C7;">
-<span style="font-size:0.68rem; color:#3A674F; font-weight:800; display:block; margin-bottom:4px;">TIP 03 · 최단 동선</span>
-<strong style="font-size:0.82rem; color:#012D1D; display:block; margin-bottom:4px;">P1 전용 안심 주차</strong>
-<p style="font-size:0.75rem; color:#414844; margin:0; line-height:1.4;">매표소 입구 도보 30m 지점에 무료 휠체어 대여소가 완비되어 있습니다.</p>
-</div>
-</div>
-</div>
-
-<div style="background-color:#F4EFE5; border:1px solid rgba(58,103,79,0.3); border-radius:12px; padding:18px;">
-<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #DED6C7; padding-bottom:10px; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
-<div>
-<span style="font-size:0.68rem; color:#3A674F; font-weight:800; text-transform:uppercase; letter-spacing:0.06em; display:block;">Public Data Fact-Check Seal</span>
-<strong style="color:#012D1D; font-size:0.92rem;">🌿 FESTAPICK 로컬 공공데이터 안심 검증 실링</strong>
-</div>
-<span class="editorial-badge badge-live">공공 API 실시간 연동</span>
-</div>
-<p style="font-size:0.78rem; color:#414844; line-height:1.6; margin:0 0 12px 0;">걷는 이의 걸음 폭과 동행의 안전을 위해 공공 공인 데이터 원천을 직접 대조·검증하여 발행한 정직한 안심 큐레이션입니다.</p>
-<div style="display:flex; flex-direction:column; gap:8px;">
-<div style="display:flex; justify-content:space-between; align-items:center; background:#FAF7F2; padding:10px 14px; border-radius:8px; border:1px solid #DED6C7;">
-<div>
-<strong style="font-size:0.80rem; color:#012D1D; display:block;">보행 환경 검증: 무장애 평지 데크길 및 계단 최소화</strong>
-<span style="font-size:0.72rem; color:#717973;">전국 국립공원·지자체 시설 보행 데이터 전수 대조</span>
-</div>
-<span style="background:rgba(16,185,129,0.12); color:#065F46; font-size:0.75rem; font-weight:800; padding:3px 8px; border-radius:4px;">● 검증 통과</span>
-</div>
-<div style="display:flex; justify-content:space-between; align-items:center; background:#FAF7F2; padding:10px 14px; border-radius:8px; border:1px solid #DED6C7;">
-<div>
-<strong style="font-size:0.80rem; color:#012D1D; display:block;">착한 가격 정보: 행정안전부 착한가격업소 최신 기준 연동</strong>
-<span style="font-size:0.72rem; color:#717973;">물가 안정 모니터링 공시가 반영</span>
-</div>
-<span style="background:rgba(245,158,11,0.12); color:#92400E; font-size:0.75rem; font-weight:800; padding:3px 8px; border-radius:4px;">● 가격 확인</span>
-</div>
-<div style="display:flex; justify-content:space-between; align-items:center; background:#FAF7F2; padding:10px 14px; border-radius:8px; border:1px solid #DED6C7;">
-<div>
-<strong style="font-size:0.80rem; color:#012D1D; display:block;">주차 인프라 확인: 공영주차장 및 보행약자 전용 구역 확인</strong>
-<span style="font-size:0.72rem; color:#717973;">안심 주차장 기준 진입 경사도 2% 미만 충족</span>
-</div>
-<span style="background:rgba(16,185,129,0.12); color:#065F46; font-size:0.75rem; font-weight:800; padding:3px 8px; border-radius:4px;">● 정상 확인</span>
-</div>
-</div>
-</div>
-</article>"""
-
-        try:
-            st.html(essay_html)
-        except Exception:
-            st.markdown(essay_html, unsafe_allow_html=True)
+        # LLM 작성 맞춤 기사 렌더링
+        if article_content:
+            st.markdown(article_content)
+        else:
+            st.info("발행된 에디토리얼 기사가 없습니다.")
 
         # [홈페이지 연동] 공식 누리집 / 예매처 바로가기 CTA 버튼
-        st.markdown("<div style='margin-top:14px;'></div>", unsafe_allow_html=True)
         if homepage:
             st.link_button("🌐 축제 공식 누리집 / 예매처 바로가기", homepage, use_container_width=True, type="primary")
         else:
             st.caption("ℹ️ 공식 누리집 주소가 미등록된 축제입니다. 세부 일정 및 현장 발권은 축제 종합안내소를 이용해 주세요.")
-
-        if article_content and '작성하지 못했습니다' not in article_content:
-            with st.expander('📄 AI 에디터 상세 분석 리포트 전문 확인', expanded=False):
-                st.markdown(article_content)
 
     with col_right:
         # [현장 확인 & 안심 지도]
@@ -1796,6 +1683,7 @@ else:
                 st.session_state.selected_region_state = hot["region"]
                 st.session_state.selected_month_state = f"{hot['month']}월"
                 st.session_state.selected_fest_name_state = hot["name"]
+                st.session_state.main_fest = hot["name"]
                 st.session_state.stamina_state = hot["stamina"]
                 st.session_state.trigger_quick_run = True
                 st.rerun()
