@@ -31,6 +31,10 @@ import streamlit as st
 import folium
 from streamlit_folium import st_folium
 import streamlit.components.v1 as st_components
+from dotenv import load_dotenv
+
+# .env 환경 변수 즉시 로드
+load_dotenv()
 
 # ==============================================================================
 # 백엔드 및 공공데이터 모듈 경로 등록
@@ -109,7 +113,7 @@ HOT_FESTIVALS_PRESET = [
         "stamina": 40,
         "companion": "연인 / 커플",
         "transport": "🚗 자가용 (편한 주차)",
-        "img": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1200",
+        "img": "https://images.unsplash.com/photo-1477414348463-c0eb7f1359b6?q=80&w=1200",
         "desc": "모노레일로 오르는 붉은 단풍 파노라마. 경사로 없는 완만한 나무 데크 숲길에서 마주하는 깊은 가을 쉼표.",
         "dates": "2026-10-18 ~ 2026-11-17",
         "address": "경기도 광주시 도척면 도척윗로 278-1 화담숲",
@@ -193,33 +197,33 @@ def make_contrast_badge(bg_hex: str, text: str, border_comp: bool = True, extra_
 # ==============================================================================
 # 3. [홈페이지 연동 & 현장 확인] 실시간 웹 검색, 누리집 크롤링 & base64 비주얼 엔진
 # ==============================================================================
-# 1) 축제 테마별 초고화질 비주얼 풀 (세분화 20개+ 테마)
+# 1) 축제 테마별 초고화질 비주얼 풀 (실제 풍경 1:1 정밀 매칭)
 FESTIVAL_THEME_VISUALS = {
     # 갈대 / 억새 / 생태
     "갈대": "https://images.unsplash.com/photo-1470240731273-7821a6eeb6bd?q=80&w=1400",
-    "억새": "https://images.unsplash.com/photo-1508873696983-2df5293cb395?q=80&w=1400",
+    "억새": "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?q=80&w=1400",
     "순천만": "https://images.unsplash.com/photo-1470240731273-7821a6eeb6bd?q=80&w=1400",
     "생태": "https://images.unsplash.com/photo-1448375240586-882707db888b?q=80&w=1400",
     # 단풍 / 숲 / 자연 / 산
-    "단풍": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1400",
-    "화담숲": "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?q=80&w=1400",
+    "단풍": "https://images.unsplash.com/photo-1477414348463-c0eb7f1359b6?q=80&w=1400",
+    "화담숲": "https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?q=80&w=1400",
     "숲": "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?q=80&w=1400",
     "산": "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=1400",
     # 유등 / 등불 / 야경 / 빛 / 불꽃
     "유등": "https://images.unsplash.com/photo-1514565131-fce0801e5785?q=80&w=1400",
-    "등불": "https://images.unsplash.com/photo-1514565131-fce0801e5785?q=80&w=1400",
+    "등불": "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=1400",
     "빛": "https://images.unsplash.com/photo-1513151233558-d860c5398176?q=80&w=1400",
-    "야경": "https://images.unsplash.com/photo-1514565131-fce0801e5785?q=80&w=1400",
+    "야경": "https://images.unsplash.com/photo-1519501025264-65ba15a82390?q=80&w=1400",
     "불꽃": "https://images.unsplash.com/photo-1498931299472-f7a63a5a1cfa?q=80&w=1400",
     # 해변 / 바다 / 해양
     "해변": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1400",
     "바다": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1400",
-    "해양": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1400",
+    "해양": "https://images.unsplash.com/photo-1518837695005-2083093ee35b?q=80&w=1400",
     # 전통 / 한옥 / 역사 / 문화 / 도자기
     "전통": "https://images.unsplash.com/photo-1583037189850-1921ae7c6c22?q=80&w=1400",
     "한옥": "https://images.unsplash.com/photo-1583037189850-1921ae7c6c22?q=80&w=1400",
     "역사": "https://images.unsplash.com/photo-1538485399081-7191377e8241?q=80&w=1400",
-    "문화": "https://images.unsplash.com/photo-1538485399081-7191377e8241?q=80&w=1400",
+    "문화": "https://images.unsplash.com/photo-1548115184-bc6544d06a58?q=80&w=1400",
     "도자기": "https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?q=80&w=1400",
     # 봄꽃 / 벚꽃 / 국화 / 꽃
     "봄꽃": "https://images.unsplash.com/photo-1490750967868-88aa4486c946?q=80&w=1400",
@@ -228,53 +232,85 @@ FESTIVAL_THEME_VISUALS = {
     "꽃": "https://images.unsplash.com/photo-1490750967868-88aa4486c946?q=80&w=1400",
     # 눈 / 얼음 / 겨울
     "눈": "https://images.unsplash.com/photo-1483921020237-2ff51e8e4b22?q=80&w=1400",
-    "얼음": "https://images.unsplash.com/photo-1483921020237-2ff51e8e4b22?q=80&w=1400",
-    "겨울": "https://images.unsplash.com/photo-1483921020237-2ff51e8e4b22?q=80&w=1400",
+    "얼음": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1400",
+    "겨울": "https://images.unsplash.com/photo-1516431883659-655d41c09bf9?q=80&w=1400",
     # 크리스마스 / 성탄
     "크리스마스": "https://images.unsplash.com/photo-1543258103-a62bdc069871?q=80&w=1400",
     "성탄": "https://images.unsplash.com/photo-1543258103-a62bdc069871?q=80&w=1400",
 }
 
-# 2) 로컬 미식 메뉴별 완벽 1:1 매칭 비주얼 풀
+# 2) 로컬 미식 메뉴별 완벽 1:1 매칭 비주얼 풀 (착한가격업소 대표 메뉴 망라)
 FOOD_MENU_VISUALS = {
+    # 면류
+    "냉면": "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?q=80&w=1200",
+    "물냉면": "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?q=80&w=1200",
+    "비빔냉면": "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?q=80&w=1200",
+    "칼국수": "https://images.unsplash.com/photo-1617093727343-374698b1b08d?q=80&w=1200",
+    "국수": "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?q=80&w=1200",
+    "잔치국수": "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?q=80&w=1200",
+    # 탕 / 국 / 찌개
+    "순대국": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=1200",
+    "순댓국": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=1200",
+    "국밥": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=1200",
+    "해장국": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=1200",
+    "설렁탕": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=1200",
+    "곰탕": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=1200",
+    "김치찌개": "https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?q=80&w=1200",
+    "된장찌개": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=1200",
+    "찌개": "https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?q=80&w=1200",
+    "순두부": "https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?q=80&w=1200",
+    # 밥류 / 뷔페 / 백반
+    "비빔밥": "https://images.unsplash.com/photo-1553163147-622ab57be1c7?q=80&w=1200",
+    "백반": "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1200",
+    "한식뷔페": "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1200",
+    "뷔페": "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1200",
+    "한정식": "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1200",
+    "정식": "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1200",
+    "한식": "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1200",
+    # 고기 / 구이
     "삼겹살": "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=1200",
     "고기": "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=1200",
     "구이": "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=1200",
     "불고기": "https://images.unsplash.com/photo-1590301157890-4810ed352733?q=80&w=1200",
     "갈비": "https://images.unsplash.com/photo-1590301157890-4810ed352733?q=80&w=1200",
-    "김치찌개": "https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?q=80&w=1000",
-    "된장찌개": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=1000",
-    "찌개": "https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?q=80&w=1000",
-    "국밥": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=1000",
-    "비빔밥": "https://images.unsplash.com/photo-1553163147-622ab57be1c7?q=80&w=1000",
-    "회": "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?q=80&w=1000",
-    "해물": "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?q=80&w=1000",
-    "국수": "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?q=80&w=1000",
-    "백반": "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1000",
-    "정식": "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1000",
-    "한식": "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1000",
-    "돈까스": "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=1000",
-    "카페": "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?q=80&w=1000",
-    "커피": "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?q=80&w=1000",
-    "베이커리": "https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=1000"
+    "제육": "https://images.unsplash.com/photo-1590301157890-4810ed352733?q=80&w=1200",
+    # 양식 / 중식 / 분식
+    "돈까스": "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=1200",
+    "돈가스": "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=1200",
+    "짜장면": "https://images.unsplash.com/photo-1585032226651-759b368d7246?q=80&w=1200",
+    "짬뽕": "https://images.unsplash.com/photo-1585032226651-759b368d7246?q=80&w=1200",
+    "중식": "https://images.unsplash.com/photo-1585032226651-759b368d7246?q=80&w=1200",
+    "떡볶이": "https://images.unsplash.com/photo-1590301157890-4810ed352733?q=80&w=1200",
+    "분식": "https://images.unsplash.com/photo-1590301157890-4810ed352733?q=80&w=1200",
+    # 해물 / 회
+    "회": "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?q=80&w=1200",
+    "해물": "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?q=80&w=1200",
+    # 카페 / 음료
+    "카페": "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?q=80&w=1200",
+    "커피": "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?q=80&w=1200",
+    "베이커리": "https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=1200"
 }
 
-# 3) 안심 휴식 쉼터 테마별 비주얼 풀
+# 3) 안심 휴식 쉼터 테마별 비주얼 풀 (자연/시설 1:1 정밀 매칭)
 SPOT_THEME_VISUALS = {
+    "도자기": "https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?q=80&w=1200",
+    "온천": "https://images.unsplash.com/photo-1540555700478-4be289fbecef?q=80&w=1200",
+    "스파": "https://images.unsplash.com/photo-1540555700478-4be289fbecef?q=80&w=1200",
+    "힐링": "https://images.unsplash.com/photo-1506126613408-eca07ce68773?q=80&w=1200",
+    "명상": "https://images.unsplash.com/photo-1506126613408-eca07ce68773?q=80&w=1200",
+    "쌀": "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?q=80&w=1200",
     "스파오": "https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=1200",
     "패션": "https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=1200",
     "쇼핑": "https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=1200",
-    "숲": "https://images.unsplash.com/photo-1448375240586-882707db888b?q=80&w=1000",
-    "휴양림": "https://images.unsplash.com/photo-1448375240586-882707db888b?q=80&w=1000",
-    "수목원": "https://images.unsplash.com/photo-1448375240586-882707db888b?q=80&w=1000",
-    "공원": "https://images.unsplash.com/photo-1519331379826-f10be5486c6f?q=80&w=1000",
-    "정원": "https://images.unsplash.com/photo-1519331379826-f10be5486c6f?q=80&w=1000",
-    "산책": "https://images.unsplash.com/photo-1519331379826-f10be5486c6f?q=80&w=1000",
-    "호수": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1000",
-    "스파": "https://images.unsplash.com/photo-1540555700478-4be289fbecef?q=80&w=1000",
-    "온천": "https://images.unsplash.com/photo-1540555700478-4be289fbecef?q=80&w=1000",
-    "사찰": "https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?q=80&w=1000",
-    "한옥": "https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?q=80&w=1000"
+    "숲": "https://images.unsplash.com/photo-1448375240586-882707db888b?q=80&w=1200",
+    "휴양림": "https://images.unsplash.com/photo-1448375240586-882707db888b?q=80&w=1200",
+    "수목원": "https://images.unsplash.com/photo-1470240731273-7821a6eeb6bd?q=80&w=1200",
+    "공원": "https://images.unsplash.com/photo-1519331379826-f10be5486c6f?q=80&w=1200",
+    "정원": "https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?q=80&w=1200",
+    "산책": "https://images.unsplash.com/photo-1476820865390-c52aeebb9891?q=80&w=1200",
+    "호수": "https://images.unsplash.com/photo-1439066615861-d1af74d74000?q=80&w=1200",
+    "사찰": "https://images.unsplash.com/photo-1548115184-bc6544d06a58?q=80&w=1200",
+    "한옥": "https://images.unsplash.com/photo-1583037189850-1921ae7c6c22?q=80&w=1200"
 }
 
 
@@ -387,65 +423,142 @@ def extract_festival_homepage_visual(url: str) -> Optional[Dict[str, Any]]:
     return None
 
 
+def extract_search_keywords(name: str, category: str = "general", region: str = "") -> List[str]:
+    """긴 관광지명, 축제명에서 불용어/서술어를 정제하고 핵심 키워드 리스트를 추출합니다."""
+    clean = re.sub(r'[\(\)\[\]\{\}\<\>]', ' ', str(name or "")).strip()
+    if not clean:
+        return []
+    
+    candidates = []
+    candidates.append(clean)
+    
+    # 쉼표(,), 가운뎃점(·), 슬래시(/), 틸드(~), 하이픈(-) 분할
+    tokens = [t.strip() for t in re.split(r'[,·/~|\-]', clean) if t.strip()]
+    for t in tokens:
+        if t and t not in candidates:
+            candidates.append(t)
+        # 축제/여행/힐링/체험/명소 등 수식어 제거
+        stripped = re.sub(r'(가을|봄|여름|겨울|단풍|축제|페스티벌|대축제|한마당|투어|여행|코스|체험|건강힐링여행|힐링여행|쉼터|명소|안내소)', '', t).strip()
+        if stripped and len(stripped) >= 2 and stripped not in candidates:
+            candidates.append(stripped)
+            
+    # 카테고리가 festival인 경우 핵심 고유명사 (예: "화담숲 가을 단풍축제" -> "화담숲")
+    if category == "festival":
+        fest_core = re.sub(r'(가을|봄|여름|겨울|단풍|축제|대축제|페스티벌|한마당)', '', clean).strip()
+        if fest_core and len(fest_core) >= 2 and fest_core not in candidates:
+            candidates.insert(1, fest_core)
+            
+    # 지역명 결합 후보 (예: "경기도 화담숲")
+    clean_reg = re.sub(r'[\(\)\[\]\{\}\<\>]', ' ', str(region or "")).strip()
+    if clean_reg and clean_reg != "전국 전체" and len(clean_reg) >= 2:
+        for c in list(candidates)[:2]:
+            reg_cand = f"{clean_reg} {c}".strip()
+            if reg_cand not in candidates:
+                candidates.append(reg_cand)
+                
+    return candidates
+
+
+def extract_food_menu_keywords(name: str, desc: str) -> List[str]:
+    """착한가격업소의 식당 이름 및 설명에서 핵심 음식 메뉴명을 지능적으로 추출합니다."""
+    clean_n = str(name or "").strip()
+    clean_d = str(desc or "").strip()
+    menus = []
+
+    # 1. desc에서 '메뉴: ...' 또는 '대표메뉴: ...' 패턴 추출
+    m_match = re.search(r'(?:대표\s*)?메뉴\s*[:：]\s*([^\(\|,\d\n\r]+)', clean_d)
+    if m_match:
+        cand = m_match.group(1).strip()
+        if cand and len(cand) >= 2:
+            menus.append(cand)
+
+    # 2. 쉼표나 가운뎃점 등으로 구분된 추가 메뉴 토큰 분리
+    sub_tokens = [t.strip() for t in re.split(r'[,·/~|\-]', clean_d) if t.strip()]
+    for st in sub_tokens:
+        clean_st = re.sub(r'[\(\)\[\]\d,원\s]+', '', st).strip()
+        if clean_st and len(clean_st) >= 2 and clean_st not in menus:
+            # 주요 음식 단어 포함 여부 확인
+            if any(fw in clean_st for fw in ['냉면', '국수', '칼국수', '찌개', '탕', '국밥', '순대', '백반', '정식', '뷔페', '비빔밥', '삼겹살', '구이', '고기', '돈까스', '짜장', '짬뽕', '떡볶이', '분식', '회']):
+                menus.append(clean_st)
+
+    # 3. 식당 이름 자체에서 대표 메뉴/업종 키워드 추론
+    food_keywords = [
+        '한식뷔페', '뷔페', '냉면', '칼국수', '순대국', '순댓국', '국밥', '해장국', '설렁탕', '곰탕',
+        '갈비탕', '김치찌개', '된장찌개', '순두부', '찌개', '비빔밥', '삼겹살', '불고기', '제육',
+        '갈비', '돈까스', '돈가스', '짜장면', '짬뽕', '탕수육', '중화', '떡볶이', '김밥',
+        '라면', '분식', '백반', '한정식', '가정식', '국수', '생선구이', '매운탕', '회',
+        '치킨', '피자', '카페', '커피', '베이커리'
+    ]
+    combined = f"{clean_n} {clean_d}"
+    for fk in food_keywords:
+        if fk in combined and fk not in menus:
+            menus.append(fk)
+
+    return menus
+
+
 @st.cache_data(ttl=7200, show_spinner=False)
-def search_kto_photo_gallery(keyword: str) -> Optional[Dict[str, Any]]:
+def search_kto_photo_gallery(keyword: str, category: str = "general", region: str = "") -> Optional[Dict[str, Any]]:
     """
     [한국관광공사 관광사진갤러리 API]
     지자체 축제 및 관광지의 고화질 공식 사진을 실시간 조회합니다.
+    서술형 명칭이나 복합어에서 핵심 명사를 자동 추출하여 조회 적중률을 극대화합니다.
     """
-    clean_k = str(keyword or "").strip()
-    if not clean_k:
-        return None
-
-    raw_key = os.getenv("GUIDE_API_KEY", "")
+    raw_key = os.getenv("GUIDE_API_KEY", "") or os.getenv("DATA_GO_KR_API_KEY", "") or os.getenv("TOUR_API_KEY", "")
     if not raw_key:
         return None
     api_key = urllib.parse.unquote(raw_key).strip()
 
     endpoint = "http://apis.data.go.kr/B551011/PhotoGalleryService1/gallerySearchList1"
-    params = {
-        "serviceKey": api_key,
-        "numOfRows": 3,
-        "MobileOS": "ETC",
-        "MobileApp": "FestaPick",
-        "_type": "json",
-        "keyword": clean_k
-    }
+    
+    cand_kws = extract_search_keywords(keyword, category=category, region=region)
+    if not cand_kws:
+        return None
 
-    try:
-        res = requests.get(endpoint, params=params, timeout=3.0)
-        if res.status_code == 200:
-            data = res.json()
-            items_container = data.get("response", {}).get("body", {}).get("items")
-            if isinstance(items_container, dict):
-                item_val = items_container.get("item", [])
-                first_item = None
-                if isinstance(item_val, list) and len(item_val) > 0:
-                    first_item = item_val[0]
-                elif isinstance(item_val, dict):
-                    first_item = item_val
+    for kw in cand_kws[:4]:
+        params = {
+            "serviceKey": api_key,
+            "numOfRows": 3,
+            "MobileOS": "ETC",
+            "MobileApp": "FestaPick",
+            "_type": "json",
+            "keyword": kw
+        }
+        try:
+            res = requests.get(endpoint, params=params, timeout=3.0)
+            if res.status_code == 200:
+                data = res.json()
+                items_container = data.get("response", {}).get("body", {}).get("items")
+                if isinstance(items_container, dict):
+                    item_val = items_container.get("item", [])
+                    first_item = None
+                    if isinstance(item_val, list) and len(item_val) > 0:
+                        first_item = item_val[0]
+                    elif isinstance(item_val, dict):
+                        first_item = item_val
 
-                if first_item and isinstance(first_item, dict):
-                    img_url = first_item.get("galWebImageUrl")
-                    if img_url:
-                        return {
-                            "url": str(img_url).strip(),
-                            "title": clean_k,
-                            "source": "📸 한국관광공사 공식 갤러리",
-                            "score": 98.0
-                        }
-    except Exception:
-        pass
+                    if first_item and isinstance(first_item, dict):
+                        img_url = first_item.get("galWebImageUrl")
+                        if img_url:
+                            return {
+                                "url": str(img_url).strip(),
+                                "title": kw,
+                                "source": f"📸 한국관광공사 공식 갤러리 ({kw})",
+                                "score": 98.0
+                            }
+        except Exception:
+            continue
     return None
 
 
 @st.cache_data(ttl=7200, show_spinner=False)
 def search_and_download_best_image_b64(query: str, category: str = "general", hint: str = "", region: str = "") -> Optional[Dict[str, Any]]:
     """
-    [현장 확인 & 프라이버시 보호 무결점 비주얼 추출기]
-    - 축제: 사람 인물/군수/시상식 배제 -> 순수 축제 현장 '경관/풍경/야경' 사진 엄선
-    - 식당: 유튜버/먹방 인물/얼굴 배제 -> '음식 사진' 또는 '메뉴판' 사진 엄선
-    - 쉼터: 온천 입욕자/샤워/프라이버시 침해 인물 완전 차단 -> '건물 외관/시설/풍경' 사진 엄선
+    [네이버 공식 오픈 API & 스마트 크롤링 하이브리드 비주얼 추출기]
+    - 1차: 공식 네이버 이미지 검색 API(v1/search/image)
+    - 2차: 네이버 웹 이미지 검색 크롤링 Fallback (키 누락/제한 시 무결점 방어)
+    - 착한가격업소(음식점): 간판, 외관, 건물, 주차장, 홀 내부 등 비(非)음식 사진 철저 배제 & 100% 음식 사진만 엄선
+    - 시네마틱 가로형(Landscape) 비율 유지 및 인물/로고 철저 배제
     """
     clean_q = re.sub(r'[\(\)\[\]\{\}\<\>]', ' ', str(query or "")).strip()
     clean_hint = re.sub(r'[\(\)\[\]\{\}\<\>]', ' ', str(hint or "")).strip()
@@ -454,89 +567,183 @@ def search_and_download_best_image_b64(query: str, category: str = "general", hi
     if not clean_q:
         return None
 
-    # 카테고리별 정밀 검색어 (인물 배제, 경관 및 음식/메뉴판 지향)
+    # 카테고리별 네거티브 필터링
+    bad_disaster = ['화재', '불', '연기', '사고', '폐업', '뉴스', '기사', '사건', '소방', '참사', '부상', '침수']
+    bad_people_media = ['먹방', '유튜버', 'bj', '사람', '얼굴', '셀카', '방송', '촬영', '기념사진', '인증샷', '손님', '단체사진', '연예인', 'selfie', 'youtube', '광마니', '문복희', '히밥', '쯔양']
+    bad_bath_exposure = ['목욕탕', '수영장', '탈의실', '샤워', '입욕', '노천탕', '온천욕', '수영복', '남탕', '여탕', '실내탕', '나체', '도촬', 'cctv']
+    bad_graphic_promo = ['포스터', '배너', '현수막', '전단지', '일러스트', '로고', 'ci', 'bi', '리플렛', '팜플렛', '카드뉴스', '일정표', '시간표', '배치도', '안내도', '약도', '그래픽', 'symbol', '마크']
+    
+    # [사용자 요청] 음식점 관련되지 않는 사진(간판, 외관, 내부 홀, 주차장, 영수증 등) 철저 배제
+    bad_non_food = [
+        '외관', '간판', '건물', '입구', '출구', '주차', '주차장', '홀', '내부', '인테리어', 
+        '좌석', '테이블', '룸', '화장실', '지도', '약도', '위치', '영수증', '가격표', '원산지', 
+        '배달', '오토바이', '포장박스', '상자', '박스', '전경', '빌딩', '로드뷰', '거리', '주소',
+        '정문', '후문', '카운터', '주방', '조리대'
+    ]
+
+    bad_keywords = bad_disaster + bad_people_media + bad_bath_exposure + bad_graphic_promo
+    if category in ["restaurant", "food_direct"]:
+        bad_keywords += bad_non_food
+
+    # 카테고리별 검색 쿼리 구성
     search_queries = []
+    cand_names = extract_search_keywords(clean_q, category=category, region=clean_reg)
+    primary_name = cand_names[1] if len(cand_names) > 1 else clean_q
+
     if category == "festival":
-        search_queries.append(f"{clean_q} {clean_reg} 축제 현장 경관 풍경".strip())
-        search_queries.append(f"{clean_q} 축제 현장 풍경 전경".strip())
-        search_queries.append(f"{clean_q} 축제 현장 경관".strip())
-        search_queries.append(f"{clean_q} 축제 야경 풍경 경관".strip())
-        bad_keywords = [
-            '포스터', '배너', '일러스트', '안내도', '현수막', '전단지', '그래픽', '팜플렛', 'ci', 'bi',
-            '로고', '재단', 'logo', 'symbol', '마크', '리플렛', '카드뉴스', '일정표', '시간표', '배치도',
-            '인물', '얼굴', '군수', '시장', '의원', '기념식', '기념촬영', '시상식', '표창', '악수', '기자회견', '단체사진', '사람들', '셀카'
-        ]
+        search_queries.append(primary_name)
+        search_queries.append(f"{primary_name} 축제 풍경".strip())
+        if clean_reg and clean_reg != "전국 전체":
+            search_queries.append(f"{clean_reg} {primary_name}".strip())
+        search_queries.append(clean_q)
     elif category == "restaurant":
-        first_menu = clean_hint.split('(')[0].split(',')[0].split('·')[0].strip()
+        # 음식점은 음식 관련 사진만을 첨부하도록 쿼리에 음식/메뉴를 강제 결합
+        menu_cands = extract_food_menu_keywords(clean_q, clean_hint)
+        first_menu = menu_cands[0] if menu_cands else ""
         if first_menu:
-            search_queries.append(f"{clean_q} {clean_reg} {first_menu} 음식 사진".strip())
             search_queries.append(f"{clean_q} {first_menu} 음식".strip())
-        search_queries.append(f"{clean_q} 메뉴판".strip())
+            search_queries.append(f"{clean_q} {first_menu} 요리".strip())
         search_queries.append(f"{clean_q} 대표메뉴 상차림".strip())
         search_queries.append(f"{clean_q} 음식 사진".strip())
-        bad_keywords = [
-            '유튜버', '광마니', '먹방', '얼굴', '인물', '사람', 'bj', '손님', '사장', '직원',
-            '셀카', 'selfie', 'youtube', '방송', '연예인', '인증샷', '기념사진', '문복희', '히밥', '쯔양'
-        ]
+        if clean_reg and clean_reg != "전국 전체":
+            search_queries.append(f"{clean_reg} {clean_q} 음식".strip())
+    elif category == "food_direct":
+        # 메뉴명 자체를 직접 질의하여 순수 유사 음식 요리 사진 추출
+        search_queries.append(f"{clean_q} 음식 요리".strip())
+        search_queries.append(f"{clean_q} 정갈한 상차림".strip())
+        search_queries.append(f"{clean_q} 대표 메뉴".strip())
     else:  # rest_spot
-        search_queries.append(f"{clean_q} {clean_reg} 건물 외관 전경".strip())
-        search_queries.append(f"{clean_q} 시설 내부 전경".strip())
-        search_queries.append(f"{clean_q} 쉼터 경관 풍경".strip())
-        search_queries.append(f"{clean_q} 전경 외관".strip())
-        bad_keywords = [
-            '입욕', '목욕', '탕', '온천욕', '수영복', '샤워', '탈의실', '남탕', '여탕', '노천탕',
-            '사람', '인물', '얼굴', '손님', '이용객', '셀카', 'cctv', '도촬', '프라이버시', '나체', '실내탕', '기념사진'
-        ]
+        search_queries.append(primary_name)
+        search_queries.append(f"{primary_name} 전경".strip())
+        if clean_reg and clean_reg != "전국 전체":
+            search_queries.append(f"{clean_reg} {primary_name}".strip())
+        search_queries.append(clean_q)
 
-    req_headers = {
+    # 1) 네이버 오픈 API 시도
+    credentials = os.getenv("Naver_Serch_API", "") or os.getenv("NAVER_SEARCH_API", "")
+    api_available = (":" in credentials)
+    client_id, client_secret = ("", "")
+    if api_available:
+        parts = credentials.split(":", 1)
+        client_id, client_secret = parts[0].strip(), parts[1].strip()
+        api_available = bool(client_id and client_secret)
+
+    img_dl_headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Referer': 'https://www.naver.com/'
+    }
+
+    if api_available:
+        api_headers = {
+            "X-Naver-Client-Id": client_id,
+            "X-Naver-Client-Secret": client_secret
+        }
+        api_url = "https://openapi.naver.com/v1/search/image"
+
+        for term in search_queries:
+            try:
+                for filt in ["large", "all"]:
+                    params = {"query": term, "display": 5, "sort": "sim", "filter": filt}
+                    res = requests.get(api_url, headers=api_headers, params=params, timeout=3.0)
+                    if res.status_code != 200:
+                        continue
+                    data = res.json()
+                    items = data.get("items", [])
+                    if not items:
+                        continue
+
+                    for item in items:
+                        img_url = item.get("link", "")
+                        title = item.get("title", "")
+                        if not img_url:
+                            continue
+
+                        u_lower = img_url.lower()
+                        title_lower = title.lower()
+
+                        if any(bad in u_lower for bad in ['icon', 'logo', 'banner', 'btn', 'receipt', 'sign', 'map', 'table', 'qrcode', 'blank', '1x1', '피규어', '애니']):
+                            continue
+                        if any(bad in title_lower or bad in u_lower for bad in bad_keywords):
+                            continue
+
+                        try:
+                            dl_res = requests.get(img_url, headers=img_dl_headers, timeout=2.5)
+                            if dl_res.status_code == 200 and len(dl_res.content) > 5000:
+                                img = Image.open(io.BytesIO(dl_res.content))
+                                w, h = img.size
+                                if w < 250 or h < 180:
+                                    continue
+                                # 극단적인 세로형(h > w * 1.25) 제외 (시네마틱 카드 유지)
+                                if h > w * 1.25:
+                                    continue
+                                if is_likely_person_or_skin_heavy(img):
+                                    continue
+                                if category in ["festival", "rest_spot"] and is_likely_logo_or_graphic(img):
+                                    continue
+
+                                if img.mode in ("RGBA", "P"):
+                                    img = img.convert("RGB")
+                                img.thumbnail((1200, 800), Image.Resampling.LANCZOS)
+                                buf = io.BytesIO()
+                                img.save(buf, format="JPEG", quality=84, optimize=True)
+                                b64 = base64.b64encode(buf.getvalue()).decode('utf-8')
+
+                                if category in ["restaurant", "food_direct"]:
+                                    source_label = "🍲 대표 음식 실사"
+                                elif category == "festival":
+                                    source_label = "📸 현장 실사"
+                                else:
+                                    source_label = "🌿 안심 시설 실사"
+                                return {
+                                    "url": f"data:image/jpeg;base64,{b64}",
+                                    "title": term,
+                                    "source": f"{source_label} ({term})",
+                                    "score": 99.0
+                                }
+                        except Exception:
+                            continue
+                    if items:
+                        break
+            except Exception:
+                continue
+
+    # 2) 네이버 웹 이미지 검색 크롤링 Fallback (API 키 없거나 결과 없을 시)
+    web_headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Referer': 'https://search.naver.com/'
     }
-
-    for term in search_queries:
+    for term in search_queries[:3]:
         try:
-            url = f"https://search.naver.com/search.naver?where=image&sm=tab_jum&query={quote(term)}"
-            r = requests.get(url, headers=req_headers, timeout=3.0)
+            crawl_url = f"https://search.naver.com/search.naver?where=image&sm=tab_jum&query={urllib.parse.quote(term)}"
+            r = requests.get(crawl_url, headers=web_headers, timeout=3.0)
             if r.status_code != 200:
                 continue
 
             unescaped = r.text.replace("&quot;", '"').replace("&amp;", "&")
-            
-            # (title, originalUrl) 튜플 매칭
             matches = re.findall(r'"title":"([^"]+)".*?"originalUrl":"(https?://[^"]+)"', unescaped)
             if not matches:
                 raw_urls = re.findall(r'"originalUrl":"(https?://[^"]+)"', unescaped)
                 matches = [("", u) for u in raw_urls]
 
-            if not matches:
-                continue
-
-            for title, raw_u in matches[:8]:
+            for title, raw_u in matches[:6]:
                 clean_u = raw_u.replace(r'\/', '/')
                 u_lower = clean_u.lower()
                 title_lower = title.lower()
 
-                # 1) 기본 시스템 무효 이미지 배제
                 if any(bad in u_lower for bad in ['icon', 'logo', 'banner', 'btn', 'receipt', 'sign', 'map', 'table', 'qrcode', 'blank', '1x1', '피규어', '애니']):
                     continue
-
-                # 2) [사용자 요청] 카테고리별 네거티브 키워드 엄격 필터링 (사람, 유튜버, 목욕/입욕 노출 등)
                 if any(bad in title_lower or bad in u_lower for bad in bad_keywords):
                     continue
 
                 try:
-                    res = requests.get(clean_u, headers=req_headers, timeout=2.5)
-                    if res.status_code == 200 and len(res.content) > 5000:
-                        img = Image.open(io.BytesIO(res.content))
+                    dl_res = requests.get(clean_u, headers=img_dl_headers, timeout=2.5)
+                    if dl_res.status_code == 200 and len(dl_res.content) > 5000:
+                        img = Image.open(io.BytesIO(dl_res.content))
                         w, h = img.size
-                        if w < 250 or h < 200:
+                        if w < 250 or h < 180:
                             continue
-
-                        # 세로형 포스터 배제 (가로 대비 세로가 비정상적으로 긴 전형적인 포스터/배너 비율 배제)
-                        if h > w * 1.2:
+                        if h > w * 1.25:
                             continue
-
-                        # 3) [사용자 요청] 이미지 픽셀 분석: 피부색 과다(인물/입욕자) 및 로고 배제
                         if is_likely_person_or_skin_heavy(img):
                             continue
                         if category in ["festival", "rest_spot"] and is_likely_logo_or_graphic(img):
@@ -546,15 +753,20 @@ def search_and_download_best_image_b64(query: str, category: str = "general", hi
                             img = img.convert("RGB")
                         img.thumbnail((1200, 800), Image.Resampling.LANCZOS)
                         buf = io.BytesIO()
-                        img.save(buf, format="JPEG", quality=82, optimize=True)
+                        img.save(buf, format="JPEG", quality=84, optimize=True)
                         b64 = base64.b64encode(buf.getvalue()).decode('utf-8')
-                        
-                        source_label = "📸 현장 경관 실사" if category == "festival" else ("🍲 대표 음식·메뉴판 실사" if category == "restaurant" else "🌿 안심 쉼터 시설 실사")
+
+                        if category in ["restaurant", "food_direct"]:
+                            source_label = "🍲 대표 음식 실사"
+                        elif category == "festival":
+                            source_label = "📸 현장 실사"
+                        else:
+                            source_label = "🌿 안심 시설 실사"
                         return {
                             "url": f"data:image/jpeg;base64,{b64}",
-                            "title": clean_q,
-                            "source": f"{source_label} ({clean_q})",
-                            "score": 99.0
+                            "title": term,
+                            "source": f"{source_label} ({term})",
+                            "score": 96.0
                         }
                 except Exception:
                     continue
@@ -573,52 +785,113 @@ def get_smart_curated_image(
     fallback_url: str = ""
 ) -> Dict[str, Any]:
     """
-    [핵심 4대 비주얼 통합 추출 엔진]
-    1. 축제 공식 누리집 유효 이미지 크롤링 (1순위)
-    2. 실제 현장/식당/명소 실시간 웹 검색 & base64 변환 (2순위: 무결점 현장 실사)
-    3. 음식 메뉴/테마 1:1 시맨틱 매칭 엄선 실사 (3순위 안전 폴백)
+    [데이터 성격 기반 비주얼 추출 라우팅 엔진]
+    1. 축제 (festival): 공식 누리집(og:image) ➔ 한국관광공사 갤러리 API ➔ 네이버 이미지 검색 엔진 ➔ Fallback 테마
+    2. 쉼터/관광지 (rest_spot): 한국관광공사 갤러리 API ➔ 네이버 이미지 검색 엔진 ➔ Fallback 테마
+    3. 식당 (restaurant): 
+       - 1차: 식당 이름 + 메뉴로 실시간 음식 실사 검색 (비음식 사진 철저 배제)
+       - [최후의 최후]: 검색 실패 시 메뉴를 기반으로 유사 음식 사진 실시간 생성/추출 및 1:1 매칭 큐레이션
     """
     clean_name = str(name or "").strip()
     clean_desc = str(desc or "").strip()
     combined_text = f"{clean_name} {clean_desc}".lower()
 
-    # 1. 축제 공식 누리집이 있는 경우 우선 크롤링
-    if homepage and category == "festival":
-        hp_visual = extract_festival_homepage_visual(homepage)
-        if hp_visual:
-            return hp_visual
-
-    # 1.5. 한국관광공사 관광사진갤러리 공식 사진 검색
+    # -------------------------------------------------------------
+    # 1) 축제 (festival) 파이프라인
+    # -------------------------------------------------------------
     if category == "festival":
-        kto_visual = search_kto_photo_gallery(clean_name)
+        # 1. 공식 누리집 메타 이미지 크롤링
+        if homepage:
+            hp_visual = extract_festival_homepage_visual(homepage)
+            if hp_visual:
+                return hp_visual
+
+        # 2. 한국관광공사 관광사진갤러리 공식 사진 API
+        kto_visual = search_kto_photo_gallery(clean_name, category="festival", region=region)
         if kto_visual:
             return kto_visual
 
-    # 2. 실제 현장 실사 웹 검색 및 base64 다운로드
-    real_visual = search_and_download_best_image_b64(clean_name, category=category, hint=clean_desc, region=region)
-    if real_visual:
-        return real_visual
+        # 3. 네이버 이미지 검색 (오픈 API & 크롤링 하이브리드)
+        real_visual = search_and_download_best_image_b64(clean_name, category="festival", hint=clean_desc, region=region)
+        if real_visual:
+            return real_visual
 
-    # 3. 카테고리별 시맨틱 매칭 폴백
-    if category == "festival":
+        # 4. 축제 시맨틱 Fallback 테마
         for k, img_url in FESTIVAL_THEME_VISUALS.items():
             if k in combined_text:
                 return {"url": img_url, "title": clean_name, "source": f"✨ 맞춤 테마 ({k})", "score": 90.0}
         return {"url": "https://images.unsplash.com/photo-1514565131-fce0801e5785?q=80&w=1400", "title": clean_name, "source": "✨ 에디토리얼 대표 축제", "score": 80.0}
 
-    elif category == "restaurant":
-        for k, img_url in FOOD_MENU_VISUALS.items():
-            if k in combined_text:
-                return {"url": img_url, "title": clean_name, "source": f"🍲 대표 메뉴 실사 ({k})", "score": 92.0}
-        return {"url": "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=1200", "title": clean_name, "source": "🍲 정갈한 로컬 한식 미식", "score": 80.0}
+    # -------------------------------------------------------------
+    # 2) 쉼터/관광지 (rest_spot) 파이프라인
+    # -------------------------------------------------------------
+    elif category == "rest_spot":
+        # 1. 한국관광공사 관광사진갤러리 공식 사진 API (쉼터/관광지 우선 조회)
+        kto_visual = search_kto_photo_gallery(clean_name, category="rest_spot", region=region)
+        if kto_visual:
+            return kto_visual
 
-    else:  # rest_spot
+        # 2. 네이버 이미지 검색 (오픈 API & 크롤링 하이브리드)
+        real_visual = search_and_download_best_image_b64(clean_name, category="rest_spot", hint=clean_desc, region=region)
+        if real_visual:
+            return real_visual
+
+        # 3. 쉼터 시맨틱 Fallback 테마
         if any(w in combined_text for w in ["스파오", "의류", "패션", "쇼핑"]):
             return {"url": SPOT_THEME_VISUALS["스파오"], "title": clean_name, "source": "🌿 도심 패션 & 문화 쉼터", "score": 90.0}
         for k, img_url in SPOT_THEME_VISUALS.items():
             if k in combined_text:
                 return {"url": img_url, "title": clean_name, "source": f"🌿 안심 힐링 스팟 ({k})", "score": 90.0}
-        return {"url": "https://images.unsplash.com/photo-1519331379826-f10be5486c6f?q=80&w=1000", "title": clean_name, "source": "🌿 안심 도심 산책 쉼터", "score": 80.0}
+        return {"url": "https://images.unsplash.com/photo-1519331379826-f10be5486c6f?q=80&w=1200", "title": clean_name, "source": "🌿 안심 도심 산책 쉼터", "score": 80.0}
+
+    # -------------------------------------------------------------
+    # 3) 식당 (restaurant) 파이프라인
+    # -------------------------------------------------------------
+    else:  # category == "restaurant"
+        # 메뉴 키워드 지능적 추출
+        menu_cands = extract_food_menu_keywords(clean_name, clean_desc)
+        primary_menu = menu_cands[0] if menu_cands else ""
+
+        # 1. 네이버 이미지 검색 엔진 (식당 이름 + 메뉴 결합, 간판/외관 등 비음식 철저 배제)
+        real_visual = search_and_download_best_image_b64(clean_name, category="restaurant", hint=clean_desc, region=region)
+        if real_visual:
+            return real_visual
+
+        # 2. [사용자 요청] 최후의 최후: 식당명 검색 실패 시 메뉴를 보고 유사 음식 사진 실시간 생성/추출
+        if primary_menu:
+            # (A) 메뉴 자체의 순수 음식 요리 실사 검색 (식당명이 아닌 메뉴명 직격 검색)
+            menu_real_visual = search_and_download_best_image_b64(primary_menu, category="food_direct", hint="음식 요리 상차림", region="")
+            if menu_real_visual:
+                menu_real_visual["source"] = f"🍲 대표 메뉴 실사 ({primary_menu})"
+                return menu_real_visual
+
+            # (B) 메뉴 1:1 매칭 큐레이션 푸드 비주얼 풀
+            for k, img_url in FOOD_MENU_VISUALS.items():
+                if k in primary_menu or primary_menu in k:
+                    return {
+                        "url": img_url, 
+                        "title": f"{clean_name} ({primary_menu})", 
+                        "source": f"🍲 메뉴 맞춤 요리 ({primary_menu})", 
+                        "score": 93.0
+                    }
+
+        # 3. 텍스트 전체에서 일치하는 메뉴 시맨틱 Fallback
+        for k, img_url in FOOD_MENU_VISUALS.items():
+            if k in combined_text:
+                return {
+                    "url": img_url, 
+                    "title": clean_name, 
+                    "source": f"🍲 대표 메뉴 실사 ({k})", 
+                    "score": 92.0
+                }
+
+        # 4. 최종 안심 디폴트: 정갈한 로컬 한식 미식
+        return {
+            "url": "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1200", 
+            "title": clean_name, 
+            "source": "🍲 정갈한 로컬 한식 미식", 
+            "score": 80.0
+        }
 
 
 def get_festival_status_badge(dates_str: str) -> str:
@@ -1080,7 +1353,7 @@ div[role="tabpanel"] {
     color: #FFFFFF;
 }
 
-/* 3단 비주얼 타임라인 카드 */
+/* 3단 비주얼 타임라인 카드 - 칼같은 190px 높이 & 종횡비 통일 */
 .story-card {
     background: #FFFFFF;
     border: 1px solid #EAE4DA;
@@ -1088,8 +1361,10 @@ div[role="tabpanel"] {
     overflow: hidden;
     box-shadow: 0 2px 10px rgba(0,0,0,0.03);
     height: 100%;
+    min-height: 380px;
     display: flex;
     flex-direction: column;
+    justify-content: space-between;
     transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 .story-card:hover {
@@ -1097,15 +1372,33 @@ div[role="tabpanel"] {
     box-shadow: 0 8px 20px rgba(1, 45, 29, 0.08);
 }
 .story-card-img-wrap {
-    width: 100%;
-    height: 185px;
-    position: relative;
+    width: 100% !important;
+    height: 190px !important;
+    min-height: 190px !important;
+    max-height: 190px !important;
+    position: relative !important;
+    overflow: hidden !important;
     background-color: #ECE8DF;
+    border-radius: 12px 12px 0 0;
 }
 .story-card-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+    width: 100% !important;
+    height: 190px !important;
+    min-height: 190px !important;
+    max-height: 190px !important;
+    object-fit: cover !important;
+    object-position: center !important;
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+.story-card-body {
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    flex-grow: 1;
+    min-height: 175px;
 }
 
 /* 인용구 및 팩트체크 박스 */
@@ -1176,14 +1469,20 @@ if "selected_fest_name_state" not in st.session_state:
     st.session_state.selected_fest_name_state = "순천만 갈대축제"
 if "stamina_state" not in st.session_state:
     st.session_state.stamina_state = 35
+if "companion_state" not in st.session_state:
+    st.session_state.companion_state = "부모님 (연로하심)"
+if "transport_state" not in st.session_state:
+    st.session_state.transport_state = "🚗 자가용 (편한 주차)"
 if "trigger_quick_run" not in st.session_state:
     st.session_state.trigger_quick_run = False
 
-# [위젯 생명주기 충돌 방어] 위젯이 인스턴스화되기 전에 pending_fest 세션 동기화
-if st.session_state.get("pending_fest"):
-    st.session_state.main_fest = st.session_state.pending_fest
-    st.session_state.selected_fest_name_state = st.session_state.pending_fest
-    del st.session_state["pending_fest"]
+# [프리셋 세션 동기화] prefilled_fest_data가 있을 경우 기본 지역/월/축제명 세션 보장
+if st.session_state.get("prefilled_fest_data"):
+    pf = st.session_state.prefilled_fest_data
+    if pf.get("region"):
+        st.session_state.selected_region_state = pf["region"]
+    if pf.get("name"):
+        st.session_state.selected_fest_name_state = pf["name"]
 
 
 # ==============================================================================
@@ -1281,17 +1580,12 @@ with col_where:
                     target_fest = fest_keys[0]
                     st.session_state.selected_fest_name_state = target_fest
 
-            # 위젯 키 동기화: selectbox 생성 전 main_fest가 fest_keys에 없으면 보정
-            if "main_fest" in st.session_state and st.session_state.main_fest not in fest_keys:
-                st.session_state.main_fest = target_fest
-
             def_fest_idx = fest_keys.index(target_fest) if target_fest in fest_keys else 0
 
             selected_fest_name = st.selectbox(
                 f"로컬 축제 ({len(festival_options)}개)", 
                 options=fest_keys, 
                 index=def_fest_idx, 
-                key="main_fest",
                 help="원하는 로컬 축제를 선택하면 해당 거점 인프라가 자동 조회됩니다."
             )
             st.session_state.selected_fest_name_state = selected_fest_name
@@ -1325,8 +1619,7 @@ with col_energy:
     with st.container(border=True):
         st.markdown('<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;"><span class="panel-step-badge">STEP 02</span><strong style="color:#012D1D; font-size:0.95rem;">오늘의 내 체력 상태</strong></div>', unsafe_allow_html=True)
 
-        current_stamina = st.session_state.get("stamina_slider", st.session_state.get("stamina_state", 35))
-        st.session_state.stamina_state = current_stamina
+        current_stamina = int(st.session_state.get("stamina_state", 35))
 
         # [사용자 편의 강조 UI] 배경색 및 보색/고대비 텍스트 자동 계산
         if current_stamina <= 30:
@@ -1363,15 +1656,16 @@ with col_energy:
         </div>
         """, unsafe_allow_html=True)
 
-        st.slider(
+        slider_val = st.slider(
             "체력 배터리 (조절)", 
             min_value=10, 
             max_value=100, 
             value=current_stamina, 
             step=5, 
-            key="stamina_slider",
             help="체력 수준에 따라 추천 동선 반경 및 쉼터 비중이 최적화됩니다."
         )
+        st.session_state.stamina_state = slider_val
+        current_stamina = slider_val
 
 
 # -------------------------------------------------------------
@@ -1381,21 +1675,28 @@ with col_action:
     with st.container(border=True):
         st.markdown('<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;"><span class="panel-step-badge">STEP 03</span><strong style="color:#012D1D; font-size:0.95rem;">누구와, 어떻게 이동하나요</strong></div>', unsafe_allow_html=True)
 
+        companion_options = ["부모님 (연로하심)", "나홀로 힐링", "연인 / 커플", "어린 자녀와 가족", "반려견 동반", "친구들과 함께"]
+        cur_companion = st.session_state.get("companion_state", "부모님 (연로하심)")
+        comp_idx = companion_options.index(cur_companion) if cur_companion in companion_options else 0
         companion = st.selectbox(
             "동행인 선택", 
-            options=["부모님 (연로하심)", "나홀로 힐링", "연인 / 커플", "어린 자녀와 가족", "반려견 동반", "친구들과 함께"], 
-            index=0, 
-            key="main_companion",
+            options=companion_options, 
+            index=comp_idx, 
             help="동행인 유형에 맞추어 맞춤 에세이 톤앤매너와 보행 팁이 생성됩니다."
         )
+        st.session_state.companion_state = companion
+
+        transport_options = ["🚗 자가용 (편한 주차)", "🚶 도보 (대중교통)"]
+        cur_transport = st.session_state.get("transport_state", "🚗 자가용 (편한 주차)")
+        trans_idx = transport_options.index(cur_transport) if cur_transport in transport_options else 0
         transport = st.radio(
             "이동 수단", 
-            options=["🚗 자가용 (편한 주차)", "🚶 도보 (대중교통)"], 
-            index=0, 
+            options=transport_options, 
+            index=trans_idx, 
             horizontal=True, 
-            key="main_transport",
             help="자가용 선택 시 반경 20km 드라이브 권역 내 안심 주차장과 맛집을 탐색하며, 도보 시 최단거리 중심 힐링 동선을 제공합니다."
         )
+        st.session_state.transport_state = transport
         
         default_req = "부모님이 무릎이 안 좋으셔서 계단은 피하고 오래 못 걸어요. 주차하기 편하고 넓은 곳이 좋겠습니다." if "부모님" in companion else "무리 없이 편안하게 즐기고 싶어요."
         extra_details = st.text_input(
@@ -1627,6 +1928,7 @@ if result and active_fest:
     if st.button("🔄 다른 축제 찾아보기 (처음으로)", key="reset_curation_btn", use_container_width=True):
         st.session_state.curation_result = None
         st.session_state.active_fest = None
+        active_fest = None
         st.session_state.pop("prefilled_fest_data", None)
         st.rerun()
 
@@ -1693,48 +1995,54 @@ if result and active_fest:
     s_col1, s_col2, s_col3 = st.columns(3, gap="medium")
     with s_col1:
         st.markdown(f"""
-        <div class="story-card">
-            <div class="story-card-img-wrap">
-                <img class="story-card-img" src="{fest_visual['url']}" alt="축제장" onerror="this.src='{FALLBACK_SAFE_IMAGE}';" />
+        <div class="story-card" style="height:100%; min-height:380px; display:flex; flex-direction:column; justify-content:space-between; background:#FFFFFF; border:1px solid #EAE4DA; border-radius:12px; overflow:hidden; box-shadow:0 2px 10px rgba(0,0,0,0.03);">
+            <div class="story-card-img-wrap" style="width:100% !important; height:190px !important; min-height:190px !important; max-height:190px !important; position:relative !important; overflow:hidden !important; background-color:#ECE8DF; border-radius:12px 12px 0 0;">
+                <img class="story-card-img" style="width:100% !important; height:190px !important; min-height:190px !important; max-height:190px !important; object-fit:cover !important; object-position:center !important; display:block !important; margin:0 !important; padding:0 !important;" src="{fest_visual['url']}" alt="축제장" onerror="this.onerror=null; this.src='{FALLBACK_SAFE_IMAGE}';" />
                 <span style="position:absolute; bottom:8px; right:8px;" class="badge-img-meta">{fest_visual['source']}</span>
             </div>
-            <div style="padding:18px;">
-                <span class="editorial-badge badge-live">STEP 01 · 추천 10:30 무렵</span>
-                <h4 style="color:#012D1D; margin:8px 0 4px 0;">{fest_name}</h4>
-                <p style="font-size:0.83rem; color:#414844; line-height:1.5;">{fest_timeline_desc}</p>
-                <div style="font-size:0.75rem; color:#3A674F; font-weight:700; margin-top:8px;">{fest_badge_text}</div>
+            <div class="story-card-body" style="padding:18px; display:flex; flex-direction:column; justify-content:space-between; flex-grow:1; min-height:175px;">
+                <div>
+                    <span class="editorial-badge badge-live">STEP 01 · 추천 10:30 무렵</span>
+                    <h4 style="color:#012D1D; margin:8px 0 4px 0; font-size:1.08rem; font-weight:700;">{fest_name}</h4>
+                    <p style="font-size:0.83rem; color:#414844; line-height:1.5; margin:0 0 8px 0;">{fest_timeline_desc}</p>
+                </div>
+                <div style="font-size:0.75rem; color:#3A674F; font-weight:700;">{fest_badge_text}</div>
             </div>
         </div>
         """, unsafe_allow_html=True)
 
     with s_col2:
         st.markdown(f"""
-        <div class="story-card">
-            <div class="story-card-img-wrap">
-                <img class="story-card-img" src="{rest_visual['url']}" alt="식당" onerror="this.src='{FALLBACK_SAFE_IMAGE}';" />
+        <div class="story-card" style="height:100%; min-height:380px; display:flex; flex-direction:column; justify-content:space-between; background:#FFFFFF; border:1px solid #EAE4DA; border-radius:12px; overflow:hidden; box-shadow:0 2px 10px rgba(0,0,0,0.03);">
+            <div class="story-card-img-wrap" style="width:100% !important; height:190px !important; min-height:190px !important; max-height:190px !important; position:relative !important; overflow:hidden !important; background-color:#ECE8DF; border-radius:12px 12px 0 0;">
+                <img class="story-card-img" style="width:100% !important; height:190px !important; min-height:190px !important; max-height:190px !important; object-fit:cover !important; object-position:center !important; display:block !important; margin:0 !important; padding:0 !important;" src="{rest_visual['url']}" alt="식당" onerror="this.onerror=null; this.src='{FALLBACK_SAFE_IMAGE}';" />
                 <span style="position:absolute; bottom:8px; right:8px;" class="badge-img-meta">{rest_visual['source']}</span>
             </div>
-            <div style="padding:18px;">
-                <span class="editorial-badge badge-live">STEP 02 · 추천 12:30 무렵</span>
-                <h4 style="color:#012D1D; margin:8px 0 4px 0;">{rest_name}</h4>
-                <p style="font-size:0.83rem; color:#414844; line-height:1.5;">{rest_desc}</p>
-                <div style="font-size:0.75rem; color:#3A674F; font-weight:700; margin-top:8px;">🍲 행안부 착한가격업소</div>
+            <div class="story-card-body" style="padding:18px; display:flex; flex-direction:column; justify-content:space-between; flex-grow:1; min-height:175px;">
+                <div>
+                    <span class="editorial-badge badge-live">STEP 02 · 추천 12:30 무렵</span>
+                    <h4 style="color:#012D1D; margin:8px 0 4px 0; font-size:1.08rem; font-weight:700;">{rest_name}</h4>
+                    <p style="font-size:0.83rem; color:#414844; line-height:1.5; margin:0 0 8px 0;">{rest_desc}</p>
+                </div>
+                <div style="font-size:0.75rem; color:#3A674F; font-weight:700;">🍲 행안부 착한가격업소</div>
             </div>
         </div>
         """, unsafe_allow_html=True)
 
     with s_col3:
         st.markdown(f"""
-        <div class="story-card">
-            <div class="story-card-img-wrap">
-                <img class="story-card-img" src="{spot_visual['url']}" alt="쉼터" onerror="this.src='{FALLBACK_SAFE_IMAGE}';" />
+        <div class="story-card" style="height:100%; min-height:380px; display:flex; flex-direction:column; justify-content:space-between; background:#FFFFFF; border:1px solid #EAE4DA; border-radius:12px; overflow:hidden; box-shadow:0 2px 10px rgba(0,0,0,0.03);">
+            <div class="story-card-img-wrap" style="width:100% !important; height:190px !important; min-height:190px !important; max-height:190px !important; position:relative !important; overflow:hidden !important; background-color:#ECE8DF; border-radius:12px 12px 0 0;">
+                <img class="story-card-img" style="width:100% !important; height:190px !important; min-height:190px !important; max-height:190px !important; object-fit:cover !important; object-position:center !important; display:block !important; margin:0 !important; padding:0 !important;" src="{spot_visual['url']}" alt="쉼터" onerror="this.onerror=null; this.src='{FALLBACK_SAFE_IMAGE}';" />
                 <span style="position:absolute; bottom:8px; right:8px;" class="badge-img-meta">{spot_visual['source']}</span>
             </div>
-            <div style="padding:18px;">
-                <span class="editorial-badge badge-live">STEP 03 · 추천 14:30 무렵</span>
-                <h4 style="color:#012D1D; margin:8px 0 4px 0;">{spot_name}</h4>
-                <p style="font-size:0.83rem; color:#414844; line-height:1.5;">{spot_desc}</p>
-                <div style="font-size:0.75rem; color:#3A674F; font-weight:700; margin-top:8px;">✨ 웰니스 치유 쉼터</div>
+            <div class="story-card-body" style="padding:18px; display:flex; flex-direction:column; justify-content:space-between; flex-grow:1; min-height:175px;">
+                <div>
+                    <span class="editorial-badge badge-live">STEP 03 · 추천 14:30 무렵</span>
+                    <h4 style="color:#012D1D; margin:8px 0 4px 0; font-size:1.08rem; font-weight:700;">{spot_name}</h4>
+                    <p style="font-size:0.83rem; color:#414844; line-height:1.5; margin:0 0 8px 0;">{spot_desc}</p>
+                </div>
+                <div style="font-size:0.75rem; color:#3A674F; font-weight:700;">✨ 웰니스 치유 쉼터</div>
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -1974,38 +2282,33 @@ else:
             </div>
             """, unsafe_allow_html=True)
 
-            def apply_editor_preset(hot_item=hot):
-                st.session_state.selected_region_state = hot_item["region"]
+            if st.button(f"🗞️ {hot['name']} 코스 세팅하기", key=f"quick_btn_{idx}", use_container_width=True):
+                st.session_state.selected_region_state = hot["region"]
                 st.session_state.selected_year_state = "2026년"
-                st.session_state.selected_month_state = f"{hot_item['month']}월"
-                st.session_state.selected_fest_name_state = hot_item["name"]
-                st.session_state.stamina_state = hot_item["stamina"]
-                st.session_state.stamina_slider = hot_item["stamina"]
-                st.session_state.main_companion = hot_item.get("companion", "부모님 (연로하심)")
-                st.session_state.main_transport = hot_item.get("transport", "🚗 자가용 (편한 주차)")
+                st.session_state.selected_month_state = f"{hot['month']}월"
+                st.session_state.selected_fest_name_state = hot["name"]
+                st.session_state.stamina_state = hot["stamina"]
+                st.session_state.companion_state = hot.get("companion", "부모님 (연로하심)")
+                st.session_state.transport_state = hot.get("transport", "🚗 자가용 (편한 주차)")
                 st.session_state.pop("main_extra", None)
-                st.session_state.main_fest = hot_item["name"]
-                st.session_state.pending_fest = hot_item["name"]
+                st.session_state.pop("main_fest", None)
+                st.session_state.pop("pending_fest", None)
+                st.session_state.pop("stamina_slider", None)
+                st.session_state.pop("main_companion", None)
+                st.session_state.pop("main_transport", None)
                 st.session_state.prefilled_fest_data = {
-                    "name": hot_item["name"],
-                    "region": hot_item["region"],
-                    "dates": hot_item.get("dates", ""),
-                    "address": hot_item.get("address", ""),
-                    "lat": hot_item.get("lat", 0.0),
-                    "lng": hot_item.get("lng", 0.0),
-                    "description": hot_item.get("desc", ""),
-                    "programs": hot_item.get("programs", []),
-                    "phone": hot_item.get("phone", ""),
-                    "homepage": hot_item.get("homepage", "")
+                    "name": hot["name"],
+                    "region": hot["region"],
+                    "dates": hot.get("dates", ""),
+                    "address": hot.get("address", ""),
+                    "lat": hot.get("lat", 0.0),
+                    "lng": hot.get("lng", 0.0),
+                    "description": hot.get("desc", ""),
+                    "programs": hot.get("programs", []),
+                    "phone": hot.get("phone", ""),
+                    "homepage": hot.get("homepage", "")
                 }
                 st.session_state.trigger_quick_run = True
                 st.session_state.curation_result = None
                 st.session_state.active_fest = None
-
-            st.button(
-                f"🗞️ {hot['name']} 코스 세팅하기", 
-                key=f"quick_btn_{idx}", 
-                use_container_width=True,
-                on_click=apply_editor_preset,
-                args=(hot,)
-            )
+                st.rerun()
