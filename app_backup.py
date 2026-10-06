@@ -193,33 +193,33 @@ def make_contrast_badge(bg_hex: str, text: str, border_comp: bool = True, extra_
 # ==============================================================================
 # 3. [홈페이지 연동 & 현장 확인] 실시간 웹 검색, 누리집 크롤링 & base64 비주얼 엔진
 # ==============================================================================
-# 1) 축제 테마별 초고화질 비주얼 풀 (세분화 20개+ 테마)
+# 1) 축제 테마별 초고화질 비주얼 풀 (실제 풍경 1:1 정밀 매칭)
 FESTIVAL_THEME_VISUALS = {
     # 갈대 / 억새 / 생태
     "갈대": "https://images.unsplash.com/photo-1470240731273-7821a6eeb6bd?q=80&w=1400",
-    "억새": "https://images.unsplash.com/photo-1508873696983-2df5293cb395?q=80&w=1400",
+    "억새": "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?q=80&w=1400",
     "순천만": "https://images.unsplash.com/photo-1470240731273-7821a6eeb6bd?q=80&w=1400",
     "생태": "https://images.unsplash.com/photo-1448375240586-882707db888b?q=80&w=1400",
     # 단풍 / 숲 / 자연 / 산
-    "단풍": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1400",
-    "화담숲": "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?q=80&w=1400",
+    "단풍": "https://images.unsplash.com/photo-1508873696983-2df5293cb395?q=80&w=1400",
+    "화담숲": "https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?q=80&w=1400",
     "숲": "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?q=80&w=1400",
     "산": "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=1400",
     # 유등 / 등불 / 야경 / 빛 / 불꽃
     "유등": "https://images.unsplash.com/photo-1514565131-fce0801e5785?q=80&w=1400",
-    "등불": "https://images.unsplash.com/photo-1514565131-fce0801e5785?q=80&w=1400",
+    "등불": "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=1400",
     "빛": "https://images.unsplash.com/photo-1513151233558-d860c5398176?q=80&w=1400",
-    "야경": "https://images.unsplash.com/photo-1514565131-fce0801e5785?q=80&w=1400",
+    "야경": "https://images.unsplash.com/photo-1519501025264-65ba15a82390?q=80&w=1400",
     "불꽃": "https://images.unsplash.com/photo-1498931299472-f7a63a5a1cfa?q=80&w=1400",
     # 해변 / 바다 / 해양
     "해변": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1400",
     "바다": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1400",
-    "해양": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1400",
+    "해양": "https://images.unsplash.com/photo-1518837695005-2083093ee35b?q=80&w=1400",
     # 전통 / 한옥 / 역사 / 문화 / 도자기
     "전통": "https://images.unsplash.com/photo-1583037189850-1921ae7c6c22?q=80&w=1400",
     "한옥": "https://images.unsplash.com/photo-1583037189850-1921ae7c6c22?q=80&w=1400",
     "역사": "https://images.unsplash.com/photo-1538485399081-7191377e8241?q=80&w=1400",
-    "문화": "https://images.unsplash.com/photo-1538485399081-7191377e8241?q=80&w=1400",
+    "문화": "https://images.unsplash.com/photo-1548115184-bc6544d06a58?q=80&w=1400",
     "도자기": "https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?q=80&w=1400",
     # 봄꽃 / 벚꽃 / 국화 / 꽃
     "봄꽃": "https://images.unsplash.com/photo-1490750967868-88aa4486c946?q=80&w=1400",
@@ -228,8 +228,8 @@ FESTIVAL_THEME_VISUALS = {
     "꽃": "https://images.unsplash.com/photo-1490750967868-88aa4486c946?q=80&w=1400",
     # 눈 / 얼음 / 겨울
     "눈": "https://images.unsplash.com/photo-1483921020237-2ff51e8e4b22?q=80&w=1400",
-    "얼음": "https://images.unsplash.com/photo-1483921020237-2ff51e8e4b22?q=80&w=1400",
-    "겨울": "https://images.unsplash.com/photo-1483921020237-2ff51e8e4b22?q=80&w=1400",
+    "얼음": "https://images.unsplash.com/photo-1517299321909-50942339206c?q=80&w=1400",
+    "겨울": "https://images.unsplash.com/photo-1457269449834-928af64c604d?q=80&w=1400",
     # 크리스마스 / 성탄
     "크리스마스": "https://images.unsplash.com/photo-1543258103-a62bdc069871?q=80&w=1400",
     "성탄": "https://images.unsplash.com/photo-1543258103-a62bdc069871?q=80&w=1400",
@@ -259,22 +259,22 @@ FOOD_MENU_VISUALS = {
     "베이커리": "https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=1000"
 }
 
-# 3) 안심 휴식 쉼터 테마별 비주얼 풀
+# 3) 안심 휴식 쉼터 테마별 비주얼 풀 (자연/시설 1:1 정밀 매칭)
 SPOT_THEME_VISUALS = {
     "스파오": "https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=1200",
     "패션": "https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=1200",
     "쇼핑": "https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=1200",
-    "숲": "https://images.unsplash.com/photo-1448375240586-882707db888b?q=80&w=1000",
-    "휴양림": "https://images.unsplash.com/photo-1448375240586-882707db888b?q=80&w=1000",
-    "수목원": "https://images.unsplash.com/photo-1448375240586-882707db888b?q=80&w=1000",
-    "공원": "https://images.unsplash.com/photo-1519331379826-f10be5486c6f?q=80&w=1000",
-    "정원": "https://images.unsplash.com/photo-1519331379826-f10be5486c6f?q=80&w=1000",
-    "산책": "https://images.unsplash.com/photo-1519331379826-f10be5486c6f?q=80&w=1000",
-    "호수": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1000",
-    "스파": "https://images.unsplash.com/photo-1540555700478-4be289fbecef?q=80&w=1000",
-    "온천": "https://images.unsplash.com/photo-1540555700478-4be289fbecef?q=80&w=1000",
-    "사찰": "https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?q=80&w=1000",
-    "한옥": "https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?q=80&w=1000"
+    "숲": "https://images.unsplash.com/photo-1448375240586-882707db888b?q=80&w=1200",
+    "휴양림": "https://images.unsplash.com/photo-1448375240586-882707db888b?q=80&w=1200",
+    "수목원": "https://images.unsplash.com/photo-1470240731273-7821a6eeb6bd?q=80&w=1200",
+    "공원": "https://images.unsplash.com/photo-1519331379826-f10be5486c6f?q=80&w=1200",
+    "정원": "https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?q=80&w=1200",
+    "산책": "https://images.unsplash.com/photo-1476820865390-c52aeebb9891?q=80&w=1200",
+    "호수": "https://images.unsplash.com/photo-1439066615861-d1af74d74000?q=80&w=1200",
+    "스파": "https://images.unsplash.com/photo-1540555700478-4be289fbecef?q=80&w=1200",
+    "온천": "https://images.unsplash.com/photo-1507652313519-d4e9174996dd?q=80&w=1200",
+    "사찰": "https://images.unsplash.com/photo-1548115184-bc6544d06a58?q=80&w=1200",
+    "한옥": "https://images.unsplash.com/photo-1583037189850-1921ae7c6c22?q=80&w=1200"
 }
 
 
@@ -442,8 +442,9 @@ def search_kto_photo_gallery(keyword: str) -> Optional[Dict[str, Any]]:
 @st.cache_data(ttl=7200, show_spinner=False)
 def search_and_download_best_image_b64(query: str, category: str = "general", hint: str = "", region: str = "") -> Optional[Dict[str, Any]]:
     """
-    [현장 확인 & 프라이버시 보호 무결점 비주얼 추출기]
-    - 축제: 사람 인물/군수/시상식 배제 -> 순수 축제 현장 '경관/풍경/야경' 사진 엄선
+    [네이버 공식 오픈 API & 프라이버시 보호 무결점 비주얼 추출기]
+    - 공식 네이버 이미지 검색 API(v1/search/image) 연동 (유사도순 정렬)
+    - 축제: 사람 인물/군수/시상식/포스터 배제 -> 순수 축제 현장 '경관/풍경/야경' 사진 엄선
     - 식당: 유튜버/먹방 인물/얼굴 배제 -> '음식 사진' 또는 '메뉴판' 사진 엄선
     - 쉼터: 온천 입욕자/샤워/프라이버시 침해 인물 완전 차단 -> '건물 외관/시설/풍경' 사진 엄선
     """
@@ -454,80 +455,93 @@ def search_and_download_best_image_b64(query: str, category: str = "general", hi
     if not clean_q:
         return None
 
-    # 카테고리별 정밀 검색어 (인물 배제, 경관 및 음식/메뉴판 지향)
+    # [네이버 오픈 API 인증키 파싱]
+    credentials = os.getenv("Naver_Serch_API", "") or os.getenv("NAVER_SEARCH_API", "")
+    if ":" not in credentials:
+        return None
+    client_id, client_secret = credentials.split(":", 1)
+    client_id = client_id.strip()
+    client_secret = client_secret.strip()
+    if not client_id or not client_secret:
+        return None
+
+    api_headers = {
+        "X-Naver-Client-Id": client_id,
+        "X-Naver-Client-Secret": client_secret
+    }
+    img_dl_headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Referer': 'https://www.naver.com/'
+    }
+
+    # -------------------------------------------------------------------------
+    # [지침 2] 네거티브 필터링 체계적 그룹화 (재난/인물/목욕/홍보 원천 차단)
+    # -------------------------------------------------------------------------
+    bad_disaster = ['화재', '불', '연기', '사고', '폐업', '뉴스', '기사', '사건', '소방', '참사', '부상', '침수']
+    bad_people_media = ['먹방', '유튜버', 'bj', '사람', '얼굴', '셀카', '방송', '촬영', '기념사진', '인증샷', '손님', '단체사진', '연예인', 'selfie', 'youtube', '광마니', '문복희', '히밥', '쯔양']
+    bad_bath_exposure = ['목욕탕', '수영장', '탈의실', '샤워', '입욕', '노천탕', '온천욕', '수영복', '남탕', '여탕', '실내탕', '나체', '도촬', 'cctv']
+    bad_graphic_promo = ['포스터', '배너', '현수막', '전단지', '일러스트', '로고', 'ci', 'bi', '리플렛', '팜플렛', '카드뉴스', '일정표', '시간표', '배치도', '안내도', '약도', '그래픽', 'symbol', '마크']
+
+    bad_keywords = bad_disaster + bad_people_media + bad_bath_exposure + bad_graphic_promo
+
+    # -------------------------------------------------------------------------
+    # [지침 2] 쿼리 정밀화: 포괄적인 단어 배제하고 명확한 대상에 집중
+    # -------------------------------------------------------------------------
     search_queries = []
     if category == "festival":
-        search_queries.append(f"{clean_q} {clean_reg} 축제 현장 경관 풍경".strip())
-        search_queries.append(f"{clean_q} 축제 현장 풍경 전경".strip())
-        search_queries.append(f"{clean_q} 축제 현장 경관".strip())
-        search_queries.append(f"{clean_q} 축제 야경 풍경 경관".strip())
-        bad_keywords = [
-            '포스터', '배너', '일러스트', '안내도', '현수막', '전단지', '그래픽', '팜플렛', 'ci', 'bi',
-            '로고', '재단', 'logo', 'symbol', '마크', '리플렛', '카드뉴스', '일정표', '시간표', '배치도',
-            '인물', '얼굴', '군수', '시장', '의원', '기념식', '기념촬영', '시상식', '표창', '악수', '기자회견', '단체사진', '사람들', '셀카'
-        ]
+        if clean_reg and clean_reg != "전국 전체":
+            search_queries.append(f"{clean_reg} {clean_q} 축제 현장".strip())
+        search_queries.append(f"{clean_q} 축제 풍경".strip())
+        search_queries.append(f"{clean_q} 축제 전경".strip())
     elif category == "restaurant":
-        first_menu = clean_hint.split('(')[0].split(',')[0].split('·')[0].strip()
-        if first_menu:
-            search_queries.append(f"{clean_q} {clean_reg} {first_menu} 음식 사진".strip())
-            search_queries.append(f"{clean_q} {first_menu} 음식".strip())
-        search_queries.append(f"{clean_q} 메뉴판".strip())
-        search_queries.append(f"{clean_q} 대표메뉴 상차림".strip())
-        search_queries.append(f"{clean_q} 음식 사진".strip())
-        bad_keywords = [
-            '유튜버', '광마니', '먹방', '얼굴', '인물', '사람', 'bj', '손님', '사장', '직원',
-            '셀카', 'selfie', 'youtube', '방송', '연예인', '인증샷', '기념사진', '문복희', '히밥', '쯔양'
-        ]
+        if clean_reg and clean_reg != "전국 전체":
+            search_queries.append(f"{clean_reg} {clean_q} 음식".strip())
+        search_queries.append(f"{clean_q} 대표메뉴".strip())
+        search_queries.append(f"{clean_q} 메뉴 음식".strip())
     else:  # rest_spot
-        search_queries.append(f"{clean_q} {clean_reg} 건물 외관 전경".strip())
-        search_queries.append(f"{clean_q} 시설 내부 전경".strip())
-        search_queries.append(f"{clean_q} 쉼터 경관 풍경".strip())
-        search_queries.append(f"{clean_q} 전경 외관".strip())
-        bad_keywords = [
-            '입욕', '목욕', '탕', '온천욕', '수영복', '샤워', '탈의실', '남탕', '여탕', '노천탕',
-            '사람', '인물', '얼굴', '손님', '이용객', '셀카', 'cctv', '도촬', '프라이버시', '나체', '실내탕', '기념사진'
-        ]
+        search_queries.append(f"{clean_q} 풍경".strip())
+        search_queries.append(f"{clean_q} 전경".strip())
+        search_queries.append(f"{clean_q} 건물 외관".strip())
 
-    req_headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Referer': 'https://search.naver.com/'
-    }
+    api_url = "https://openapi.naver.com/v1/search/image"
 
     for term in search_queries:
         try:
-            url = f"https://search.naver.com/search.naver?where=image&sm=tab_jum&query={quote(term)}"
-            r = requests.get(url, headers=req_headers, timeout=3.0)
-            if r.status_code != 200:
+            params = {
+                "query": term,
+                "display": 5,
+                "sort": "sim"
+            }
+            res = requests.get(api_url, headers=api_headers, params=params, timeout=3.0)
+            if res.status_code != 200:
                 continue
 
-            unescaped = r.text.replace("&quot;", '"').replace("&amp;", "&")
-            
-            # (title, originalUrl) 튜플 매칭
-            matches = re.findall(r'"title":"([^"]+)".*?"originalUrl":"(https?://[^"]+)"', unescaped)
-            if not matches:
-                raw_urls = re.findall(r'"originalUrl":"(https?://[^"]+)"', unescaped)
-                matches = [("", u) for u in raw_urls]
-
-            if not matches:
+            data = res.json()
+            items = data.get("items", [])
+            if not items:
                 continue
 
-            for title, raw_u in matches[:8]:
-                clean_u = raw_u.replace(r'\/', '/')
-                u_lower = clean_u.lower()
+            for item in items:
+                img_url = item.get("link", "")
+                title = item.get("title", "")
+                if not img_url:
+                    continue
+
+                u_lower = img_url.lower()
                 title_lower = title.lower()
 
                 # 1) 기본 시스템 무효 이미지 배제
                 if any(bad in u_lower for bad in ['icon', 'logo', 'banner', 'btn', 'receipt', 'sign', 'map', 'table', 'qrcode', 'blank', '1x1', '피규어', '애니']):
                     continue
 
-                # 2) [사용자 요청] 카테고리별 네거티브 키워드 엄격 필터링 (사람, 유튜버, 목욕/입욕 노출 등)
+                # 2) [사용자 요청] 카테고리별 네거티브 키워드 엄격 필터링 (사람, 포스터, 배너, 로고 등)
                 if any(bad in title_lower or bad in u_lower for bad in bad_keywords):
                     continue
 
                 try:
-                    res = requests.get(clean_u, headers=req_headers, timeout=2.5)
-                    if res.status_code == 200 and len(res.content) > 5000:
-                        img = Image.open(io.BytesIO(res.content))
+                    dl_res = requests.get(img_url, headers=img_dl_headers, timeout=2.5)
+                    if dl_res.status_code == 200 and len(dl_res.content) > 5000:
+                        img = Image.open(io.BytesIO(dl_res.content))
                         w, h = img.size
                         if w < 250 or h < 200:
                             continue
@@ -548,7 +562,7 @@ def search_and_download_best_image_b64(query: str, category: str = "general", hi
                         buf = io.BytesIO()
                         img.save(buf, format="JPEG", quality=82, optimize=True)
                         b64 = base64.b64encode(buf.getvalue()).decode('utf-8')
-                        
+
                         source_label = "📸 현장 경관 실사" if category == "festival" else ("🍲 대표 음식·메뉴판 실사" if category == "restaurant" else "🌿 안심 쉼터 시설 실사")
                         return {
                             "url": f"data:image/jpeg;base64,{b64}",
@@ -573,52 +587,77 @@ def get_smart_curated_image(
     fallback_url: str = ""
 ) -> Dict[str, Any]:
     """
-    [핵심 4대 비주얼 통합 추출 엔진]
-    1. 축제 공식 누리집 유효 이미지 크롤링 (1순위)
-    2. 실제 현장/식당/명소 실시간 웹 검색 & base64 변환 (2순위: 무결점 현장 실사)
-    3. 음식 메뉴/테마 1:1 시맨틱 매칭 엄선 실사 (3순위 안전 폴백)
+    [데이터 성격 기반 비주얼 추출 라우팅 엔진]
+    1. 축제 (festival): 공식 누리집(og:image) ➔ 한국관광공사 갤러리 API ➔ 네이버 이미지 검색 API ➔ Fallback 테마
+    2. 쉼터/관광지 (rest_spot): 한국관광공사 갤러리 API ➔ 네이버 이미지 검색 API ➔ Fallback 테마
+    3. 식당 (restaurant): 네이버 이미지 검색 API ➔ Fallback 테마
     """
     clean_name = str(name or "").strip()
     clean_desc = str(desc or "").strip()
     combined_text = f"{clean_name} {clean_desc}".lower()
 
-    # 1. 축제 공식 누리집이 있는 경우 우선 크롤링
-    if homepage and category == "festival":
-        hp_visual = extract_festival_homepage_visual(homepage)
-        if hp_visual:
-            return hp_visual
-
-    # 1.5. 한국관광공사 관광사진갤러리 공식 사진 검색
+    # -------------------------------------------------------------
+    # 1) 축제 (festival) 파이프라인
+    # -------------------------------------------------------------
     if category == "festival":
+        # 1. 공식 누리집 메타 이미지 크롤링
+        if homepage:
+            hp_visual = extract_festival_homepage_visual(homepage)
+            if hp_visual:
+                return hp_visual
+
+        # 2. 한국관광공사 관광사진갤러리 공식 사진 API
         kto_visual = search_kto_photo_gallery(clean_name)
         if kto_visual:
             return kto_visual
 
-    # 2. 실제 현장 실사 웹 검색 및 base64 다운로드
-    real_visual = search_and_download_best_image_b64(clean_name, category=category, hint=clean_desc, region=region)
-    if real_visual:
-        return real_visual
+        # 3. 네이버 공식 이미지 검색 API
+        real_visual = search_and_download_best_image_b64(clean_name, category="festival", hint=clean_desc, region=region)
+        if real_visual:
+            return real_visual
 
-    # 3. 카테고리별 시맨틱 매칭 폴백
-    if category == "festival":
+        # 4. 축제 시맨틱 Fallback 테마
         for k, img_url in FESTIVAL_THEME_VISUALS.items():
             if k in combined_text:
                 return {"url": img_url, "title": clean_name, "source": f"✨ 맞춤 테마 ({k})", "score": 90.0}
         return {"url": "https://images.unsplash.com/photo-1514565131-fce0801e5785?q=80&w=1400", "title": clean_name, "source": "✨ 에디토리얼 대표 축제", "score": 80.0}
 
-    elif category == "restaurant":
-        for k, img_url in FOOD_MENU_VISUALS.items():
-            if k in combined_text:
-                return {"url": img_url, "title": clean_name, "source": f"🍲 대표 메뉴 실사 ({k})", "score": 92.0}
-        return {"url": "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=1200", "title": clean_name, "source": "🍲 정갈한 로컬 한식 미식", "score": 80.0}
+    # -------------------------------------------------------------
+    # 2) 쉼터/관광지 (rest_spot) 파이프라인
+    # -------------------------------------------------------------
+    elif category == "rest_spot":
+        # 1. 한국관광공사 관광사진갤러리 공식 사진 API (쉼터/관광지 우선 조회)
+        kto_visual = search_kto_photo_gallery(clean_name)
+        if kto_visual:
+            return kto_visual
 
-    else:  # rest_spot
+        # 2. 네이버 공식 이미지 검색 API
+        real_visual = search_and_download_best_image_b64(clean_name, category="rest_spot", hint=clean_desc, region=region)
+        if real_visual:
+            return real_visual
+
+        # 3. 쉼터 시맨틱 Fallback 테마
         if any(w in combined_text for w in ["스파오", "의류", "패션", "쇼핑"]):
             return {"url": SPOT_THEME_VISUALS["스파오"], "title": clean_name, "source": "🌿 도심 패션 & 문화 쉼터", "score": 90.0}
         for k, img_url in SPOT_THEME_VISUALS.items():
             if k in combined_text:
                 return {"url": img_url, "title": clean_name, "source": f"🌿 안심 힐링 스팟 ({k})", "score": 90.0}
-        return {"url": "https://images.unsplash.com/photo-1519331379826-f10be5486c6f?q=80&w=1000", "title": clean_name, "source": "🌿 안심 도심 산책 쉼터", "score": 80.0}
+        return {"url": "https://images.unsplash.com/photo-1519331379826-f10be5486c6f?q=80&w=1200", "title": clean_name, "source": "🌿 안심 도심 산책 쉼터", "score": 80.0}
+
+    # -------------------------------------------------------------
+    # 3) 식당 (restaurant) 파이프라인
+    # -------------------------------------------------------------
+    else:  # category == "restaurant"
+        # 1. 네이버 공식 이미지 검색 API (대표 음식/메뉴 특화)
+        real_visual = search_and_download_best_image_b64(clean_name, category="restaurant", hint=clean_desc, region=region)
+        if real_visual:
+            return real_visual
+
+        # 2. 식당 시맨틱 Fallback 테마
+        for k, img_url in FOOD_MENU_VISUALS.items():
+            if k in combined_text:
+                return {"url": img_url, "title": clean_name, "source": f"🍲 대표 메뉴 실사 ({k})", "score": 92.0}
+        return {"url": "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=1200", "title": clean_name, "source": "🍲 정갈한 로컬 한식 미식", "score": 80.0}
 
 
 def get_festival_status_badge(dates_str: str) -> str:
@@ -1176,14 +1215,20 @@ if "selected_fest_name_state" not in st.session_state:
     st.session_state.selected_fest_name_state = "순천만 갈대축제"
 if "stamina_state" not in st.session_state:
     st.session_state.stamina_state = 35
+if "companion_state" not in st.session_state:
+    st.session_state.companion_state = "부모님 (연로하심)"
+if "transport_state" not in st.session_state:
+    st.session_state.transport_state = "🚗 자가용 (편한 주차)"
 if "trigger_quick_run" not in st.session_state:
     st.session_state.trigger_quick_run = False
 
-# [위젯 생명주기 충돌 방어] 위젯이 인스턴스화되기 전에 pending_fest 세션 동기화
-if st.session_state.get("pending_fest"):
-    st.session_state.main_fest = st.session_state.pending_fest
-    st.session_state.selected_fest_name_state = st.session_state.pending_fest
-    del st.session_state["pending_fest"]
+# [프리셋 세션 동기화] prefilled_fest_data가 있을 경우 기본 지역/월/축제명 세션 보장
+if st.session_state.get("prefilled_fest_data"):
+    pf = st.session_state.prefilled_fest_data
+    if pf.get("region"):
+        st.session_state.selected_region_state = pf["region"]
+    if pf.get("name"):
+        st.session_state.selected_fest_name_state = pf["name"]
 
 
 # ==============================================================================
@@ -1281,17 +1326,12 @@ with col_where:
                     target_fest = fest_keys[0]
                     st.session_state.selected_fest_name_state = target_fest
 
-            # 위젯 키 동기화: selectbox 생성 전 main_fest가 fest_keys에 없으면 보정
-            if "main_fest" in st.session_state and st.session_state.main_fest not in fest_keys:
-                st.session_state.main_fest = target_fest
-
             def_fest_idx = fest_keys.index(target_fest) if target_fest in fest_keys else 0
 
             selected_fest_name = st.selectbox(
                 f"로컬 축제 ({len(festival_options)}개)", 
                 options=fest_keys, 
                 index=def_fest_idx, 
-                key="main_fest",
                 help="원하는 로컬 축제를 선택하면 해당 거점 인프라가 자동 조회됩니다."
             )
             st.session_state.selected_fest_name_state = selected_fest_name
@@ -1325,8 +1365,7 @@ with col_energy:
     with st.container(border=True):
         st.markdown('<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;"><span class="panel-step-badge">STEP 02</span><strong style="color:#012D1D; font-size:0.95rem;">오늘의 내 체력 상태</strong></div>', unsafe_allow_html=True)
 
-        current_stamina = st.session_state.get("stamina_slider", st.session_state.get("stamina_state", 35))
-        st.session_state.stamina_state = current_stamina
+        current_stamina = int(st.session_state.get("stamina_state", 35))
 
         # [사용자 편의 강조 UI] 배경색 및 보색/고대비 텍스트 자동 계산
         if current_stamina <= 30:
@@ -1363,15 +1402,16 @@ with col_energy:
         </div>
         """, unsafe_allow_html=True)
 
-        st.slider(
+        slider_val = st.slider(
             "체력 배터리 (조절)", 
             min_value=10, 
             max_value=100, 
             value=current_stamina, 
             step=5, 
-            key="stamina_slider",
             help="체력 수준에 따라 추천 동선 반경 및 쉼터 비중이 최적화됩니다."
         )
+        st.session_state.stamina_state = slider_val
+        current_stamina = slider_val
 
 
 # -------------------------------------------------------------
@@ -1381,21 +1421,28 @@ with col_action:
     with st.container(border=True):
         st.markdown('<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;"><span class="panel-step-badge">STEP 03</span><strong style="color:#012D1D; font-size:0.95rem;">누구와, 어떻게 이동하나요</strong></div>', unsafe_allow_html=True)
 
+        companion_options = ["부모님 (연로하심)", "나홀로 힐링", "연인 / 커플", "어린 자녀와 가족", "반려견 동반", "친구들과 함께"]
+        cur_companion = st.session_state.get("companion_state", "부모님 (연로하심)")
+        comp_idx = companion_options.index(cur_companion) if cur_companion in companion_options else 0
         companion = st.selectbox(
             "동행인 선택", 
-            options=["부모님 (연로하심)", "나홀로 힐링", "연인 / 커플", "어린 자녀와 가족", "반려견 동반", "친구들과 함께"], 
-            index=0, 
-            key="main_companion",
+            options=companion_options, 
+            index=comp_idx, 
             help="동행인 유형에 맞추어 맞춤 에세이 톤앤매너와 보행 팁이 생성됩니다."
         )
+        st.session_state.companion_state = companion
+
+        transport_options = ["🚗 자가용 (편한 주차)", "🚶 도보 (대중교통)"]
+        cur_transport = st.session_state.get("transport_state", "🚗 자가용 (편한 주차)")
+        trans_idx = transport_options.index(cur_transport) if cur_transport in transport_options else 0
         transport = st.radio(
             "이동 수단", 
-            options=["🚗 자가용 (편한 주차)", "🚶 도보 (대중교통)"], 
-            index=0, 
+            options=transport_options, 
+            index=trans_idx, 
             horizontal=True, 
-            key="main_transport",
             help="자가용 선택 시 반경 20km 드라이브 권역 내 안심 주차장과 맛집을 탐색하며, 도보 시 최단거리 중심 힐링 동선을 제공합니다."
         )
+        st.session_state.transport_state = transport
         
         default_req = "부모님이 무릎이 안 좋으셔서 계단은 피하고 오래 못 걸어요. 주차하기 편하고 넓은 곳이 좋겠습니다." if "부모님" in companion else "무리 없이 편안하게 즐기고 싶어요."
         extra_details = st.text_input(
@@ -1627,6 +1674,7 @@ if result and active_fest:
     if st.button("🔄 다른 축제 찾아보기 (처음으로)", key="reset_curation_btn", use_container_width=True):
         st.session_state.curation_result = None
         st.session_state.active_fest = None
+        active_fest = None
         st.session_state.pop("prefilled_fest_data", None)
         st.rerun()
 
@@ -1974,38 +2022,33 @@ else:
             </div>
             """, unsafe_allow_html=True)
 
-            def apply_editor_preset(hot_item=hot):
-                st.session_state.selected_region_state = hot_item["region"]
+            if st.button(f"🗞️ {hot['name']} 코스 세팅하기", key=f"quick_btn_{idx}", use_container_width=True):
+                st.session_state.selected_region_state = hot["region"]
                 st.session_state.selected_year_state = "2026년"
-                st.session_state.selected_month_state = f"{hot_item['month']}월"
-                st.session_state.selected_fest_name_state = hot_item["name"]
-                st.session_state.stamina_state = hot_item["stamina"]
-                st.session_state.stamina_slider = hot_item["stamina"]
-                st.session_state.main_companion = hot_item.get("companion", "부모님 (연로하심)")
-                st.session_state.main_transport = hot_item.get("transport", "🚗 자가용 (편한 주차)")
+                st.session_state.selected_month_state = f"{hot['month']}월"
+                st.session_state.selected_fest_name_state = hot["name"]
+                st.session_state.stamina_state = hot["stamina"]
+                st.session_state.companion_state = hot.get("companion", "부모님 (연로하심)")
+                st.session_state.transport_state = hot.get("transport", "🚗 자가용 (편한 주차)")
                 st.session_state.pop("main_extra", None)
-                st.session_state.main_fest = hot_item["name"]
-                st.session_state.pending_fest = hot_item["name"]
+                st.session_state.pop("main_fest", None)
+                st.session_state.pop("pending_fest", None)
+                st.session_state.pop("stamina_slider", None)
+                st.session_state.pop("main_companion", None)
+                st.session_state.pop("main_transport", None)
                 st.session_state.prefilled_fest_data = {
-                    "name": hot_item["name"],
-                    "region": hot_item["region"],
-                    "dates": hot_item.get("dates", ""),
-                    "address": hot_item.get("address", ""),
-                    "lat": hot_item.get("lat", 0.0),
-                    "lng": hot_item.get("lng", 0.0),
-                    "description": hot_item.get("desc", ""),
-                    "programs": hot_item.get("programs", []),
-                    "phone": hot_item.get("phone", ""),
-                    "homepage": hot_item.get("homepage", "")
+                    "name": hot["name"],
+                    "region": hot["region"],
+                    "dates": hot.get("dates", ""),
+                    "address": hot.get("address", ""),
+                    "lat": hot.get("lat", 0.0),
+                    "lng": hot.get("lng", 0.0),
+                    "description": hot.get("desc", ""),
+                    "programs": hot.get("programs", []),
+                    "phone": hot.get("phone", ""),
+                    "homepage": hot.get("homepage", "")
                 }
                 st.session_state.trigger_quick_run = True
                 st.session_state.curation_result = None
                 st.session_state.active_fest = None
-
-            st.button(
-                f"🗞️ {hot['name']} 코스 세팅하기", 
-                key=f"quick_btn_{idx}", 
-                use_container_width=True,
-                on_click=apply_editor_preset,
-                args=(hot,)
-            )
+                st.rerun()
